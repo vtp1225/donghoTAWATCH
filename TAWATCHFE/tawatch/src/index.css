@@ -1,0 +1,92 @@
+/* Global base styles used by the landing page */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Hanken Grotesk', sans-serif;
+  background:
+    radial-gradient(1200px 600px at 90% -10%, rgba(233, 193, 118, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(255, 222, 165, 0.05), transparent 60%),
+    #1a1a1a;
+  color: #e5e2e1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* Mega menu scrollbar and sizing tweaks */
+.mega-scroll {
+  /* keep native scrolling but with a slimmer track */
+}
+
+/* Webkit scrollbar styling */
+.mega-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+.mega-scroll::-webkit-scrollbar-track {
+  background: rgba(20,20,20,0.6);
+}
+.mega-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255,215,130,0.18), rgba(255,215,130,0.28));
+  border-radius: 9999px;
+  border: 2px solid rgba(20,20,20,0.4);
+}
+.mega-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255,215,130,0.32), rgba(255,215,130,0.42));
+}
+
+/* Firefox thin scrollbar */
+.mega-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,215,130,0.28) rgba(20,20,20,0.6);
+}
+
+/* Slightly brighten muted placeholder and "muted" utility text for better legibility */
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: rgba(221, 209, 194, 0.72) !important;
+  opacity: 1 !important;
+}
+
+/* Tailwind utility classes with reduced opacity like `text-on-surface-variant/40` can be overridden here */
+.text-on-surface-variant\/40 {
+  color: rgba(221, 209, 194, 0.72) !important;
+}
+
+
+/* small helper to make sure images are visible by default */
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: 'Hanken Grotesk', sans-serif;
+  background:
+    radial-gradient(1200px 600px at 90% -10%, rgba(233, 193, 118, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(255, 222, 165, 0.05), transparent 60%),
+    #1a1a1a;
+  color: #e5e2e1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100vh;
+}

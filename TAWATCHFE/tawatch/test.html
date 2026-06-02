@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&amp;family=Hanken+Grotesk:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .active-nav-item {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom Scrollbar for Luxury Feel */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #131313; }
+        ::-webkit-scrollbar-thumb { background: #4e4639; }
+        ::-webkit-scrollbar-thumb:hover { background: #e9c176; }
+        
+        .glass-panel {
+            backdrop-filter: blur(20px);
+            background: rgba(30, 30, 30, 0.7);
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary": "#c6c6c7",
+                        "tertiary": "#b0c6f9",
+                        "surface-dim": "#131313",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-fixed": "#e2e2e2",
+                        "outline": "#9a8f80",
+                        "on-surface-variant": "#d1c5b4",
+                        "inverse-primary": "#775a19",
+                        "secondary-fixed-dim": "#c6c6c7",
+                        "on-primary-container": "#4e3700",
+                        "on-error": "#690005",
+                        "on-background": "#e5e2e1",
+                        "on-secondary-container": "#b4b5b5",
+                        "background": "#131313",
+                        "on-tertiary": "#173059",
+                        "on-secondary-fixed-variant": "#454747",
+                        "surface-container": "#201f1f",
+                        "on-secondary-fixed": "#1a1c1c",
+                        "primary-container": "#c5a059",
+                        "on-tertiary-fixed": "#001a41",
+                        "inverse-surface": "#e5e2e1",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-primary-fixed-variant": "#5d4201",
+                        "surface-container-low": "#1c1b1b",
+                        "surface-container-highest": "#353534",
+                        "tertiary-fixed-dim": "#b0c6f9",
+                        "tertiary-container": "#8fa5d6",
+                        "surface": "#131313",
+                        "on-tertiary-fixed-variant": "#304671",
+                        "on-tertiary-container": "#233a65",
+                        "primary-fixed": "#ffdea5",
+                        "on-primary-fixed": "#261900",
+                        "surface-tint": "#e9c176",
+                        "secondary-container": "#454747",
+                        "primary": "#e9c176",
+                        "on-secondary": "#2f3131",
+                        "on-error-container": "#ffdad6",
+                        "surface-variant": "#353534",
+                        "outline-variant": "#4e4639",
+                        "on-surface": "#e5e2e1",
+                        "surface-bright": "#393939",
+                        "primary-fixed-dim": "#e9c176",
+                        "on-primary": "#412d00",
+                        "surface-container-high": "#2a2a2a"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Hanken Grotesk"],
+                        "body-lg": ["Hanken Grotesk"],
+                        "headline-sm": ["EB Garamond"],
+                        "display-lg": ["EB Garamond"],
+                        "label-caps": ["Hanken Grotesk"],
+                        "display-lg-mobile": ["EB Garamond"],
+                        "headline-md": ["EB Garamond"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                        "body-lg": ["18px", {"lineHeight": "1.6", "letterSpacing": "0.01em", "fontWeight": "400"}],
+                        "headline-sm": ["24px", {"lineHeight": "1.4", "fontWeight": "500"}],
+                        "display-lg": ["64px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "400"}],
+                        "label-caps": ["12px", {"lineHeight": "1.2", "letterSpacing": "0.15em", "fontWeight": "600"}],
+                        "display-lg-mobile": ["40px", {"lineHeight": "1.2", "letterSpacing": "-0.01em", "fontWeight": "400"}],
+                        "headline-md": ["32px", {"lineHeight": "1.3", "fontWeight": "400"}]
+                    },
+                    "spacing": {
+                        "unit": "8px",
+                        "gutter": "24px"
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md selection:bg-primary/30 selection:text-primary overflow-x-hidden">
+<!-- Sidebar Navigation Shell -->
+<aside class="h-screen fixed left-0 top-0 w-72 border-r border-outline-variant/20 flex flex-col h-full py-unit-8 bg-background z-50">
+<div class="px-8 mb-12">
+<h1 class="font-headline-sm text-headline-sm tracking-[0.2em] uppercase text-primary">HOROLOGICAL</h1>
+<p class="font-label-caps text-label-caps tracking-widest text-on-surface-variant/60">HERITAGE</p>
+</div>
+<nav class="flex-1 space-y-2 px-4">
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant font-label-caps tracking-widest hover:text-primary hover:tracking-[0.25em] transition-all duration-500 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Overview</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant font-label-caps tracking-widest hover:text-primary hover:tracking-[0.25em] transition-all duration-500 ease-in-out" href="#">
+<span class="material-symbols-outlined">watch</span>
+<span>Inventory</span>
+</a>
+<!-- Active Tab: Orders -->
+<a class="flex items-center gap-4 px-4 py-3 text-primary font-bold border-r-2 border-primary bg-surface-container-low transition-all duration-500" href="#">
+<span class="material-symbols-outlined active-nav-item" style="font-variation-settings: 'FILL' 1;">shopping_cart</span>
+<span>Orders</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant font-label-caps tracking-widest hover:text-primary hover:tracking-[0.25em] transition-all duration-500 ease-in-out" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Customers</span>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 text-on-surface-variant font-label-caps tracking-widest hover:text-primary hover:tracking-[0.25em] transition-all duration-500 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="mt-auto px-8 py-8 flex items-center gap-4">
+<div class="w-10 h-10 rounded-full border border-primary/30 flex items-center justify-center overflow-hidden">
+<img alt="Luxury Brand Crest" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlxXOJIjTasuoWKiQ-b-mpcF2LFYgo8-DtGY30edPtQVCa0gsppJ65pmMSupXT_GOgiky1WHEPpkr4L84iPUZHIIDQYCL1iJrKSZyrZ7qACjLG_e0PqtZsDLy3qALiDCUHWk3f65lxXZCKMHWEmKEvzu03y0e_QSfBUMlw-KbS6LJo7QP4y_4A8bfFGLMvJdlHbZ9kNa1wmo5AUPP740Qns_2ehiRem9G0fr7fVAprbggdR82RTS8QRv7qOZXwQRh9KVj6o6QB88UH"/>
+</div>
+<div>
+<p class="font-label-caps text-[10px] text-primary">MASTER WATCHMAKER</p>
+<p class="font-body-md text-sm text-on-surface">Julian Vane</p>
+</div>
+</div>
+</aside>
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 left-72 h-20 z-40 bg-background/80 backdrop-blur-xl flex items-center justify-between px-gutter border-b border-outline-variant/10">
+<div class="flex items-center gap-8">
+<div class="relative group">
+<span class="absolute inset-y-0 left-0 pl-3 flex items-center text-outline">
+<span class="material-symbols-outlined text-sm">search</span>
+</span>
+<input class="bg-transparent border-none focus:ring-0 text-label-caps font-label-caps tracking-widest w-64 placeholder:text-outline/50" placeholder="FIND ACQUISITION..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="relative text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-primary rounded-full"></span>
+</button>
+<div class="h-4 w-[1px] bg-outline-variant/30"></div>
+<p class="font-label-caps text-label-caps tracking-widest text-primary">DASHBOARD</p>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-72 pt-28 pb-20 px-12 min-h-screen">
+<!-- Hero Section / Editorial Header -->
+<section class="mb-16">
+<div class="max-w-4xl">
+<p class="font-label-caps text-label-caps text-primary tracking-[0.3em] mb-4">LOGISTICS ARCHIVE</p>
+<h2 class="font-display-lg text-display-lg mb-6 leading-none">Global Order Tracking</h2>
+<div class="w-24 h-[1px] bg-primary mb-8"></div>
+<p class="font-body-lg text-body-lg text-on-surface-variant/80 max-w-2xl">
+                    Overseeing the journey of exceptional horological pieces. From initial calibration to final handover, every second is accounted for in our ledger of heritage.
+                </p>
+</div>
+</section>
+<!-- Filter & Utility Bar -->
+<section class="flex flex-wrap items-end justify-between gap-6 mb-12">
+<div class="flex gap-4">
+<button class="px-6 py-2 border border-primary text-primary font-label-caps text-label-caps tracking-widest bg-primary/5 hover:bg-primary hover:text-background transition-all duration-300">
+                    ALL STATUS
+                </button>
+<button class="px-6 py-2 border border-outline-variant/20 text-on-surface-variant font-label-caps text-label-caps tracking-widest hover:border-primary/50 transition-all">
+                    PROCESSING
+                </button>
+<button class="px-6 py-2 border border-outline-variant/20 text-on-surface-variant font-label-caps text-label-caps tracking-widest hover:border-primary/50 transition-all">
+                    QUALITY CONTROL
+                </button>
+<button class="px-6 py-2 border border-outline-variant/20 text-on-surface-variant font-label-caps text-label-caps tracking-widest hover:border-primary/50 transition-all">
+                    SHIPPING
+                </button>
+</div>
+<div class="flex items-center gap-4 text-on-surface-variant/60 font-label-caps text-xs tracking-widest">
+<span>EXPORT LEDGER</span>
+<span class="material-symbols-outlined text-sm">file_download</span>
+</div>
+</section>
+<!-- Order Ledger (Bento Style/Table Hybrid) -->
+<section class="grid grid-cols-1 gap-px bg-outline-variant/10 border border-outline-variant/10">
+<!-- Table Header -->
+<div class="grid grid-cols-12 bg-surface-container-lowest py-4 px-6 items-center">
+<div class="col-span-2 font-label-caps text-[10px] tracking-widest text-outline">ORDER REFERENCE</div>
+<div class="col-span-3 font-label-caps text-[10px] tracking-widest text-outline">ACQUISITIONIST</div>
+<div class="col-span-2 font-label-caps text-[10px] tracking-widest text-outline">TEMPORAL STATUS</div>
+<div class="col-span-2 font-label-caps text-[10px] tracking-widest text-outline">VALUATION</div>
+<div class="col-span-3 font-label-caps text-[10px] tracking-widest text-outline text-right">ACTION</div>
+</div>
+<!-- Row 1: Processing -->
+<div class="grid grid-cols-12 bg-background hover:bg-surface-container-low py-8 px-6 items-center transition-all duration-500 group">
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface group-hover:text-primary transition-colors">#HH-7721</p>
+<p class="font-label-caps text-[9px] text-outline mt-1">OCT 24, 2023</p>
+</div>
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-[10px] font-bold text-primary">AS</div>
+<p class="font-body-md text-on-surface">Alexander Sterling</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-2 px-3 py-1 border border-primary/20 bg-primary/5 rounded-full text-[10px] font-label-caps tracking-widest text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                        PROCESSING
+                    </span>
+</div>
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface">$42,500.00</p>
+</div>
+<div class="col-span-3 text-right">
+<button class="font-label-caps text-[10px] tracking-[0.2em] text-primary border-b border-primary/0 hover:border-primary transition-all">VIEW DOSSIER</button>
+</div>
+</div>
+<!-- Row 2: Quality Control -->
+<div class="grid grid-cols-12 bg-background hover:bg-surface-container-low py-8 px-6 items-center transition-all duration-500 group">
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface group-hover:text-primary transition-colors">#HH-7718</p>
+<p class="font-label-caps text-[9px] text-outline mt-1">OCT 22, 2023</p>
+</div>
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-[10px] font-bold text-primary">EM</div>
+<p class="font-body-md text-on-surface">Elena Moretti</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-2 px-3 py-1 border border-tertiary/20 bg-tertiary/5 rounded-full text-[10px] font-label-caps tracking-widest text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+                        QUALITY CONTROL
+                    </span>
+</div>
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface">$118,200.00</p>
+</div>
+<div class="col-span-3 text-right">
+<button class="font-label-caps text-[10px] tracking-[0.2em] text-primary border-b border-primary/0 hover:border-primary transition-all">VIEW DOSSIER</button>
+</div>
+</div>
+<!-- Row 3: Shipping -->
+<div class="grid grid-cols-12 bg-background hover:bg-surface-container-low py-8 px-6 items-center transition-all duration-500 group border-y border-outline-variant/10">
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface group-hover:text-primary transition-colors">#HH-7712</p>
+<p class="font-label-caps text-[9px] text-outline mt-1">OCT 18, 2023</p>
+</div>
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-[10px] font-bold text-primary">RK</div>
+<p class="font-body-md text-on-surface">Richard Kensington</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-2 px-3 py-1 border border-secondary/20 bg-secondary/5 rounded-full text-[10px] font-label-caps tracking-widest text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+                        SHIPPING
+                    </span>
+</div>
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface">$24,000.00</p>
+</div>
+<div class="col-span-3 text-right">
+<button class="font-label-caps text-[10px] tracking-[0.2em] text-primary border-b border-primary/0 hover:border-primary transition-all">VIEW DOSSIER</button>
+</div>
+</div>
+<!-- Row 4: Delivered -->
+<div class="grid grid-cols-12 bg-background hover:bg-surface-container-low py-8 px-6 items-center transition-all duration-500 group">
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface group-hover:text-primary transition-colors">#HH-7699</p>
+<p class="font-label-caps text-[9px] text-outline mt-1">OCT 15, 2023</p>
+</div>
+<div class="col-span-3 flex items-center gap-3">
+<div class="w-8 h-8 bg-surface-variant rounded-full flex items-center justify-center text-[10px] font-bold text-primary">TH</div>
+<p class="font-body-md text-on-surface">Thomas Hilliard</p>
+</div>
+<div class="col-span-2">
+<span class="inline-flex items-center gap-2 px-3 py-1 border border-outline/20 bg-outline/5 rounded-full text-[10px] font-label-caps tracking-widest text-outline">
+<span class="w-1.5 h-1.5 rounded-full bg-outline"></span>
+                        DELIVERED
+                    </span>
+</div>
+<div class="col-span-2">
+<p class="font-headline-sm text-lg text-on-surface">$56,700.00</p>
+</div>
+<div class="col-span-3 text-right">
+<button class="font-label-caps text-[10px] tracking-[0.2em] text-primary border-b border-primary/0 hover:border-primary transition-all">VIEW DOSSIER</button>
+</div>
+</div>
+</section>
+<!-- Feature Spotlight (Asymmetric Layout) -->
+<section class="mt-24 grid grid-cols-12 gap-12 items-center">
+<div class="col-span-5">
+<div class="relative overflow-hidden aspect-[4/5] border border-outline-variant/10">
+<img class="w-full h-full object-cover transition-transform duration-[2000ms] hover:scale-110" data-alt="A high-fidelity macro shot of a luxury watch movement with exposed gears and intricate mechanical details. The lighting is cinematic with deep shadows and warm gold highlights, emphasizing the precision of the craftsmanship. The overall aesthetic is one of quiet luxury and timeless sophistication, set against a dark charcoal studio background that makes the gold and silver components pop with crystalline clarity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXSKgQL-7Wz-wz3Qdvwrh3cn8_4OqkyRljTCyz4_HlxSZH0-ascToGF0DA5l_wz7XkwLh3B0Th375OnpJ9v6uaDa70ohyzqRpvew-OMVNRRn1lKW0Fa7CmpSONOkwv5tNfML2rse9nNsNbgLxovwG2cnXGjeHSQw71ZmtizGgLq59wwDIBkqYAeBJEBhDx1I2A0AaO1mHHL1ZlMPBhRbC1DqlRhKJnDaDusqC__5pgijs5cdxloYzxxX4tSmDlp7Opyibm7MF3gZ4j"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-60"></div>
+</div>
+</div>
+<div class="col-span-7 pl-12">
+<p class="font-label-caps text-label-caps text-primary tracking-[0.3em] mb-4">MASTER CHRONOMETRY</p>
+<h3 class="font-display-lg text-display-lg mb-8">The Precision of Delivery</h3>
+<p class="font-body-lg text-body-lg text-on-surface-variant/80 mb-12">
+                    Every piece in our inventory undergoes a rigorous 48-point inspection before transit. Our tracking system doesn't just show locations; it monitors the environmental stability of each movement during its voyage to you.
+                </p>
+<div class="grid grid-cols-2 gap-8">
+<div>
+<p class="font-headline-sm text-primary mb-2">99.8%</p>
+<p class="font-label-caps text-[10px] tracking-widest text-outline">TEMPORAL PRECISION</p>
+</div>
+<div>
+<p class="font-headline-sm text-primary mb-2">126</p>
+<p class="font-label-caps text-[10px] tracking-widest text-outline">CRAFTSMEN AUDITS</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Action Element -->
+<div class="fixed bottom-12 right-12 flex flex-col items-end gap-4 z-40">
+<div class="hidden glass-panel border border-primary/20 px-6 py-4 animate-bounce" id="status-toast">
+<p class="font-label-caps text-[10px] text-primary tracking-widest uppercase">New Status Update</p>
+<p class="font-body-md text-sm text-on-surface">Order #HH-7721 shifted to QC</p>
+</div>
+<button class="w-16 h-16 bg-primary text-on-primary flex items-center justify-center rounded-none shadow-2xl active:scale-95 transition-transform group overflow-hidden relative">
+<span class="material-symbols-outlined relative z-10">add</span>
+<div class="absolute inset-0 bg-on-primary-container scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
+</button>
+</div>
+<script>
+        // Atmospheric Micro-interactions
+        document.querySelectorAll('button, a').forEach(el => {
+            el.addEventListener('mousedown', () => {
+                el.style.transform = 'scale(0.98)';
+            });
+            el.addEventListener('mouseup', () => {
+                el.style.transform = 'scale(1)';
+            });
+        });
+
+        // Simulate real-time update
+        setTimeout(() => {
+            const toast = document.getElementById('status-toast');
+            toast.classList.remove('hidden');
+            toast.classList.add('flex', 'flex-col');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                toast.classList.replace('transition-all', 'duration-1000');
+            }, 5000);
+        }, 3000);
+
+        // Grid Animation Trigger
+        const rows = document.querySelectorAll('main section:last-of-type');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('opacity-100');
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        rows.forEach(row => {
+            row.style.transform = 'translateY(30px)';
+            row.classList.add('transition-all', 'duration-1000', 'opacity-0');
+            observer.observe(row);
+        });
+    </script>
+</body></html>
