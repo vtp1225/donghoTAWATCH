@@ -55,12 +55,12 @@ public class RefreshToken {
     private Instant expiresAt;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "last_used_at", nullable = false)
     private Instant lastUsedAt;
 

@@ -53,7 +53,7 @@ public class OtpVerification {
     private Instant expiresAt;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 

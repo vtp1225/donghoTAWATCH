@@ -41,7 +41,7 @@ public class OrderStatusHistory {
     private User changedBy;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "changed_at", nullable = false)
     private Instant changedAt;
 

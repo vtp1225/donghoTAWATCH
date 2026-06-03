@@ -35,7 +35,7 @@ public class Wishlist {
     private WatchVariant watchVariant;
 
     @NotNull
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "added_at", nullable = false)
     private Instant addedAt;
 
