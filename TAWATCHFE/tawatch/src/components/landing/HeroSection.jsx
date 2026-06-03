@@ -1,4 +1,8 @@
+import { useNavigate } from 'react-router-dom'
+
 export default function HeroSection() {
+  const navigate = useNavigate()
+
   return (
     <header className="relative flex h-screen w-full items-center justify-center overflow-hidden">
       <div className="absolute inset-0 z-0">
@@ -24,11 +28,11 @@ export default function HeroSection() {
           className="flex flex-col justify-center gap-6 animate-fade-in md:flex-row"
           style={{ animationDelay: '0.4s' }}
         >
-          <button className="gold-border-button px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest" type="button">
-            Discover the Series
+          <button onClick={() => navigate('/products')} className="gold-border-button px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest" type="button">
+            Xem Bộ Sưu Tập
           </button>
-          <button className="border border-transparent px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest text-primary transition-all hover:border-primary/20" type="button">
-            The Heritage
+          <button onClick={() => navigate('/brands')} className="border border-transparent px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest text-primary transition-all hover:border-primary/20" type="button">
+            Khám Phá Thương Hiệu
           </button>
         </div>
       </div>
