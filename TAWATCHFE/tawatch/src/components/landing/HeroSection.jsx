@@ -12,13 +12,13 @@ export default function HeroSection() {
       <div className="relative z-10 max-w-4xl px-gutter text-center">
         <div className="reveal-divider mb-8 active" />
         <h1 className="font-display-lg text-display-lg-mobile text-primary animate-fade-in md:text-display-lg mb-6">
-          Timeless Precision
+            Đẳng cấp thời gian, tinh hoa chế tác
         </h1>
         <p
           className="font-body-lg text-body-lg mx-auto mb-12 max-w-2xl animate-fade-in text-on-surface-variant opacity-80"
           style={{ animationDelay: '0.2s' }}
         >
-          Experience the quiet luxury of horological mastery, where every second is a testament to heritage and meticulous craftsmanship.
+            TAWATCH - Nơi hội tụ những tuyệt tác đồng hồ, kết tinh từ nghệ thuật chế tác và đam mê thời gian. Khám phá bộ sưu tập độc đáo, trải nghiệm dịch vụ tận tâm và cảm nhận sự khác biệt của từng chiếc đồng hồ tại TAWATCH.
         </p>
         <div
           className="flex flex-col justify-center gap-6 animate-fade-in md:flex-row"
