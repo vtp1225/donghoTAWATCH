@@ -25,7 +25,7 @@ spring:
 server:
   servlet:
     context-path: /tawatch
-  port: 8080
+  port: ${PORT:8080}
 
 app:
   mail:
