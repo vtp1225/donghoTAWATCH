@@ -10,5 +10,6 @@ public record WatchVariantImageRequest(
         @NotNull @Size(max = 500) String url,
         @Size(max = 255) String altText,
         Boolean isPrimary,
+        Boolean isMainImage,
         Integer sortOrder
 ) implements Serializable {}

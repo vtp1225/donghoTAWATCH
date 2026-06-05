@@ -31,6 +31,10 @@ public class WatchVariantImage {
     private String url;
 
     @Size(max = 255)
+    @Column(name = "public_id")
+    private String publicId;
+
+    @Size(max = 255)
     @Column(name = "alt_text")
     private String altText;
 
@@ -38,6 +42,11 @@ public class WatchVariantImage {
     @ColumnDefault("0")
     @Column(name = "is_primary", nullable = false)
     private Boolean isPrimary = false;
+
+    @NotNull
+    @ColumnDefault("0")
+    @Column(name = "is_main_image", nullable = false)
+    private Boolean isMainImage = false;
 
     @NotNull
     @ColumnDefault("0")

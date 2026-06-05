@@ -14,6 +14,9 @@ export const watchService = {
   getAll() {
     return request('/watches').then(unwrap)
   },
+  getById(id) {
+    return request(`/watches/${id}`).then(unwrap)
+  },
   create(payload) {
     return request('/watches', {
       method: 'POST',
@@ -66,9 +69,25 @@ export const variantImageService = {
   getByVariant(variantId) {
     return request(`/watch-variant-images?variantId=${variantId}`).then(unwrap)
   },
+  getMainImage(watchId) {
+    return request(`/watch-variant-images/main?watchId=${watchId}`).then(unwrap)
+  },
+  upload(formData) {
+    return request('/watch-variant-images/upload', {
+      method: 'POST',
+      body: formData,
+    }).then(unwrap)
+  },
   create(payload) {
     return request('/watch-variant-images', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(payload),
+    }).then(unwrap)
+  },
+  update(id, payload) {
+    return request(`/watch-variant-images/${id}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(payload),
     }).then(unwrap)
@@ -80,34 +99,14 @@ export const variantImageService = {
       body: JSON.stringify(payload),
     }).then(unwrap)
   },
-  deleteByVariant(variantId) {
-    return request(`/watch-variant-images/variant/${variantId}`, {
+  deleteById(id) {
+    return request(`/watch-variant-images/${id}`, {
       method: 'DELETE',
       headers: authHeaders(),
     }).then(unwrap)
   },
-}
-
-export const watchImageService = {
-  getByWatch(watchId) {
-    return request(`/watch-images?watchId=${watchId}`).then(unwrap)
-  },
-  create(payload) {
-    return request('/watch-images', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(payload),
-    }).then(unwrap)
-  },
-  createBatch(payload) {
-    return request('/watch-images/batch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(payload),
-    }).then(unwrap)
-  },
-  deleteByWatch(watchId) {
-    return request(`/watch-images/watch/${watchId}`, {
+  deleteByVariant(variantId) {
+    return request(`/watch-variant-images/variant/${variantId}`, {
       method: 'DELETE',
       headers: authHeaders(),
     }).then(unwrap)

@@ -9,6 +9,7 @@ import TAWactch.example.TAWatch.service.WatchVariantImageService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -28,12 +29,36 @@ public class WatchVariantImageController {
         return response;
     }
 
+    @GetMapping("/main")
+    public ApiRespone<WatchVariantImageResponse> getMainImage(@RequestParam int watchId) {
+        ApiRespone<WatchVariantImageResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(variantImageService.getMainImageByWatchId(watchId));
+        return response;
+    }
+
     @GetMapping("/{id}")
     public ApiRespone<WatchVariantImageResponse> getById(@PathVariable int id) {
         ApiRespone<WatchVariantImageResponse> response = new ApiRespone<>();
         response.setCode(200);
         response.setMessage("Success");
         response.setData(variantImageService.getById(id));
+        return response;
+    }
+
+    @PostMapping("/upload")
+    public ApiRespone<WatchVariantImageResponse> upload(
+            @RequestParam MultipartFile file,
+            @RequestParam Integer variantId,
+            @RequestParam(required = false) String altText,
+            @RequestParam(required = false) Boolean isPrimary,
+            @RequestParam(required = false) Boolean isMainImage,
+            @RequestParam(required = false) Integer sortOrder) {
+        ApiRespone<WatchVariantImageResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Upload anh bien the thanh cong");
+        response.setData(variantImageService.uploadAndCreate(file, variantId, altText, isPrimary, isMainImage, sortOrder));
         return response;
     }
 
@@ -70,6 +95,15 @@ public class WatchVariantImageController {
         response.setCode(200);
         response.setMessage("Dat anh chinh bien the thanh cong");
         response.setData(variantImageService.setPrimary(id));
+        return response;
+    }
+
+    @PatchMapping("/{id}/set-main-image")
+    public ApiRespone<WatchVariantImageResponse> setMainImage(@PathVariable int id) {
+        ApiRespone<WatchVariantImageResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Dat anh dai dien san pham thanh cong");
+        response.setData(variantImageService.setMainImage(id));
         return response;
     }
 

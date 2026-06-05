@@ -343,3 +343,116 @@ Trong `OrderService.placeOrder()`, `shippingFee = BigDecimal.ZERO`. Chưa có lo
 
 ### CORS chỉ cho `localhost:5173`
 `SecurityConfig.corsConfigurationSource()` hardcode origin `http://localhost:5173`. Khi deploy production phải cập nhật theo domain thật.
+
+---
+
+## 13. Tích hợp Cloudinary — Lưu hình ảnh trên đám mây
+
+### Hiện trạng
+
+Hiện tại `WatchVariantImage` chỉ lưu một trường `url` (String). Client phải **tự cung cấp URL** hình ảnh trong request body — tức là chưa có cơ chế upload file thật. Client có thể paste bất kỳ URL nào, không kiểm soát được.
+
+### Cloudinary là gì
+
+Cloudinary là dịch vụ lưu trữ và xử lý ảnh/video trên đám mây. Khi upload ảnh lên Cloudinary, hệ thống trả về:
+- `url` — đường dẫn CDN để hiển thị ảnh
+- `public_id` — định danh duy nhất, dùng để xóa/cập nhật ảnh sau này
+
+### Danh sách việc cần làm (theo thứ tự)
+
+#### Bước 1 — Thêm dependency vào `pom.xml`
+```xml
+<dependency>
+    <groupId>com.cloudinary</groupId>
+    <artifactId>cloudinary-http44</artifactId>
+    <version>1.38.0</version>
+</dependency>
+```
+
+#### Bước 2 — Thêm config vào `application.properties`
+```properties
+cloudinary.cloud-name=your_cloud_name
+cloudinary.api-key=your_api_key
+cloudinary.api-secret=your_api_secret
+```
+Ba giá trị này lấy từ Dashboard của tài khoản Cloudinary. **Không commit file chứa api-secret lên git công khai.**
+
+#### Bước 3 — Tạo `CloudinaryConfig.java` (class mới)
+`@Configuration` tạo `Cloudinary` Bean từ 3 giá trị properties ở trên. Bean này được inject vào `CloudinaryService`.
+
+#### Bước 4 — Tạo `CloudinaryService.java` (class mới)
+Có 2 method cốt lõi:
+- `uploadFile(MultipartFile file, String folder)` → upload file lên Cloudinary, trả về `Map` chứa `url` và `public_id`
+- `deleteFile(String publicId)` → gọi Cloudinary API để xóa ảnh theo `public_id`
+
+`folder` là tên thư mục trên Cloudinary để tổ chức ảnh, ví dụ `"tawatch/watches"`.
+
+#### Bước 5 — Thêm cột `public_id` vào entity và DB
+
+**`WatchVariantImage.java`** — thêm field:
+```java
+@Size(max = 255)
+@Column(name = "public_id")
+private String publicId;
+```
+
+**DB schema** — thêm cột:
+```sql
+ALTER TABLE watch_variant_image ADD COLUMN public_id VARCHAR(255);
+```
+
+`public_id` cần thiết vì khi xóa record trong DB, phải xóa ảnh tương ứng trên Cloudinary. Nếu không lưu `public_id` thì không biết phải xóa ảnh nào.
+
+#### Bước 6 — Thêm endpoint upload vào `WatchVariantImageController.java`
+
+Thêm endpoint mới nhận `multipart/form-data`:
+```
+POST /watch-variant-images/upload
+Content-Type: multipart/form-data
+
+file: <binary>
+variantId: 1
+altText: "..."
+isPrimary: false
+isMainImage: false
+sortOrder: 0
+```
+
+Endpoint này nhận `MultipartFile` thay vì nhận `url` trong JSON. Giữ nguyên endpoint `POST /watch-variant-images` (nhận JSON + URL) để vẫn tương thích với flow cũ nếu cần.
+
+#### Bước 7 — Cập nhật `WatchVariantImageService.java`
+
+- Thêm method `uploadAndCreate(MultipartFile file, ...)`:
+  1. Gọi `cloudinaryService.uploadFile(file, "tawatch/watches")`
+  2. Lấy `url` và `public_id` từ kết quả
+  3. Tạo entity `WatchVariantImage` với url + publicId, lưu DB
+
+- Sửa method `delete(int id)`:
+  1. Load entity trước
+  2. Nếu `publicId != null` → gọi `cloudinaryService.deleteFile(publicId)`
+  3. Sau đó mới `variantImageRepo.deleteById(id)`
+
+- Sửa tương tự cho `deleteAllByVariantId` — loop qua từng ảnh để xóa trên Cloudinary trước.
+
+### Lưu ý quan trọng
+
+| Vấn đề | Giải pháp |
+|---|---|
+| File quá lớn | Giới hạn size trong `application.properties`: `spring.servlet.multipart.max-file-size=5MB` |
+| Upload thất bại nhưng DB đã lưu | Thứ tự phải là: upload Cloudinary trước → thành công rồi mới lưu DB |
+| Xóa DB nhưng chưa xóa Cloudinary | Luôn gọi `cloudinaryService.deleteFile()` trước `repo.deleteById()` |
+| `public_id` null với ảnh cũ | Khi xóa, check `if (publicId != null)` trước khi gọi Cloudinary delete |
+| Bảo mật api-secret | Dùng biến môi trường hoặc Vault, không hardcode trong code |
+
+### Tóm tắt luồng upload hoàn chỉnh
+
+```
+Admin chọn file ảnh
+  → POST /watch-variant-images/upload (multipart/form-data)
+  → Controller gọi WatchVariantImageService.uploadAndCreate()
+  → Service gọi CloudinaryService.uploadFile()
+  → Cloudinary trả về { url, public_id }
+  → Service tạo WatchVariantImage { url, publicId, variantId, ... }
+  → Lưu DB
+  → Trả WatchVariantImageResponse về client (chứa url để hiển thị)
+```

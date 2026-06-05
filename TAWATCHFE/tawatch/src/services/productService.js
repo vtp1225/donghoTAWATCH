@@ -1,9 +1,4 @@
-import { watchImageService, watchService, variantService } from './watchService.js'
-
-function unwrapImage(images) {
-	if (!Array.isArray(images) || images.length === 0) return null
-	return images.find((image) => image.isPrimary)?.url ?? images[0]?.url ?? null
-}
+import { variantImageService, watchService, variantService } from './watchService.js'
 
 function unwrapPrice(variants) {
 	if (!Array.isArray(variants) || variants.length === 0) return null
@@ -35,16 +30,16 @@ function unwrapVariantId(variants) {
 }
 
 async function loadProduct(watch, index) {
-	const [variants, images] = await Promise.all([
+	const [variants, mainImage] = await Promise.all([
 		variantService.getByWatch(watch.id).catch((err) => {
 			console.error(`[productService] Không lấy được variants cho watch ${watch.id}:`, err?.status, err?.message)
 			return []
 		}),
-		watchImageService.getByWatch(watch.id).catch(() => []),
+		variantImageService.getMainImage(watch.id).catch(() => null),
 	])
 
 	const price = unwrapPrice(variants)
-	const image = unwrapImage(images) ?? '/images/product-heritage.jpg'
+	const image = mainImage?.url ?? '/images/product-heritage.jpg'
 
 	return {
 		id: watch.id,

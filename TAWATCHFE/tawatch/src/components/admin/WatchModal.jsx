@@ -34,9 +34,13 @@ const WATCH_DEFAULTS = {
 }
 
 const IMAGE_DEFAULT = {
+  id: null,
   url: '',
   altText: '',
   isPrimary: true,
+  isMainImage: false,
+  file: null,
+  preview: '',
 }
 
 const VARIANT_DEFAULT = {
@@ -79,9 +83,13 @@ function buildImageRows(images) {
   const hasPrimary = sorted.some((item) => item.isPrimary)
 
   return sorted.map((image, index) => ({
+    id: image.id ?? null,
     url: image.url ?? '',
     altText: image.altText ?? '',
     isPrimary: hasPrimary ? Boolean(image.isPrimary) : index === 0,
+    isMainImage: Boolean(image.isMainImage),
+    file: null,
+    preview: '',
   }))
 }
 
@@ -104,11 +112,14 @@ function buildVariantForm(variant, images) {
 function normalizeImages(rows) {
   const filled = rows
     .map((row) => ({
-      url: row.url.trim(),
+      id: row.id ?? null,
+      url: row.file ? '' : row.url.trim(),
       altText: row.altText.trim(),
       isPrimary: Boolean(row.isPrimary),
+      isMainImage: Boolean(row.isMainImage),
+      file: row.file || null,
     }))
-    .filter((row) => row.url)
+    .filter((row) => row.url || row.file)
 
   if (filled.length === 0) return []
 
@@ -116,9 +127,12 @@ function normalizeImages(rows) {
   const resolvedPrimary = primaryIndex >= 0 ? primaryIndex : 0
 
   return filled.map((row, index) => ({
+    id: row.id,
     url: row.url,
     altText: row.altText || undefined,
     isPrimary: index === resolvedPrimary,
+    isMainImage: Boolean(row.isMainImage),
+    file: row.file,
     sortOrder: index,
   }))
 }
@@ -142,6 +156,7 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
   const [watchForm, setWatchForm] = useState(WATCH_DEFAULTS)
   const [variants, setVariants] = useState([{ ...VARIANT_DEFAULT, images: [{ ...IMAGE_DEFAULT }] }])
   const [loadedVariantIds, setLoadedVariantIds] = useState([])
+  const [loadedImageIdsByVariant, setLoadedImageIdsByVariant] = useState({})
   const [brands, setBrands] = useState([])
   const [categories, setCategories] = useState([])
   const [segments, setSegments] = useState([])
@@ -157,10 +172,12 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
     setStep(1)
     setError('')
+    
     setSubmitting(false)
     setWatchForm(buildWatchForm(watch))
-    setVariants([{ ...VARIANT_DEFAULT, images: [{ ...IMAGE_DEFAULT }] }])
+    setVariants([{ ...VARIANT_DEFAULT, images: [{ ...IMAGE_DEFAULT, isMainImage: true }] }])
     setLoadedVariantIds([])
+    setLoadedImageIdsByVariant({})
 
     Promise.all([
       brandService.getAll().catch(() => []),
@@ -195,6 +212,12 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
       const variantForms = variantList.map((variant, index) => buildVariantForm(variant, imagesByVariant[index]))
       setVariants(variantForms)
       setLoadedVariantIds(variantList.map((variant) => variant.id))
+
+      const imageIds = {}
+      variantList.forEach((variant, index) => {
+        imageIds[variant.id] = imagesByVariant[index].map((img) => img.id).filter(Boolean)
+      })
+      setLoadedImageIdsByVariant(imageIds)
     })
 
     return () => {
@@ -235,6 +258,9 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
     setVariants((prev) => prev.map((variant, index) => {
       if (index !== variantIndex) return variant
 
+      const removed = variant.images[imageIndex]
+      if (removed?.preview) URL.revokeObjectURL(removed.preview)
+
       const nextImages = variant.images.filter((_, idx) => idx !== imageIndex)
       if (nextImages.length === 0) {
         return { ...variant, images: [{ ...IMAGE_DEFAULT }] }
@@ -264,6 +290,46 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
       return {
         ...variant,
         images: variant.images.map((image, idx) => ({ ...image, isPrimary: idx === imageIndex })),
+      }
+    }))
+  }
+
+  function setMainImage(variantIndex, imageIndex) {
+    setVariants((prev) => prev.map((variant, vIdx) => ({
+      ...variant,
+      images: variant.images.map((image, iIdx) => ({
+        ...image,
+        isMainImage: vIdx === variantIndex && iIdx === imageIndex,
+      })),
+    })))
+  }
+
+  function handleFileChange(variantIndex, imageIndex, file) {
+    if (!file) return
+    const preview = URL.createObjectURL(file)
+    setVariants((prev) => prev.map((variant, vIdx) => {
+      if (vIdx !== variantIndex) return variant
+      return {
+        ...variant,
+        images: variant.images.map((image, iIdx) => {
+          if (iIdx !== imageIndex) return image
+          if (image.preview) URL.revokeObjectURL(image.preview)
+          return { ...image, file, preview, url: '' }
+        }),
+      }
+    }))
+  }
+
+  function clearFile(variantIndex, imageIndex) {
+    setVariants((prev) => prev.map((variant, vIdx) => {
+      if (vIdx !== variantIndex) return variant
+      return {
+        ...variant,
+        images: variant.images.map((image, iIdx) => {
+          if (iIdx !== imageIndex) return image
+          if (image.preview) URL.revokeObjectURL(image.preview)
+          return { ...image, file: null, preview: '', url: '' }
+        }),
       }
     }))
   }
@@ -362,11 +428,57 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
         const variantId = savedVariant?.id ?? variant.id
         keptVariantIds.push(variantId)
 
-        await variantImageService.deleteByVariant(variantId).catch(() => {})
-        await variantImageService.createBatch({
-          variantId,
-          images: normalizedImages,
-        })
+        if (isEditMode && variant.id != null) {
+          // Smart diff: only delete removed images, update changed ones
+          const originalImageIds = loadedImageIdsByVariant[variant.id] ?? []
+          const keptIds = new Set(normalizedImages.filter((img) => img.id != null).map((img) => img.id))
+          const removedIds = originalImageIds.filter((id) => !keptIds.has(id))
+          await Promise.all(removedIds.map((id) => variantImageService.deleteById(id).catch(() => {})))
+
+          // Update existing images to apply any flag/altText changes
+          const existingImages = normalizedImages.filter((img) => img.id != null && !img.file)
+          for (const img of existingImages) {
+            await variantImageService.update(img.id, {
+              variantId,
+              url: img.url,
+              altText: img.altText || undefined,
+              isPrimary: img.isPrimary,
+              isMainImage: img.isMainImage,
+              sortOrder: img.sortOrder,
+            }).catch(() => {})
+          }
+        } else {
+          // New product or new variant: safe to delete all then recreate
+          await variantImageService.deleteByVariant(variantId).catch(() => {})
+        }
+
+        // Upload new file images (always new, never have an id)
+        const fileImages = normalizedImages.filter((img) => img.file)
+        for (const img of fileImages) {
+          const fd = new FormData()
+          fd.append('file', img.file)
+          fd.append('variantId', String(variantId))
+          if (img.altText) fd.append('altText', img.altText)
+          fd.append('isPrimary', String(img.isPrimary))
+          fd.append('isMainImage', String(img.isMainImage))
+          fd.append('sortOrder', String(img.sortOrder ?? 0))
+          await variantImageService.upload(fd)
+        }
+
+        // Create new URL images (those without an existing DB id)
+        const newUrlImages = normalizedImages.filter((img) => !img.file && img.url && img.id == null)
+        if (newUrlImages.length > 0) {
+          await variantImageService.createBatch({
+            variantId,
+            images: newUrlImages.map(({ url, altText, isPrimary, isMainImage, sortOrder }) => ({
+              url,
+              altText: altText || undefined,
+              isPrimary,
+              isMainImage,
+              sortOrder,
+            })),
+          })
+        }
       }
 
       const removedIds = loadedVariantIds.filter((id) => !keptVariantIds.includes(id))
@@ -516,22 +628,64 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <p className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Ảnh của biến thể</p>
+                      <div>
+                        <p className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Ảnh của biến thể</p>
+                        <p className="font-label-caps text-[9px] text-on-surface-variant/40 mt-0.5">Ảnh chính: đại diện biến thể · Đại diện SP: thumbnail hiển thị toàn trang (chọn 1 trong tất cả biến thể)</p>
+                      </div>
                       <button type="button" onClick={() => addImage(variantIndex)} className="px-3 py-2 border border-primary text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background transition-colors">Thêm ảnh</button>
                     </div>
 
                     {variant.images.map((image, imageIndex) => (
-                      <div key={imageIndex} className="grid grid-cols-[1fr,1fr,auto,auto] gap-3 items-end border border-outline-variant/10 p-3">
-                        <Field label="URL ảnh" required>
-                          <input className={inputCls} placeholder="https://example.com/variant.jpg" value={image.url} onChange={(e) => setImageField(variantIndex, imageIndex, 'url', e.target.value)} />
-                        </Field>
-                        <Field label="Alt text">
-                          <input className={inputCls} placeholder="Mặt nghiêng của biến thể" value={image.altText} onChange={(e) => setImageField(variantIndex, imageIndex, 'altText', e.target.value)} />
-                        </Field>
-                        <button type="button" onClick={() => setPrimaryImage(variantIndex, imageIndex)} className={`px-3 py-2 text-[10px] font-label-caps tracking-widest uppercase border ${image.isPrimary ? 'border-primary text-primary bg-primary/10' : 'border-outline-variant/20 text-on-surface-variant hover:border-primary hover:text-primary'}`}>
-                          {image.isPrimary ? 'ẢNH CHÍNH' : 'ĐẶT CHÍNH'}
-                        </button>
-                        <button type="button" onClick={() => removeImage(variantIndex, imageIndex)} className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors">delete</button>
+                      <div key={imageIndex} className="border border-outline-variant/10 p-3">
+                        <div className="flex gap-3 items-start">
+                          {/* Thumbnail preview */}
+                          <div className="shrink-0 w-16 h-16 border border-outline-variant/20 overflow-hidden bg-surface-container flex items-center justify-center">
+                            {(image.preview || image.url) ? (
+                              <img src={image.preview || image.url} alt="" className="w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none' }} />
+                            ) : (
+                              <span className="material-symbols-outlined text-on-surface-variant/20 text-2xl">image</span>
+                            )}
+                          </div>
+
+                          {/* Fields */}
+                          <div className="flex-1 space-y-2 min-w-0">
+                            <div>
+                              <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase block mb-1.5">
+                                Ảnh <span className="text-error ml-1">*</span>
+                              </label>
+                              {image.file ? (
+                                <div className="flex items-center gap-2">
+                                  <span className="font-body-md text-xs text-on-surface-variant truncate">{image.file.name}</span>
+                                  <button type="button" onClick={() => clearFile(variantIndex, imageIndex)} className="shrink-0 text-[10px] font-label-caps tracking-widest uppercase text-error hover:text-error/70 transition-colors">
+                                    × Xóa file
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <label htmlFor={`img-file-${variantIndex}-${imageIndex}`} className="shrink-0 px-2.5 py-1.5 border border-outline-variant/30 text-[10px] font-label-caps tracking-widest uppercase cursor-pointer hover:border-primary hover:text-primary transition-colors flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-sm leading-none">upload</span>
+                                    TẢI LÊN
+                                  </label>
+                                  <input type="file" accept="image/*" id={`img-file-${variantIndex}-${imageIndex}`} className="hidden" onChange={(e) => handleFileChange(variantIndex, imageIndex, e.target.files[0])} />
+                                </div>
+                              )}
+                            </div>
+                            <Field label="Alt text">
+                              <input className={inputCls} placeholder="Mặt nghiêng của biến thể" value={image.altText} onChange={(e) => setImageField(variantIndex, imageIndex, 'altText', e.target.value)} />
+                            </Field>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex flex-col gap-1.5 shrink-0">
+                            <button type="button" onClick={() => setPrimaryImage(variantIndex, imageIndex)} className={`px-2.5 py-1.5 text-[10px] font-label-caps tracking-widest uppercase border ${image.isPrimary ? 'border-primary text-primary bg-primary/10' : 'border-outline-variant/20 text-on-surface-variant hover:border-primary hover:text-primary'}`}>
+                              {image.isPrimary ? 'ẢNH CHÍNH' : 'ĐẶT CHÍNH'}
+                            </button>
+                            <button type="button" onClick={() => setMainImage(variantIndex, imageIndex)} title="Đặt làm ảnh đại diện sản phẩm" className={`px-2.5 py-1.5 text-[10px] font-label-caps tracking-widest uppercase border transition-colors ${image.isMainImage ? 'border-amber-500 text-amber-500 bg-amber-500/10' : 'border-outline-variant/20 text-on-surface-variant hover:border-amber-500 hover:text-amber-500'}`}>
+                              {image.isMainImage ? '★ ĐẠI DIỆN' : '☆ ĐẠI DIỆN'}
+                            </button>
+                            <button type="button" onClick={() => removeImage(variantIndex, imageIndex)} className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors text-center text-xl">delete</button>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -8,7 +8,9 @@ public record WatchVariantImageResponse(
         String dialColor,
         String strapColor,
         String url,
+        String publicId,
         String altText,
         Boolean isPrimary,
+        Boolean isMainImage,
         Integer sortOrder
 ) implements Serializable {}

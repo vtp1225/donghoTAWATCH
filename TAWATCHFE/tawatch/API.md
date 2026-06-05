@@ -571,314 +571,11 @@
 
 ---
 
-## 5. Watch Images
+## 5. Watch Variant Images
 
-> **Quy ước nguồn ảnh:**
-> - `watch_image` — ảnh marketing/editorial cấp sản phẩm: dùng ở trang danh sách, trang thương hiệu, thumbnail chung. Không phụ thuộc biến thể.
-> - `watch_variant_image` — **nguồn ảnh chính thức cho trang chi tiết sản phẩm**: thay đổi khi user chọn biến thể. Frontend luôn lấy ảnh biến thể từ `GET /watch-variant-images?variantId={id}`.
-
-### GET `/watch-images?watchId={id}` — Lấy tất cả ảnh theo đồng hồ
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Success",
-  "data": [
-    {
-      "id": 1,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-1.jpg",
-      "altText": "Rolex Submariner mat truoc",
-      "isPrimary": true,
-      "sortOrder": 0
-    },
-    {
-      "id": 2,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-2.jpg",
-      "altText": "Rolex Submariner mat sau",
-      "isPrimary": false,
-      "sortOrder": 1
-    }
-  ]
-}
-```
-
----
-
-### GET `/watch-images/{id}` — Lấy ảnh theo ID
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Success",
-  "data": {
-    "id": 1,
-    "watchId": 1,
-    "watchName": "Rolex Submariner",
-    "url": "https://example.com/rolex-sub-1.jpg",
-    "altText": "Rolex Submariner mat truoc",
-    "isPrimary": true,
-    "sortOrder": 0
-  }
-}
-```
-
-**Lỗi (không tìm thấy):**
-```json
-{
-  "code": 2007,
-  "message": "Khong tim thay anh dong ho"
-}
-```
-
----
-
-### POST `/watch-images` — Thêm ảnh cho đồng hồ
-
-**Request Body:**
-```json
-{
-  "watchId": 1,
-  "url": "https://example.com/rolex-sub-1.jpg",
-  "altText": "Rolex Submariner mat truoc",
-  "isPrimary": true,
-  "sortOrder": 0
-}
-```
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Tao anh dong ho thanh cong",
-  "data": {
-    "id": 1,
-    "watchId": 1,
-    "watchName": "Rolex Submariner",
-    "url": "https://example.com/rolex-sub-1.jpg",
-    "altText": "Rolex Submariner mat truoc",
-    "isPrimary": true,
-    "sortOrder": 0
-  }
-}
-```
-
----
-
-### PUT `/watch-images/{id}` — Cập nhật ảnh
-
-**Request Body:**
-```json
-{
-  "watchId": 1,
-  "url": "https://example.com/rolex-sub-new.jpg",
-  "altText": "Rolex Submariner anh moi",
-  "isPrimary": false,
-  "sortOrder": 2
-}
-```
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Cap nhat anh dong ho thanh cong",
-  "data": {
-    "id": 1,
-    "watchId": 1,
-    "watchName": "Rolex Submariner",
-    "url": "https://example.com/rolex-sub-new.jpg",
-    "altText": "Rolex Submariner anh moi",
-    "isPrimary": false,
-    "sortOrder": 2
-  }
-}
-```
-
----
-
-### DELETE `/watch-images/{id}` — Xóa ảnh
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Xoa anh dong ho thanh cong"
-}
-```
-
----
-
-### PATCH `/watch-images/{id}/set-primary` — Đặt ảnh chính
-
-**Auth:** ADMIN
-
-> Tự động bỏ `isPrimary` của ảnh cũ, set `isPrimary = true` cho ảnh được chọn.
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Dat anh chinh thanh cong",
-  "data": {
-    "id": 2,
-    "watchId": 1,
-    "watchName": "Rolex Submariner",
-    "url": "https://example.com/rolex-sub-2.jpg",
-    "altText": "Rolex Submariner mat nghieng",
-    "isPrimary": true,
-    "sortOrder": 1
-  }
-}
-```
-
-**Lỗi (không tìm thấy):**
-```json
-{
-  "code": 2007,
-  "message": "Khong tim thay anh dong ho"
-}
-```
-
----
-
-### POST `/watch-images/batch` — Tạo nhiều ảnh cùng lúc
-
-**Auth:** ADMIN
-
-**Request Body:**
-```json
-{
-  "watchId": 1,
-  "images": [
-    {
-      "url": "https://example.com/rolex-sub-1.jpg",
-      "altText": "Rolex Submariner mat truoc",
-      "isPrimary": true,
-      "sortOrder": 0
-    },
-    {
-      "url": "https://example.com/rolex-sub-2.jpg",
-      "altText": "Rolex Submariner mat nghieng",
-      "isPrimary": false,
-      "sortOrder": 1
-    }
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Tao nhieu anh dong ho thanh cong",
-  "data": [
-    {
-      "id": 1,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-1.jpg",
-      "altText": "Rolex Submariner mat truoc",
-      "isPrimary": true,
-      "sortOrder": 0
-    },
-    {
-      "id": 2,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-2.jpg",
-      "altText": "Rolex Submariner mat nghieng",
-      "isPrimary": false,
-      "sortOrder": 1
-    }
-  ]
-}
-```
-
----
-
-### PATCH `/watch-images/reorder` — Sắp xếp lại thứ tự ảnh
-
-**Auth:** ADMIN
-
-**Request Body:**
-```json
-{
-  "orders": [
-    { "id": 3, "sortOrder": 0 },
-    { "id": 1, "sortOrder": 1 },
-    { "id": 2, "sortOrder": 2 }
-  ]
-}
-```
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Cap nhat thu tu anh thanh cong",
-  "data": [
-    {
-      "id": 3,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-3.jpg",
-      "altText": "Rolex Submariner mat sau",
-      "isPrimary": false,
-      "sortOrder": 0
-    },
-    {
-      "id": 1,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-1.jpg",
-      "altText": "Rolex Submariner mat truoc",
-      "isPrimary": true,
-      "sortOrder": 1
-    },
-    {
-      "id": 2,
-      "watchId": 1,
-      "watchName": "Rolex Submariner",
-      "url": "https://example.com/rolex-sub-2.jpg",
-      "altText": "Rolex Submariner mat nghieng",
-      "isPrimary": false,
-      "sortOrder": 2
-    }
-  ]
-}
-```
-
----
-
-### DELETE `/watch-images/watch/{watchId}` — Xóa tất cả ảnh của một đồng hồ
-
-**Auth:** ADMIN
-
-**Response:**
-```json
-{
-  "code": 200,
-  "message": "Xoa tat ca anh dong ho thanh cong"
-}
-```
-
-**Lỗi (không tìm thấy đồng hồ):**
-```json
-{
-  "code": 2001,
-  "message": "Khong tim thay dong ho"
-}
-```
-
----
-
-## 6. Watch Variant Images
+> **Quy ước hai field ảnh:**
+> - `isPrimary` — ảnh chính của **biến thể** đó (ví dụ: mặt trước của biến thể màu đen). Mỗi biến thể chỉ có 1 ảnh `isPrimary = true`.
+> - `isMainImage` — ảnh đại diện hiển thị chung cho **toàn sản phẩm** (dùng ở trang danh sách, thumbnail, chia sẻ mạng xã hội). Mỗi sản phẩm (`watch`) chỉ nên có đúng 1 bản ghi `isMainImage = true` trong toàn bộ các biến thể của nó.
 
 ### GET `/watch-variant-images?variantId={id}` — Lấy tất cả ảnh theo biến thể
 
@@ -898,6 +595,7 @@
       "url": "https://example.com/rolex-sub-black-1.jpg",
       "altText": "Rolex Submariner Black mat truoc",
       "isPrimary": true,
+      "isMainImage": true,
       "sortOrder": 0
     },
     {
@@ -908,9 +606,45 @@
       "url": "https://example.com/rolex-sub-black-2.jpg",
       "altText": "Rolex Submariner Black mat nghieng",
       "isPrimary": false,
+      "isMainImage": false,
       "sortOrder": 1
     }
   ]
+}
+```
+
+---
+
+### GET `/watch-variant-images/main?watchId={id}` — Lấy ảnh đại diện của sản phẩm
+
+**Auth:** Public
+
+> Trả về ảnh có `isMainImage = true` thuộc bất kỳ biến thể nào của sản phẩm. Dùng để hiển thị thumbnail ở trang danh sách.
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "variantId": 1,
+    "dialColor": "Black",
+    "strapColor": "Black",
+    "url": "https://example.com/rolex-sub-black-1.jpg",
+    "altText": "Rolex Submariner Black mat truoc",
+    "isPrimary": true,
+    "isMainImage": true,
+    "sortOrder": 0
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2001,
+  "message": "Khong tim thay dong ho"
 }
 ```
 
@@ -933,6 +667,7 @@
     "url": "https://example.com/rolex-sub-black-1.jpg",
     "altText": "Rolex Submariner Black mat truoc",
     "isPrimary": true,
+    "isMainImage": true,
     "sortOrder": 0
   }
 }
@@ -948,7 +683,49 @@
 
 ---
 
-### POST `/watch-variant-images` — Thêm ảnh cho biến thể
+### POST `/watch-variant-images/upload` — Upload ảnh lên Cloudinary
+
+**Auth:** ADMIN
+
+**Content-Type:** `multipart/form-data`
+
+| Field | Kiểu | Bắt buộc | Mô tả |
+|---|---|---|---|
+| `file` | file | ✅ | File ảnh (tối đa 5MB) |
+| `variantId` | integer | ✅ | ID biến thể |
+| `altText` | string | ❌ | Mô tả ảnh |
+| `isPrimary` | boolean | ❌ | Ảnh chính của biến thể |
+| `isMainImage` | boolean | ❌ | Ảnh đại diện sản phẩm |
+| `sortOrder` | integer | ❌ | Thứ tự hiển thị |
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Upload anh bien the thanh cong",
+  "data": {
+    "id": 1,
+    "variantId": 1,
+    "dialColor": "Black",
+    "strapColor": "Black",
+    "url": "https://res.cloudinary.com/your_cloud/image/upload/v1234/tawatch/watches/abc.jpg",
+    "publicId": "tawatch/watches/abc",
+    "altText": "Rolex Submariner Black mat truoc",
+    "isPrimary": true,
+    "isMainImage": true,
+    "sortOrder": 0
+  }
+}
+```
+
+**Lỗi (upload thất bại):**
+```json
+{ "code": 9001, "message": "Upload anh that bai, vui long thu lai" }
+```
+
+---
+
+### POST `/watch-variant-images` — Thêm ảnh cho biến thể (bằng URL có sẵn)
 
 **Auth:** ADMIN
 
@@ -959,6 +736,7 @@
   "url": "https://example.com/rolex-sub-black-1.jpg",
   "altText": "Rolex Submariner Black mat truoc",
   "isPrimary": true,
+  "isMainImage": true,
   "sortOrder": 0
 }
 ```
@@ -974,8 +752,10 @@
     "dialColor": "Black",
     "strapColor": "Black",
     "url": "https://example.com/rolex-sub-black-1.jpg",
+    "publicId": null,
     "altText": "Rolex Submariner Black mat truoc",
     "isPrimary": true,
+    "isMainImage": true,
     "sortOrder": 0
   }
 }
@@ -994,6 +774,7 @@
   "url": "https://example.com/rolex-sub-black-new.jpg",
   "altText": "Rolex Submariner Black anh moi",
   "isPrimary": false,
+  "isMainImage": false,
   "sortOrder": 2
 }
 ```
@@ -1011,6 +792,7 @@
     "url": "https://example.com/rolex-sub-black-new.jpg",
     "altText": "Rolex Submariner Black anh moi",
     "isPrimary": false,
+    "isMainImage": false,
     "sortOrder": 2
   }
 }
@@ -1032,11 +814,11 @@
 
 ---
 
-### PATCH `/watch-variant-images/{id}/set-primary` — Đặt ảnh chính
+### PATCH `/watch-variant-images/{id}/set-primary` — Đặt ảnh chính của biến thể
 
 **Auth:** ADMIN
 
-> Tự động bỏ `isPrimary` của ảnh cũ, set `isPrimary = true` cho ảnh được chọn.
+> Tự động bỏ `isPrimary` của ảnh cũ trong cùng biến thể, set `isPrimary = true` cho ảnh được chọn.
 
 **Response:**
 ```json
@@ -1051,7 +833,43 @@
     "url": "https://example.com/rolex-sub-black-2.jpg",
     "altText": "Rolex Submariner Black mat nghieng",
     "isPrimary": true,
+    "isMainImage": false,
     "sortOrder": 1
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2013,
+  "message": "Khong tim thay anh bien the dong ho"
+}
+```
+
+---
+
+### PATCH `/watch-variant-images/{id}/set-main-image` — Đặt ảnh đại diện sản phẩm
+
+**Auth:** ADMIN
+
+> Tự động bỏ `isMainImage` của ảnh cũ trong toàn bộ biến thể của **cùng sản phẩm**, set `isMainImage = true` cho ảnh được chọn.
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Dat anh dai dien san pham thanh cong",
+  "data": {
+    "id": 1,
+    "variantId": 1,
+    "dialColor": "Black",
+    "strapColor": "Black",
+    "url": "https://example.com/rolex-sub-black-1.jpg",
+    "altText": "Rolex Submariner Black mat truoc",
+    "isPrimary": true,
+    "isMainImage": true,
+    "sortOrder": 0
   }
 }
 ```
@@ -1079,12 +897,14 @@
       "url": "https://example.com/rolex-sub-black-1.jpg",
       "altText": "Rolex Submariner Black mat truoc",
       "isPrimary": true,
+      "isMainImage": true,
       "sortOrder": 0
     },
     {
       "url": "https://example.com/rolex-sub-black-2.jpg",
       "altText": "Rolex Submariner Black mat nghieng",
       "isPrimary": false,
+      "isMainImage": false,
       "sortOrder": 1
     }
   ]
@@ -1105,6 +925,7 @@
       "url": "https://example.com/rolex-sub-black-1.jpg",
       "altText": "Rolex Submariner Black mat truoc",
       "isPrimary": true,
+      "isMainImage": true,
       "sortOrder": 0
     },
     {
@@ -1115,6 +936,7 @@
       "url": "https://example.com/rolex-sub-black-2.jpg",
       "altText": "Rolex Submariner Black mat nghieng",
       "isPrimary": false,
+      "isMainImage": false,
       "sortOrder": 1
     }
   ]
@@ -1151,6 +973,7 @@
       "url": "https://example.com/rolex-sub-black-2.jpg",
       "altText": "Rolex Submariner Black mat nghieng",
       "isPrimary": false,
+      "isMainImage": false,
       "sortOrder": 0
     },
     {
@@ -1161,6 +984,7 @@
       "url": "https://example.com/rolex-sub-black-1.jpg",
       "altText": "Rolex Submariner Black mat truoc",
       "isPrimary": true,
+      "isMainImage": true,
       "sortOrder": 1
     }
   ]
@@ -1191,7 +1015,7 @@
 
 ---
 
-## 8. Watch Variants
+## 6. Watch Variants
 
 ### GET `/watch-variants?watchId={id}` — Lấy tất cả biến thể theo đồng hồ
 
@@ -1349,7 +1173,7 @@
 
 ---
 
-## 9. Categories
+## 7. Categories
 
 ### GET `/categories` — Lấy tất cả danh mục (flat list)
 
@@ -1502,6 +1326,36 @@
 
 ---
 
+### GET `/categories/slug/{slug}` — Lấy danh mục theo slug
+
+**Auth:** Public
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 2,
+    "name": "The Thao",
+    "slug": "the-thao",
+    "parentId": 1,
+    "parentName": "Dong Ho",
+    "children": []
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2004,
+  "message": "Khong tim thay danh muc"
+}
+```
+
+---
+
 ### PUT `/categories/{id}` — Cập nhật danh mục
 
 **Auth:** ADMIN
@@ -1556,7 +1410,7 @@
 
 ---
 
-## 10. Segments
+## 8. Segments
 
 ### GET `/segments` — Lấy tất cả phân khúc
 
@@ -1693,7 +1547,7 @@
 
 ---
 
-## 11. User Addresses
+## 9. User Addresses
 
 ### GET `/users/{userId}/addresses` — Lấy tất cả địa chỉ của user
 
@@ -1884,7 +1738,7 @@
 
 ---
 
-## 12. Cart
+## 10. Cart
 
 > **Lưu ý:**
 > - User đã đăng nhập: dùng `GET /cart/user/{userId}` để lấy hoặc tạo cart.
@@ -2091,7 +1945,7 @@
 
 ---
 
-## 13. OTP
+## 11. OTP
 
 > **Luồng sử dụng:**
 > ```
@@ -2232,7 +2086,7 @@
 
 ---
 
-## 14. Orders
+## 12. Orders
 
 > **Luồng trạng thái hợp lệ:**
 > ```
@@ -2573,7 +2427,7 @@
 
 ---
 
-## 15. Payments
+## 13. Payments
 
 > **Luồng thanh toán:**
 > ```
@@ -2761,7 +2615,7 @@
 
 ---
 
-## 16. Shippers
+## 14. Shippers
 
 > Quản lý danh sách đơn vị vận chuyển. Dùng để gán shipper vào đơn hàng `DIRECT_SHOP`.
 
@@ -2875,13 +2729,13 @@
 | 1005 | Email không đúng định dạng |
 | 1006 | Sai mật khẩu |
 | 1007 | Token không hợp lệ hoặc đã hết hạn |
+| 1008 | Email này đã được xác thực |
 | 2001 | Không tìm thấy đồng hồ |
 | 2002 | Mã SKU đã tồn tại |
 | 2003 | Không tìm thấy thương hiệu |
 | 2004 | Không tìm thấy danh mục |
 | 2005 | Không tìm thấy phân khúc |
 | 2006 | Tên thương hiệu đã tồn tại |
-| 2007 | Không tìm thấy ảnh đồng hồ |
 | 2008 | Không tìm thấy biến thể đồng hồ |
 | 2009 | Tên danh mục đã tồn tại |
 | 2010 | Slug danh mục đã tồn tại |
@@ -2905,7 +2759,6 @@
 | 5008 | Coupon không còn hoạt động |
 | 5009 | Giá trị đơn hàng chưa đạt mức tối thiểu để áp dụng coupon |
 | 5010 | Chuyển đổi trạng thái đơn hàng không hợp lệ |
-| 1008 | Email này đã được xác thực |
 | 6001 | Không tìm thấy OTP hợp lệ, vui lòng yêu cầu gửi lại |
 | 6002 | OTP đã hết hạn |
 | 6003 | OTP này đã được sử dụng |
@@ -2921,3 +2774,5 @@
 | 8002 | Tên shipper đã tồn tại |
 | 8003 | Chỉ cập nhật mã vận đơn khi đơn hàng ở trạng thái SHIPPING |
 | 8004 | Chỉ gán shipper khi đơn hàng ở trạng thái CONFIRMED hoặc PROCESSING |
+| 9001 | Upload ảnh thất bại, vui lòng thử lại |
+

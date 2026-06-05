@@ -16,7 +16,6 @@ public enum ErrorCode {
     CATEGORY_NOT_FOUND(2004, "Khong tim thay danh muc"),
     SEGMENT_NOT_FOUND(2005, "Khong tim thay phan khuc"),
     BRAND_NAME_EXISTS(2006, "Ten thuong hieu da ton tai"),
-    WATCH_IMAGE_NOT_FOUND(2007, "Khong tim thay anh dong ho"),
     WATCH_VARIANT_NOT_FOUND(2008, "Khong tim thay bien the dong ho"),
     CATEGORY_NAME_EXISTS(2009, "Ten danh muc da ton tai"),
     CATEGORY_SLUG_EXISTS(2010, "Slug danh muc da ton tai"),
@@ -60,6 +59,9 @@ public enum ErrorCode {
     SHIPPER_NAME_EXISTS(8002, "Ten shipper da ton tai"),
     ORDER_TRACKING_REQUIRES_SHIPPING(8003, "Chi cap nhat ma van don khi don hang o trang thai SHIPPING"),
     ORDER_SHIPPER_REQUIRES_CONFIRMED(8004, "Chi gan shipper khi don hang o trang thai CONFIRMED hoac PROCESSING"),
+
+    // Cloudinary
+    IMAGE_UPLOAD_FAILED(9001, "Upload anh that bai, vui long thu lai"),
     ;
 
     private final int code;

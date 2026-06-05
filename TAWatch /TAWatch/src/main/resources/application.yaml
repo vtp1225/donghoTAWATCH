@@ -21,12 +21,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
 
 server:
   servlet:
     context-path: /tawatch
   port: ${PORT:8080}
-
 app:
   mail:
     from: ${MAIL_USERNAME:no-reply@tawatch.vn}
@@ -46,3 +49,7 @@ springdoc:
   swagger-ui:
     enabled: true
     path: /swagger-ui.html
+cloudinary:
+  cloud-name: ${CLOUD_NAME}
+  api-key: ${CLOUD_API_KEY}
+  api-secret: ${CLOUD_API_SECRET}
