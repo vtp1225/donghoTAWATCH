@@ -8,8 +8,8 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0">
         <img
           alt="Timeless Precision"
-          className="h-full w-full scale-105 object-cover"
-          src="/images/hero.jpg"
+          className="h-full w-full scale-105 object-cover object-center opacity-80"
+          src="/images/product-skeleton.jpg"
         />
         <div className="hero-overlay absolute inset-0" />
       </div>

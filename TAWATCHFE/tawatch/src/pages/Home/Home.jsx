@@ -11,7 +11,7 @@ export default function Home() {
     <div className="bg-surface text-on-surface selection:bg-primary-container/30">
       <Navbar />
       <HeroSection />
-      <CollectionsSection />
+      {/* <CollectionsSection /> */}
       <FeaturedTimepiecesSection />
       <HeritageSection />
       <QuoteSection />

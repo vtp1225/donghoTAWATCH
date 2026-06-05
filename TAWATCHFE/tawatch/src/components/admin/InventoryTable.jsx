@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { watchService, variantService } from '../../services/watchService'
+import { watchService, variantService, variantImageService } from '../../services/watchService'
 
 const FILTERS = [
   { label: 'TẤT CẢ', value: 'all' },
@@ -30,13 +30,16 @@ export default function InventoryTable({ refreshKey, onDelete, onEdit }) {
     setError('')
     try {
       const list = await watchService.getAll()
-      const variantsAll = await Promise.all(list.map((w) => variantService.getByWatch(w.id).catch(() => [])))
+      const [variantsAll, mainImages] = await Promise.all([
+        Promise.all(list.map((w) => variantService.getByWatch(w.id).catch(() => []))),
+        Promise.all(list.map((w) => variantImageService.getMainImage(w.id).catch(() => null))),
+      ])
       setWatches(
         list.map((w, i) => {
           const variants = variantsAll[i] ?? []
           const totalStock = variants.reduce((s, v) => s + (v.stockQuantity ?? 0), 0)
           const minPrice = variants.length ? Math.min(...variants.map((v) => v.price)) : null
-          const primaryImage = variants.find((v) => v.imageUrl)?.imageUrl ?? null
+          const primaryImage = mainImages[i]?.url ?? null
           return { ...w, variants, totalStock, minPrice, primaryImage }
         })
       )
