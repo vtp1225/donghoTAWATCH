@@ -7,6 +7,7 @@ import TAWactch.example.TAWatch.entity.Segment;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.mapper.SegmentMapper;
 import TAWactch.example.TAWatch.repository.SegmentRepo;
+import TAWactch.example.TAWatch.utils.SlugUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,11 +34,24 @@ public class SegmentService {
         return segmentMapper.toResponse(segment);
     }
 
+    public SegmentResponse getSegmentBySlug(String slug) {
+        Segment segment = segmentRepo.findBySlug(slug)
+                .orElseThrow(() -> new AppException(ErrorCode.SEGMENT_NOT_FOUND));
+        return segmentMapper.toResponse(segment);
+    }
+
     public SegmentResponse createSegment(SegmentRequest request) {
         if (segmentRepo.existsByName(request.name())) {
             throw new AppException(ErrorCode.SEGMENT_NAME_EXISTS);
         }
-        return segmentMapper.toResponse(segmentRepo.save(segmentMapper.toEntity(request)));
+        String slug = request.slug() != null && !request.slug().isBlank()
+                ? request.slug() : SlugUtils.toSlug(request.name());
+        if (segmentRepo.existsBySlug(slug)) {
+            throw new AppException(ErrorCode.SEGMENT_SLUG_EXISTS);
+        }
+        Segment segment = segmentMapper.toEntity(request);
+        segment.setSlug(slug);
+        return segmentMapper.toResponse(segmentRepo.save(segment));
     }
 
     public SegmentResponse updateSegment(int id, SegmentRequest request) {
@@ -46,7 +60,13 @@ public class SegmentService {
         if (segmentRepo.existsByNameAndIdNot(request.name(), id)) {
             throw new AppException(ErrorCode.SEGMENT_NAME_EXISTS);
         }
+        String slug = request.slug() != null && !request.slug().isBlank()
+                ? request.slug() : SlugUtils.toSlug(request.name());
+        if (segmentRepo.existsBySlugAndIdNot(slug, id)) {
+            throw new AppException(ErrorCode.SEGMENT_SLUG_EXISTS);
+        }
         segmentMapper.partialUpdate(request, segment);
+        segment.setSlug(slug);
         return segmentMapper.toResponse(segmentRepo.save(segment));
     }
 

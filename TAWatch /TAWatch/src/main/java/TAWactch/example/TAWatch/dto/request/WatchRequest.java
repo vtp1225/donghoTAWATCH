@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 public record WatchRequest(
         @NotNull @Size(max = 50) String sku,
         @NotNull @Size(max = 255) String name,
+        @Size(max = 255) String slug,
         @NotNull Integer segmentId,
         String description,
         @NotNull MovementType movementType,

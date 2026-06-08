@@ -37,6 +37,16 @@ public class WatchController {
         return response;
     }
 
+    // GET /watches/slug/{slug} — lấy đồng hồ theo slug
+    @GetMapping("/slug/{slug}")
+    public ApiRespone<WatchResponse> getWatchBySlug(@PathVariable String slug) {
+        ApiRespone<WatchResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(watchService.getWatchBySlug(slug));
+        return response;
+    }
+
     // POST /watches — tạo đồng hồ mới
     @PostMapping
     public ApiRespone<WatchResponse> createWatch(@Valid @RequestBody WatchRequest request) {

@@ -6,6 +6,7 @@ import java.time.Instant;
 public record BrandResponse(
         Integer id,
         String name,
+        String slug,
         String country,
         String description,
         String logoUrl,

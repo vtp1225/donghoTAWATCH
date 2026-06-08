@@ -35,6 +35,15 @@ public class SegmentController {
         return response;
     }
 
+    @GetMapping("/slug/{slug}")
+    public ApiRespone<SegmentResponse> getSegmentBySlug(@PathVariable String slug) {
+        ApiRespone<SegmentResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(segmentService.getSegmentBySlug(slug));
+        return response;
+    }
+
     @PostMapping
     public ApiRespone<SegmentResponse> createSegment(@Valid @RequestBody SegmentRequest request) {
         ApiRespone<SegmentResponse> response = new ApiRespone<>();

@@ -60,6 +60,15 @@ public enum ErrorCode {
     ORDER_TRACKING_REQUIRES_SHIPPING(8003, "Chi cap nhat ma van don khi don hang o trang thai SHIPPING"),
     ORDER_SHIPPER_REQUIRES_CONFIRMED(8004, "Chi gan shipper khi don hang o trang thai CONFIRMED hoac PROCESSING"),
 
+    // Coupon / Promotion
+    PROMOTION_NOT_FOUND(9002, "Khong tim thay chuong trinh khuyen mai"),
+    COUPON_CODE_EXISTS(9003, "Ma coupon nay da ton tai"),
+
+    // Slug
+    WATCH_SLUG_EXISTS(2014, "Slug dong ho da ton tai"),
+    BRAND_SLUG_EXISTS(2015, "Slug thuong hieu da ton tai"),
+    SEGMENT_SLUG_EXISTS(2016, "Slug phan khuc da ton tai"),
+
     // Cloudinary
     IMAGE_UPLOAD_FAILED(9001, "Upload anh that bai, vui long thu lai"),
     ;

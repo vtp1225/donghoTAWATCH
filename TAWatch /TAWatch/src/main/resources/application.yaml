@@ -5,6 +5,11 @@ spring:
     password: ${DB_PASSWORD}
     hikari:
       connection-init-sql: "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION'"
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 1200000
   mail:
     host: smtp.gmail.com
     port: 587

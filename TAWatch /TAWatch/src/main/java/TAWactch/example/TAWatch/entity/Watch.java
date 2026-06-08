@@ -19,7 +19,8 @@ import java.time.Instant;
         @Index(name = "idx_watch_category", columnList = "category_id"),
         @Index(name = "idx_watch_segment", columnList = "segment_id")
 }, uniqueConstraints = {
-        @UniqueConstraint(name = "sku", columnNames = {"sku"})
+        @UniqueConstraint(name = "sku", columnNames = {"sku"}),
+        @UniqueConstraint(name = "uk_watch_slug", columnNames = {"slug"})
 })
 public class Watch {
     @Id
@@ -36,6 +37,10 @@ public class Watch {
     @NotNull
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Size(max = 255)
+    @Column(name = "slug", length = 255)
+    private String slug;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

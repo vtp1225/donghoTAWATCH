@@ -35,6 +35,15 @@ public class BrandController {
         return response;
     }
 
+    @GetMapping("/slug/{slug}")
+    public ApiRespone<BrandResponse> getBrandBySlug(@PathVariable String slug) {
+        ApiRespone<BrandResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(brandService.getBrandBySlug(slug));
+        return response;
+    }
+
     @PostMapping
     public ApiRespone<BrandResponse> createBrand(@Valid @RequestBody BrandRequest request) {
         ApiRespone<BrandResponse> response = new ApiRespone<>();

@@ -10,6 +10,7 @@ public record WatchResponse(
         Integer id,
         String sku,
         String name,
+        String slug,
         Integer segmentId,
         String segmentName,
         String description,

@@ -20,7 +20,7 @@ public record OrderRequest(
         String guestAddressDetail,
         @NotNull PaymentMethodType paymentMethod,
         @NotNull DeliveryMethodType deliveryMethod,
-        Integer couponId,
+        String couponCode,
         String note,
         @NotNull @NotEmpty @Valid List<OrderItemRequest> items
 ) {}

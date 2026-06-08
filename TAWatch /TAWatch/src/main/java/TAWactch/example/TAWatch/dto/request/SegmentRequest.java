@@ -9,5 +9,6 @@ import java.io.Serializable;
 
 public record SegmentRequest(
         @NotBlank @Size(max = 100) String name,
+        @Size(max = 120) String slug,
         @NotNull DeliveryMethodType deliveryMethod
 ) implements Serializable {}

@@ -14,7 +14,9 @@ import java.util.Set;
 @Getter
 @Setter
 @Entity
-@Table(name = "brand")
+@Table(name = "brand", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_brand_slug", columnNames = {"slug"})
+})
 public class Brand {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,6 +27,10 @@ public class Brand {
     @NotNull
     @Column(name = "name", nullable = false, length = 100)
     private String name;
+
+    @Size(max = 150)
+    @Column(name = "slug", length = 150)
+    private String slug;
 
     @Size(max = 100)
     @Column(name = "country", length = 100)

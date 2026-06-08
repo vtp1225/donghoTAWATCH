@@ -166,6 +166,18 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/payments/bank-transfer/initiate").permitAll()
                         .requestMatchers(HttpMethod.PATCH, "/payments/*/confirm").hasAnyRole("ADMIN", "STAFF")
 
+                        // Promotion APIs - admin write, public read
+                        .requestMatchers(HttpMethod.GET, "/promotions/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/promotions").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/promotions/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/promotions/**").hasRole("ADMIN")
+
+                        // Coupon APIs - validate public, rest admin
+                        .requestMatchers(HttpMethod.POST, "/coupons/validate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/coupons/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/coupons").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/coupons/**").hasRole("ADMIN")
+
                         // Shipper APIs
                         .requestMatchers(HttpMethod.GET, "/shippers/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.POST, "/shippers").hasRole("ADMIN")

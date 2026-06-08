@@ -7,5 +7,6 @@ import java.io.Serializable;
 public record SegmentResponse(
         Integer id,
         String name,
+        String slug,
         DeliveryMethodType deliveryMethod
 ) implements Serializable {}

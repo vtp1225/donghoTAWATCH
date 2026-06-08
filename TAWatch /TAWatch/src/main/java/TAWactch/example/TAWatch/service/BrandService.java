@@ -7,6 +7,7 @@ import TAWactch.example.TAWatch.entity.Brand;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.mapper.BrandMapper;
 import TAWactch.example.TAWatch.repository.BrandRepo;
+import TAWactch.example.TAWatch.utils.SlugUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,11 +35,23 @@ public class BrandService {
         return brandMapper.toResponse(brand);
     }
 
+    public BrandResponse getBrandBySlug(String slug) {
+        Brand brand = brandRepo.findBySlug(slug)
+                .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND));
+        return brandMapper.toResponse(brand);
+    }
+
     public BrandResponse createBrand(BrandRequest request) {
         if (brandRepo.existsByName(request.name())) {
             throw new AppException(ErrorCode.BRAND_NAME_EXISTS);
         }
+        String slug = request.slug() != null && !request.slug().isBlank()
+                ? request.slug() : SlugUtils.toSlug(request.name());
+        if (brandRepo.existsBySlug(slug)) {
+            throw new AppException(ErrorCode.BRAND_SLUG_EXISTS);
+        }
         Brand brand = brandMapper.toEntity(request);
+        brand.setSlug(slug);
         brand.setIsActive(request.isActive() != null ? request.isActive() : true);
         brand.setCreatedAt(Instant.now());
         brand.setUpdatedAt(Instant.now());
@@ -51,7 +64,13 @@ public class BrandService {
         if (!brand.getName().equals(request.name()) && brandRepo.existsByName(request.name())) {
             throw new AppException(ErrorCode.BRAND_NAME_EXISTS);
         }
+        String slug = request.slug() != null && !request.slug().isBlank()
+                ? request.slug() : SlugUtils.toSlug(request.name());
+        if (brandRepo.existsBySlugAndIdNot(slug, id)) {
+            throw new AppException(ErrorCode.BRAND_SLUG_EXISTS);
+        }
         brandMapper.partialUpdate(request, brand);
+        brand.setSlug(slug);
         brand.setUpdatedAt(Instant.now());
         return brandMapper.toResponse(brandRepo.save(brand));
     }

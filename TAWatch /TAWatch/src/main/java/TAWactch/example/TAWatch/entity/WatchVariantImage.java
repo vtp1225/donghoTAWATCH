@@ -12,7 +12,10 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 @Entity
-@Table(name = "watch_variant_image")
+@Table(name = "watch_variant_image", indexes = {
+        @Index(name = "idx_wvi_variant_id", columnList = "variant_id"),
+        @Index(name = "idx_wvi_is_main_image", columnList = "is_main_image")
+})
 public class WatchVariantImage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

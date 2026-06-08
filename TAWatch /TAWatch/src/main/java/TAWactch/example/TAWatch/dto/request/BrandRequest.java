@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 public record BrandRequest(
         @NotNull @Size(max = 100) String name,
+        @Size(max = 150) String slug,
         @Size(max = 100) String country,
         String description,
         @Size(max = 500) String logoUrl,

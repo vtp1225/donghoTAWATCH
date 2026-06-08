@@ -10,6 +10,7 @@ import TAWactch.example.TAWatch.repository.BrandRepo;
 import TAWactch.example.TAWatch.repository.CategoryRepo;
 import TAWactch.example.TAWatch.repository.SegmentRepo;
 import TAWactch.example.TAWatch.repository.WatchRepo;
+import TAWactch.example.TAWatch.utils.SlugUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -42,11 +43,19 @@ public class WatchService {
         return watchMapper.toResponse(watch);
     }
 
+    public WatchResponse getWatchBySlug(String slug) {
+        Watch watch = watchRepo.findBySlug(slug)
+                .orElseThrow(() -> new AppException(ErrorCode.WATCH_NOT_FOUND));
+        return watchMapper.toResponse(watch);
+    }
+
     public WatchResponse createWatch(WatchRequest request) {
         if (watchRepo.existsBySku(request.sku())) {
             throw new AppException(ErrorCode.WATCH_SKU_EXISTS);
         }
+        String slug = resolveWatchSlug(request.slug(), request.name(), request.sku(), null);
         Watch watch = watchMapper.toEntity(request);
+        watch.setSlug(slug);
         watch.setBrand(brandRepo.findById(request.brandId())
                 .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND)));
         watch.setCategory(categoryRepo.findById(request.categoryId())
@@ -65,7 +74,9 @@ public class WatchService {
         if (!watch.getSku().equals(request.sku()) && watchRepo.existsBySku(request.sku())) {
             throw new AppException(ErrorCode.WATCH_SKU_EXISTS);
         }
+        String slug = resolveWatchSlugForUpdate(request.slug(), request.name(), request.sku(), id);
         watchMapper.partialUpdate(request, watch);
+        watch.setSlug(slug);
         if (request.brandId() != null) {
             watch.setBrand(brandRepo.findById(request.brandId())
                     .orElseThrow(() -> new AppException(ErrorCode.BRAND_NOT_FOUND)));
@@ -80,6 +91,32 @@ public class WatchService {
         }
         watch.setUpdatedAt(Instant.now());
         return watchMapper.toResponse(watchRepo.save(watch));
+    }
+
+    private String resolveWatchSlug(String requestSlug, String name, String sku, Integer excludeId) {
+        if (requestSlug != null && !requestSlug.isBlank()) {
+            if (excludeId != null ? watchRepo.existsBySlugAndIdNot(requestSlug, excludeId)
+                                  : watchRepo.existsBySlug(requestSlug)) {
+                throw new AppException(ErrorCode.WATCH_SLUG_EXISTS);
+            }
+            return requestSlug;
+        }
+        String slug = SlugUtils.toSlug(name);
+        boolean conflict = excludeId != null ? watchRepo.existsBySlugAndIdNot(slug, excludeId)
+                                             : watchRepo.existsBySlug(slug);
+        if (conflict) {
+            slug = slug + "-" + SlugUtils.toSlug(sku);
+            boolean stillConflict = excludeId != null ? watchRepo.existsBySlugAndIdNot(slug, excludeId)
+                                                      : watchRepo.existsBySlug(slug);
+            if (stillConflict) {
+                throw new AppException(ErrorCode.WATCH_SLUG_EXISTS);
+            }
+        }
+        return slug;
+    }
+
+    private String resolveWatchSlugForUpdate(String requestSlug, String name, String sku, int id) {
+        return resolveWatchSlug(requestSlug, name, sku, id);
     }
 
     public void deleteWatch(int id) {

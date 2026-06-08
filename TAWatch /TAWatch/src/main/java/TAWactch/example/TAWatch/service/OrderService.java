@@ -33,6 +33,7 @@ public class OrderService {
     @Autowired private WatchVariantRepo watchVariantRepo;
     @Autowired private CouponRepo couponRepo;
     @Autowired private ShipperRepo shipperRepo;
+    @Autowired private CouponService couponService;
 
     // -------------------------------------------------------
     // Đặt hàng mới
@@ -77,10 +78,10 @@ public class OrderService {
         // Áp dụng coupon
         BigDecimal discountAmount = BigDecimal.ZERO;
         Coupon coupon = null;
-        if (request.couponId() != null) {
-            coupon = couponRepo.findById(request.couponId())
+        if (request.couponCode() != null && !request.couponCode().isBlank()) {
+            coupon = couponRepo.findByCode(request.couponCode().toUpperCase())
                     .orElseThrow(() -> new AppException(ErrorCode.COUPON_NOT_FOUND));
-            discountAmount = validateAndCalculateCoupon(coupon, subtotal);
+            discountAmount = couponService.validateAndCalculate(coupon, subtotal);
         }
 
         BigDecimal shippingFee = BigDecimal.ZERO;
@@ -266,33 +267,6 @@ public class OrderService {
     private Order requireOrder(Integer orderId) {
         return orderRepo.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-    }
-
-    private BigDecimal validateAndCalculateCoupon(Coupon coupon, BigDecimal subtotal) {
-        if (Boolean.TRUE.equals(coupon.getIsUsed())) {
-            throw new AppException(ErrorCode.COUPON_ALREADY_USED);
-        }
-        if (coupon.getExpiresAt() != null && coupon.getExpiresAt().isBefore(Instant.now())) {
-            throw new AppException(ErrorCode.COUPON_EXPIRED);
-        }
-        Promotion promo = coupon.getPromotion();
-        if (!Boolean.TRUE.equals(promo.getIsActive())) {
-            throw new AppException(ErrorCode.COUPON_INACTIVE);
-        }
-        if (subtotal.compareTo(promo.getMinOrderValue()) < 0) {
-            throw new AppException(ErrorCode.ORDER_BELOW_MIN_VALUE);
-        }
-
-        BigDecimal discount;
-        if (promo.getDiscountType() == DiscountType.PERCENTAGE) {
-            discount = subtotal.multiply(promo.getDiscountValue()).divide(BigDecimal.valueOf(100));
-            if (promo.getMaxDiscountAmount() != null) {
-                discount = discount.min(promo.getMaxDiscountAmount());
-            }
-        } else {
-            discount = promo.getDiscountValue();
-        }
-        return discount.min(subtotal);
     }
 
     private void validateStatusTransition(OrderStatusType from, OrderStatusType to) {
