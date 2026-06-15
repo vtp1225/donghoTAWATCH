@@ -17,13 +17,23 @@ public class WatchController {
     @Autowired
     private WatchService watchService;
 
-    // GET /watches — lấy tất cả đồng hồ
+    // GET /watches — lấy tất cả đồng hồ đang active (public)
     @GetMapping
     public ApiRespone<List<WatchResponse>> getAllWatches() {
         ApiRespone<List<WatchResponse>> response = new ApiRespone<>();
         response.setCode(200);
         response.setMessage("Success");
         response.setData(watchService.getAllWatches());
+        return response;
+    }
+
+    // GET /watches/admin — lấy tất cả đồng hồ kể cả inactive (admin)
+    @GetMapping("/admin")
+    public ApiRespone<List<WatchResponse>> getAllWatchesAdmin() {
+        ApiRespone<List<WatchResponse>> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(watchService.getAllWatchesAdmin());
         return response;
     }
 
@@ -64,6 +74,17 @@ public class WatchController {
         response.setCode(200);
         response.setMessage("Cap nhat dong ho thanh cong");
         response.setData(watchService.updateWatch(id, request));
+        return response;
+    }
+
+    // PATCH /watches/{id}/status — bật/tắt trạng thái bán
+    @PatchMapping("/{id}/status")
+    public ApiRespone<WatchResponse> updateWatchStatus(@PathVariable int id, @RequestBody java.util.Map<String, Boolean> body) {
+        Boolean isActive = body.get("isActive");
+        ApiRespone<WatchResponse> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Cap nhat trang thai thanh cong");
+        response.setData(watchService.updateWatchStatus(id, isActive));
         return response;
     }
 

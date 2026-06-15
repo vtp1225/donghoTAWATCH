@@ -1,5 +1,6 @@
 package TAWactch.example.TAWatch.entity;
 
+import TAWactch.example.TAWatch.Enum.GlassMaterialType;
 import TAWactch.example.TAWatch.Enum.MovementType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -57,9 +58,9 @@ public class Watch {
     @Column(name = "movement_type", nullable = false)
     private MovementType movementType;
 
-    @Size(max = 100)
-    @Column(name = "glass_material", length = 100)
-    private String glassMaterial;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "glass_material", length = 50)
+    private GlassMaterialType glassMaterial;
 
     @Column(name = "thickness_mm", precision = 5, scale = 2)
     private BigDecimal thicknessMm;

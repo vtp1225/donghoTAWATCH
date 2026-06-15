@@ -3,6 +3,7 @@ import { watchService, variantService, variantImageService } from '../../service
 import { brandService } from '../../services/brandService'
 import { categoryService } from '../../services/categoryService'
 import { segmentService } from '../../services/segmentService'
+import { colorService } from '../../services/colorService'
 
 function uniqueById(arr, idKey, nameKey) {
   const seen = new Map()
@@ -14,7 +15,26 @@ function uniqueById(arr, idKey, nameKey) {
   return [...seen.values()]
 }
 
-const MOVEMENT_TYPES = ['AUTOMATIC', 'MANUAL', 'QUARTZ', 'SOLAR']
+const MOVEMENT_TYPES = ['AUTOMATIC', 'MANUAL', 'QUARTZ', 'SOLAR', 'SMART']
+
+const GLASS_MATERIAL_TYPES = [
+  { value: 'SAPPHIRE', label: 'Sapphire (chống xước cao cấp)' },
+  { value: 'MINERAL', label: 'Mineral (kính khoáng phổ thông)' },
+  { value: 'HARDLEX', label: 'Hardlex (Seiko, cứng hơn mineral)' },
+  { value: 'ACRYLIC', label: 'Acrylic / Plexiglass (đồng hồ cổ)' },
+  { value: 'SAPPHIRE_COATED', label: 'Sapphire phủ chống phản chiếu' },
+]
+
+const STRAP_MATERIAL_TYPES = [
+  { value: 'STAINLESS_STEEL', label: 'Thép không gỉ' },
+  { value: 'LEATHER', label: 'Da' },
+  { value: 'RUBBER', label: 'Cao su / Silicone' },
+  { value: 'NYLON', label: 'Vải Nylon / NATO strap' },
+  { value: 'GOLD', label: 'Dây vàng' },
+  { value: 'TITANIUM', label: 'Titanium' },
+  { value: 'CERAMIC', label: 'Ceramic' },
+  { value: 'MESH', label: 'Dây lưới kim loại (Milanese)' },
+]
 
 const WATCH_DEFAULTS = {
   sku: '',
@@ -45,8 +65,8 @@ const IMAGE_DEFAULT = {
 
 const VARIANT_DEFAULT = {
   id: null,
-  dialColor: '',
-  strapColor: '',
+  dialColorId: '',
+  strapColorId: '',
   strapMaterial: '',
   caseSizeMm: '',
   price: '',
@@ -98,8 +118,8 @@ function buildVariantForm(variant, images) {
 
   return {
     id: variant.id,
-    dialColor: variant.dialColor ?? '',
-    strapColor: variant.strapColor ?? '',
+    dialColorId: variant.dialColorId ? String(variant.dialColorId) : '',
+    strapColorId: variant.strapColorId ? String(variant.strapColorId) : '',
     strapMaterial: variant.strapMaterial ?? '',
     caseSizeMm: variant.caseSizeMm ?? '',
     price: variant.price ?? '',
@@ -148,6 +168,30 @@ function Field({ label, required, children }) {
   )
 }
 
+function ColorSelect({ value, onChange, colors, placeholder = '-- Chọn màu --' }) {
+  const selected = colors.find((c) => String(c.id) === String(value))
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full appearance-none bg-transparent border-b border-outline-variant/30 focus:border-primary focus:outline-none py-2 pl-8 pr-4 font-body-md text-sm text-on-surface transition-colors cursor-pointer"
+      >
+        <option value="">{placeholder}</option>
+        {colors.map((c) => (
+          <option key={c.id} value={String(c.id)}>{c.name}</option>
+        ))}
+      </select>
+      {selected?.hexCode && (
+        <span
+          className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-4 w-4 rounded-full border border-white/20 shadow-sm"
+          style={{ background: selected.hexCode }}
+        />
+      )}
+    </div>
+  )
+}
+
 const inputCls = 'bg-transparent border-b border-outline-variant/30 focus:border-primary focus:outline-none py-2 font-body-md text-sm text-on-surface placeholder:text-on-surface-variant/30 transition-colors w-full'
 const selectCls = `${inputCls} appearance-none cursor-pointer`
 
@@ -160,6 +204,7 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
   const [brands, setBrands] = useState([])
   const [categories, setCategories] = useState([])
   const [segments, setSegments] = useState([])
+  const [colors, setColors] = useState([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -181,14 +226,17 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
     Promise.all([
       brandService.getAll().catch(() => []),
-      watchService.getAll().catch(() => []),
+      watchService.getAllAdmin().catch(() => []),
       categoryService.getAll().catch(() => []),
       segmentService.getAll().catch(() => []),
+      colorService.getAll(true).catch(() => []),
       watch ? variantService.getByWatch(watch.id).catch(() => []) : Promise.resolve([]),
-    ]).then(async ([brandList, watchList, categoryList, segmentList, variantList]) => {
+    ]).then(async ([brandList, watchList, categoryList, segmentList, colorList, variantList]) => {
       if (cancelled) return
 
       setBrands(brandList)
+      setColors(Array.isArray(colorList) ? colorList : [])
+
       if (categoryList.length > 0) {
         setCategories(categoryList.map((item) => ({ id: item.id, name: item.name })))
       } else {
@@ -346,7 +394,7 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
     for (let i = 0; i < variants.length; i += 1) {
       const variant = variants[i]
-      if (!variant.dialColor.trim()) return `Biến thể ${i + 1}: màu mặt không được để trống`
+      if (!variant.dialColorId) return `Biến thể ${i + 1}: màu mặt không được để trống`
       if (!variant.strapMaterial.trim()) return `Biến thể ${i + 1}: chất liệu dây không được để trống`
       if (!variant.caseSizeMm) return `Biến thể ${i + 1}: kích thước case không được để trống`
       if (!variant.price) return `Biến thể ${i + 1}: giá không được để trống`
@@ -411,8 +459,8 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
         const variantPayload = {
           watchId,
-          dialColor: variant.dialColor.trim(),
-          strapColor: variant.strapColor.trim() || undefined,
+          dialColorId: variant.dialColorId ? Number(variant.dialColorId) : undefined,
+          strapColorId: variant.strapColorId ? Number(variant.strapColorId) : undefined,
           strapMaterial: variant.strapMaterial.trim(),
           caseSizeMm: Number(variant.caseSizeMm),
           price: Number(variant.price),
@@ -560,7 +608,12 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
                 </select>
               </Field>
               <Field label="Kính">
-                <input className={inputCls} placeholder="Sapphire" value={watchForm.glassMaterial} onChange={(e) => setWatch('glassMaterial', e.target.value)} />
+                <select className={selectCls} value={watchForm.glassMaterial} onChange={(e) => setWatch('glassMaterial', e.target.value)}>
+                  <option value="">-- Chọn loại kính --</option>
+                  {GLASS_MATERIAL_TYPES.map((g) => (
+                    <option key={g.value} value={g.value}>{g.label}</option>
+                  ))}
+                </select>
               </Field>
               <Field label="Chống nước (ATM)">
                 <input className={inputCls} type="number" placeholder="30" value={watchForm.waterResistanceAtm} onChange={(e) => setWatch('waterResistanceAtm', e.target.value)} />
@@ -607,13 +660,28 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
 
                   <div className="grid grid-cols-3 gap-4">
                     <Field label="Màu mặt" required>
-                      <input className={inputCls} value={variant.dialColor} onChange={(e) => setVariant(variantIndex, 'dialColor', e.target.value)} />
+                      <ColorSelect
+                        value={variant.dialColorId}
+                        onChange={(v) => setVariant(variantIndex, 'dialColorId', v)}
+                        colors={colors}
+                        placeholder="-- Chọn màu mặt --"
+                      />
                     </Field>
                     <Field label="Màu dây">
-                      <input className={inputCls} value={variant.strapColor} onChange={(e) => setVariant(variantIndex, 'strapColor', e.target.value)} />
+                      <ColorSelect
+                        value={variant.strapColorId}
+                        onChange={(v) => setVariant(variantIndex, 'strapColorId', v)}
+                        colors={colors}
+                        placeholder="-- Chọn màu dây --"
+                      />
                     </Field>
                     <Field label="Chất liệu dây" required>
-                      <input className={inputCls} value={variant.strapMaterial} onChange={(e) => setVariant(variantIndex, 'strapMaterial', e.target.value)} />
+                      <select className={selectCls} value={variant.strapMaterial} onChange={(e) => setVariant(variantIndex, 'strapMaterial', e.target.value)}>
+                        <option value="">-- Chọn chất liệu --</option>
+                        {STRAP_MATERIAL_TYPES.map((s) => (
+                          <option key={s.value} value={s.value}>{s.label}</option>
+                        ))}
+                      </select>
                     </Field>
                     <Field label="Case (mm)" required>
                       <input className={inputCls} type="number" step="0.1" value={variant.caseSizeMm} onChange={(e) => setVariant(variantIndex, 'caseSizeMm', e.target.value)} />

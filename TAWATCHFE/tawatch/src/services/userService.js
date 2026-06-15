@@ -13,6 +13,14 @@ export const userService = {
 		return request(`/users/${id}`).then(unwrapApiResponse)
 	},
 
+	updateUser(id, payload) {
+		return request(`/users/${id}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(payload),
+		}).then(unwrapApiResponse)
+	},
+
 	addUser(payload) {
 		return request('/users', {
 			method: 'POST',

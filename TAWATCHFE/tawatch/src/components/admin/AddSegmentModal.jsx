@@ -1,14 +1,20 @@
 import { useState } from 'react'
 import { segmentService } from '../../services/segmentService'
 
+const DELIVERY_METHOD_OPTIONS = [
+  { value: 'EXTERNAL_SHIPPER', label: 'Giao hàng tận nơi' },
+  { value: 'DIRECT_SHOP', label: 'Nhận tại cửa hàng' },
+]
+
 function buildForm(segment) {
   if (!segment) {
-    return { name: '', description: '' }
+    return { name: '', description: '', deliveryMethod: 'EXTERNAL_SHIPPER' }
   }
 
   return {
     name: segment.name ?? '',
     description: segment.description ?? '',
+    deliveryMethod: segment.deliveryMethod ?? 'EXTERNAL_SHIPPER',
   }
 }
 
@@ -24,6 +30,7 @@ export default function AddSegmentModal({ onClose, onSuccess, segment }) {
 
   function validate() {
     if (!form.name.trim()) return 'Tên phân khúc không được để trống'
+    if (!DELIVERY_METHOD_OPTIONS.some((option) => option.value === form.deliveryMethod)) return 'Vui lòng chọn phương thức giao hàng'
     return ''
   }
 
@@ -41,6 +48,7 @@ export default function AddSegmentModal({ onClose, onSuccess, segment }) {
       const payload = {
         name: form.name.trim(),
         description: form.description.trim() || undefined,
+        deliveryMethod: form.deliveryMethod,
       }
 
       if (isEditMode) {
@@ -84,6 +92,21 @@ export default function AddSegmentModal({ onClose, onSuccess, segment }) {
             <div className="flex flex-col gap-1.5">
               <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Mô tả</label>
               <textarea className="bg-transparent border-b border-outline-variant/30 py-2 resize-none h-24" value={form.description} onChange={(e) => setField('description', e.target.value)} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Phương thức giao hàng</label>
+              <select
+                className="bg-transparent border-b border-outline-variant/30 py-2 text-on-surface outline-none"
+                value={form.deliveryMethod}
+                onChange={(e) => setField('deliveryMethod', e.target.value)}
+              >
+                {DELIVERY_METHOD_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </form>

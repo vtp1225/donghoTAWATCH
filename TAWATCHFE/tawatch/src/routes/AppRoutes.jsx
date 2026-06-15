@@ -10,6 +10,7 @@ import ProductDetail from '../pages/Product/ProductDetail.jsx'
 import Cart from '../pages/Cart/Cart.jsx'
 import Checkout from '../pages/Checkout/Checkout.jsx'
 import OrderHistory from '../pages/Order/OrderHistory.jsx'
+import Profile from '../pages/Profile/Profile.jsx'
 import Brands from '../pages/Brands/Brands.jsx'
 import Contact from '../pages/Contact/Contact.jsx'
 import AdminLayout from '../layouts/AdminLayout.jsx'
@@ -21,6 +22,7 @@ import ManageOrder from '../pages/Admin/ManageOrder.jsx'
 import ManageCategory from '../pages/Admin/ManageCategory.jsx'
 import ManageSegment from '../pages/Admin/ManageSegment.jsx'
 import ManageCustomer from '../pages/Admin/ManageCustomer.jsx'
+import ManageColor from '../pages/Admin/ManageColor.jsx'
 
 export default function AppRoutes() {
   return (
@@ -36,6 +38,7 @@ export default function AppRoutes() {
       <Route path="/cart" element={<Cart />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/orders" element={<OrderHistory />} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="/brands" element={<Brands />} />
       <Route path="/lien-he" element={<Contact />} />
 
@@ -48,6 +51,7 @@ export default function AppRoutes() {
           <Route path="brands" element={<ManageBrand />} />
           <Route path="customers" element={<ManageCustomer />} />
           <Route path="orders" element={<ManageOrder />} />
+          <Route path="colors" element={<ManageColor />} />
         </Route>
       </Route>
     </Routes>

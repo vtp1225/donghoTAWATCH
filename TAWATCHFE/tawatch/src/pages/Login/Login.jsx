@@ -144,9 +144,9 @@ export default function Login() {
                   <label className="font-label-caps text-label-caps text-on-surface-variant" htmlFor="password">
                     PASSWORD
                   </label>
-                  <a className="font-label-caps text-[10px] uppercase text-primary transition-colors hover:text-primary-container" href="#">
-                    Forgot?
-                  </a>
+                  <Link className="font-label-caps text-[10px] uppercase text-primary transition-colors hover:text-primary-container" to="/forgot-password">
+                    Quên mật khẩu?
+                  </Link>
                 </div>
                 <input
                   id="password"

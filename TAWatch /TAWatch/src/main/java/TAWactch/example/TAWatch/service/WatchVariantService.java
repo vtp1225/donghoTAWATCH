@@ -3,10 +3,12 @@ package TAWactch.example.TAWatch.service;
 import TAWactch.example.TAWatch.Enum.ErrorCode;
 import TAWactch.example.TAWatch.dto.request.WatchVariantRequest;
 import TAWactch.example.TAWatch.dto.respone.WatchVariantResponse;
+import TAWactch.example.TAWatch.entity.Color;
 import TAWactch.example.TAWatch.entity.Watch;
 import TAWactch.example.TAWatch.entity.WatchVariant;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.mapper.WatchVariantMapper;
+import TAWactch.example.TAWatch.repository.ColorRepo;
 import TAWactch.example.TAWatch.repository.WatchRepo;
 import TAWactch.example.TAWatch.repository.WatchVariantRepo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ public class WatchVariantService {
 
     @Autowired
     private WatchRepo watchRepo;
+
+    @Autowired
+    private ColorRepo colorRepo;
 
     @Autowired
     private WatchVariantMapper watchVariantMapper;
@@ -46,6 +51,8 @@ public class WatchVariantService {
                 .orElseThrow(() -> new AppException(ErrorCode.WATCH_NOT_FOUND));
         WatchVariant watchVariant = watchVariantMapper.toEntity(request);
         watchVariant.setWatch(watch);
+        watchVariant.setDialColor(resolveColor(request.dialColorId()));
+        watchVariant.setStrapColor(resolveColor(request.strapColorId()));
         watchVariant.setStockQuantity(request.stockQuantity() != null ? request.stockQuantity() : 0);
         watchVariant.setIsActive(request.isActive() != null ? request.isActive() : true);
         return watchVariantMapper.toResponse(watchVariantRepo.save(watchVariant));
@@ -59,6 +66,12 @@ public class WatchVariantService {
                     .orElseThrow(() -> new AppException(ErrorCode.WATCH_NOT_FOUND));
             watchVariant.setWatch(watch);
         }
+        if (request.dialColorId() != null) {
+            watchVariant.setDialColor(resolveColor(request.dialColorId()));
+        }
+        if (request.strapColorId() != null) {
+            watchVariant.setStrapColor(resolveColor(request.strapColorId()));
+        }
         watchVariantMapper.partialUpdate(request, watchVariant);
         return watchVariantMapper.toResponse(watchVariantRepo.save(watchVariant));
     }
@@ -68,5 +81,11 @@ public class WatchVariantService {
             throw new AppException(ErrorCode.WATCH_VARIANT_NOT_FOUND);
         }
         watchVariantRepo.deleteById(id);
+    }
+
+    private Color resolveColor(Integer colorId) {
+        if (colorId == null) return null;
+        return colorRepo.findById(colorId)
+                .orElseThrow(() -> new AppException(ErrorCode.COLOR_NOT_FOUND));
     }
 }

@@ -1,9 +1,15 @@
+
+
+
+
+
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
 import { watchService, variantService, variantImageService } from '../../services/watchService.js'
 import { cartService } from '../../services/cartService.js'
+import ProductReviews from './ProductReviews.jsx'
 
 function formatVnd(value) {
   if (value == null) return 'Liên hệ'
@@ -121,8 +127,8 @@ export default function ProductDetail() {
   const specs = SPEC_ITEMS.filter(({ key }) => watch[key] != null && watch[key] !== '')
   const variantLabel = selectedVariant
     ? [
-        selectedVariant.dialColor,
-        selectedVariant.strapColor && `Dây ${selectedVariant.strapColor}`,
+        selectedVariant.dialColorName,
+        selectedVariant.strapColorName && `Dây ${selectedVariant.strapColorName}`,
         selectedVariant.strapMaterial,
         selectedVariant.caseSizeMm != null && `${selectedVariant.caseSizeMm}mm`,
       ]
@@ -278,7 +284,7 @@ export default function ProductDetail() {
                         }`}
                       >
                         <span className="font-label-caps text-[11px] tracking-[0.18em] uppercase leading-tight">
-                          {variant.dialColor || '—'}
+                          {variant.dialColorName || '—'}
                         </span>
                         {variant.caseSizeMm != null && (
                           <span className="mt-1 font-body-md text-xs text-on-surface-variant/60">
@@ -345,6 +351,24 @@ export default function ProductDetail() {
                 <span className="material-symbols-outlined text-lg leading-none">shopping_cart</span>
                 Xem giỏ hàng
               </Link>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById('product-review-textarea')
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    el.focus()
+                  } else {
+                    const section = document.querySelector('[data-product-reviews]')
+                    if (section) section.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                  }
+                }}
+                className="mt-2 flex items-center justify-center gap-2 border border-outline-variant/20 py-3 font-label-caps text-xs tracking-[0.2em] uppercase text-on-surface-variant/55 transition-all duration-300 hover:border-primary/35 hover:text-primary/80"
+              >
+                <span className="material-symbols-outlined text-lg leading-none">rate_review</span>
+                Viết đánh giá
+              </button>
             </div>
 
             {/* Description */}
@@ -408,6 +432,9 @@ export default function ProductDetail() {
             Tiếp tục xem sản phẩm
           </Link>
         </div>
+        
+        {/* Reviews section */}
+        <ProductReviews watchId={watch.id} />
       </main>
 
       <Footer />

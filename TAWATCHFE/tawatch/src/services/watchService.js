@@ -14,6 +14,9 @@ export const watchService = {
   getAll() {
     return request('/watches').then(unwrap)
   },
+  getAllAdmin() {
+    return request('/watches/admin').then(unwrap)
+  },
   getById(id) {
     return request(`/watches/${id}`).then(unwrap)
   },
@@ -29,6 +32,13 @@ export const watchService = {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
       body: JSON.stringify(payload),
+    }).then(unwrap)
+  },
+  toggleStatus(id, isActive) {
+    return request(`/watches/${id}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ isActive }),
     }).then(unwrap)
   },
   delete(id) {

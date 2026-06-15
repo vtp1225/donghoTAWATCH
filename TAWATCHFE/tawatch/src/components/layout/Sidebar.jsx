@@ -8,6 +8,7 @@ const navItems = [
   { icon: 'storefront', label: 'Thương hiệu', to: '/admin/brands' },
   { icon: 'shopping_cart', label: 'Đơn hàng', to: '/admin/orders' },
   { icon: 'group', label: 'Khách hàng', to: '/admin/customers' },
+  { icon: 'palette', label: 'Màu sắc', to: '/admin/colors' },
   { icon: 'settings', label: 'Cài đặt', to: '/admin/settings' },
 ]
 

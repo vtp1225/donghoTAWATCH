@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/tawatch': 'http://localhost:8080',
+      '/tawatch': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
     },
   },
 })

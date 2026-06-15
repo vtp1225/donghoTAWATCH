@@ -168,6 +168,8 @@ export default function Navbar() {
     navigate('/', { replace: true })
   }
 
+  const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
+
   return (
     <nav
       className={`fixed top-0 z-50 flex h-20 w-full items-center justify-between px-8 backdrop-blur-xl transition-all duration-300 md:px-[80px] ${
@@ -271,10 +273,27 @@ export default function Navbar() {
                       </p>
                       <p className="truncate font-body-md text-sm text-on-surface">{displayName}</p>
                     </div>
-                    <button
+                    <Link
                       className="flex w-full items-center gap-3 px-5 py-3.5 text-left font-label-caps text-[10px] tracking-[0.15em] uppercase text-on-surface/65 transition-all duration-200 hover:bg-surface-container-high hover:pl-6 hover:text-primary"
+                      to="/profile"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[17px]">manage_accounts</span>
+                      Hồ sơ cá nhân
+                    </Link>
+                    <Link
+                      className="flex w-full items-center gap-3 px-5 py-3.5 text-left font-label-caps text-[10px] tracking-[0.15em] uppercase text-on-surface/65 transition-all duration-200 hover:bg-surface-container-high hover:pl-6 hover:text-primary"
+                      to="/orders"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[17px]">receipt_long</span>
+                      Đơn hàng của tôi
+                    </Link>
+                    <div className="mx-5 h-px bg-outline-variant/10" />
+                    <button
+                      className="flex w-full items-center gap-3 px-5 py-3.5 text-left font-label-caps text-[10px] tracking-[0.15em] uppercase text-on-surface/65 transition-all duration-200 hover:bg-surface-container-high hover:pl-6 hover:text-red-400"
                       type="button"
-                      onClick={handleLogout}
+                      onClick={() => setConfirmLogoutOpen(true)}
                     >
                       <span className="material-symbols-outlined text-[17px]">logout</span>
                       Đăng xuất
@@ -301,6 +320,40 @@ export default function Navbar() {
                     </Link>
                   </>
                 )}
+              </div>
+            </div>
+          )}
+
+          {confirmLogoutOpen && (
+            <div className="fixed inset-0 z-[9999] grid place-items-center p-4">
+              <div className="absolute inset-0 bg-black/50" onClick={() => setConfirmLogoutOpen(false)} />
+              <div className="relative z-[10000] w-full max-w-md rounded-lg border border-outline-variant/15 bg-surface-container p-6 shadow-lg">
+                <div className="mb-4 flex items-start justify-between gap-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center bg-primary/10">
+                      <span className="material-symbols-outlined text-[18px] text-primary">logout</span>
+                    </div>
+                    <div>
+                      <p className="font-body-md text-sm font-medium">Xác nhận đăng xuất</p>
+                      <p className="mt-0.5 font-body-md text-xs text-on-surface-variant/70">Bạn có chắc muốn đăng xuất?</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setConfirmLogoutOpen(false)} className="text-on-surface-variant/50">✕</button>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => { logout(); setAccountOpen(false); setConfirmLogoutOpen(false); navigate('/', { replace: true }) }}
+                    className="border border-primary px-5 py-2 font-label-caps text-[9px] tracking-[0.2em] text-primary"
+                  >
+                    Đăng xuất
+                  </button>
+                  <button
+                    onClick={() => setConfirmLogoutOpen(false)}
+                    className="border border-outline-variant/25 px-5 py-2 font-label-caps text-[9px] tracking-[0.2em] text-on-surface-variant"
+                  >
+                    Huỷ
+                  </button>
+                </div>
               </div>
             </div>
           )}

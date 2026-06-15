@@ -1,5 +1,6 @@
 package TAWactch.example.TAWatch.dto.respone;
 
+import TAWactch.example.TAWatch.Enum.GlassMaterialType;
 import TAWactch.example.TAWatch.Enum.MovementType;
 
 import java.io.Serializable;
@@ -15,7 +16,7 @@ public record WatchResponse(
         String segmentName,
         String description,
         MovementType movementType,
-        String glassMaterial,
+        GlassMaterialType glassMaterial,
         BigDecimal thicknessMm,
         BigDecimal waterResistanceAtm,
         Integer powerReserveHours,

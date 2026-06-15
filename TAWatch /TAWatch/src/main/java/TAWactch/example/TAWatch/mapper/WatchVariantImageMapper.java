@@ -12,8 +12,8 @@ public interface WatchVariantImageMapper {
     WatchVariantImage toEntity(WatchVariantImageRequest request);
 
     @Mapping(source = "variant.id", target = "variantId")
-    @Mapping(source = "variant.dialColor", target = "dialColor")
-    @Mapping(source = "variant.strapColor", target = "strapColor")
+    @Mapping(source = "variant.dialColor.name", target = "dialColor")
+    @Mapping(source = "variant.strapColor.name", target = "strapColor")
     WatchVariantImageResponse toResponse(WatchVariantImage image);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

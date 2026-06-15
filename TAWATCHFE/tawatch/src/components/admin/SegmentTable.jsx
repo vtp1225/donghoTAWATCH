@@ -14,6 +14,12 @@ function getWatchCount(segment) {
   return segment.watchCount ?? segment.totalWatches ?? segment.itemsCount ?? segment.productsCount ?? 0
 }
 
+function getDeliveryMethodLabel(deliveryMethod) {
+  if (deliveryMethod === 'DIRECT_SHOP') return 'Nhận tại cửa hàng'
+  if (deliveryMethod === 'EXTERNAL_SHIPPER') return 'Giao hàng tận nơi'
+  return 'Chưa thiết lập'
+}
+
 export default function SegmentTable({ onDelete, onEdit, onDataChange }) {
   const [segments, setSegments] = useState([])
   const [loading, setLoading] = useState(true)
@@ -98,6 +104,9 @@ export default function SegmentTable({ onDelete, onEdit, onDataChange }) {
                     </span>
                   </div>
                   <p className="font-body-md text-on-surface-variant/80 line-clamp-1">{segment.description || 'Phân khúc định vị các dòng sản phẩm theo tệp khách hàng và giá trị.'}</p>
+                  <p className="mt-2 font-label-caps text-[10px] tracking-[0.18em] text-on-surface-variant/60 uppercase">
+                    Phương thức giao hàng: <span className="text-primary">{getDeliveryMethodLabel(segment.deliveryMethod)}</span>
+                  </p>
                 </div>
 
                 <div className="flex flex-col items-center min-w-20">

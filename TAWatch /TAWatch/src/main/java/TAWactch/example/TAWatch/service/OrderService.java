@@ -307,9 +307,9 @@ public class OrderService {
         snap.put("sku",          watch.getSku());
         snap.put("name",         watch.getName());
         snap.put("brand",        watch.getBrand().getName());
-        snap.put("dialColor",    variant.getDialColor());
-        snap.put("strapColor",   variant.getStrapColor());
-        snap.put("strapMaterial",variant.getStrapMaterial());
+        snap.put("dialColor",    variant.getDialColor() != null ? variant.getDialColor().getName() : null);
+        snap.put("strapColor",   variant.getStrapColor() != null ? variant.getStrapColor().getName() : null);
+        snap.put("strapMaterial",variant.getStrapMaterial() != null ? variant.getStrapMaterial().name() : null);
         snap.put("caseSizeMm",   variant.getCaseSizeMm());
         snap.put("imageUrl",     variant.getImageUrl());
         snap.put("price",        variant.getPrice());
@@ -346,8 +346,8 @@ public class OrderService {
                     item.getId(),
                     v.getId(),
                     v.getWatch().getName(),
-                    v.getDialColor(),
-                    v.getStrapColor(),
+                    v.getDialColor() != null ? v.getDialColor().getName() : null,
+                    v.getStrapColor() != null ? v.getStrapColor().getName() : null,
                     v.getImageUrl(),
                     item.getProductSnapshot(),
                     item.getQuantity(),

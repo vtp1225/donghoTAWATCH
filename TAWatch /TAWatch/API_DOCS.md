@@ -223,6 +223,10 @@
 
 ## 3. Watches
 
+> **Enum values:**
+> - `movementType`: `AUTOMATIC` | `MANUAL` | `QUARTZ` | `SOLAR` | `SMART`
+> - `glassMaterial`: `SAPPHIRE` | `MINERAL` | `HARDLEX` | `ACRYLIC` | `SAPPHIRE_COATED`
+
 ### GET `/watches` — Lấy tất cả đồng hồ
 
 **Auth:** Public
@@ -241,7 +245,7 @@
       "segmentName": "Luxury",
       "description": "Dong ho the thao cao cap chong nuoc",
       "movementType": "AUTOMATIC",
-      "glassMaterial": "Sapphire",
+      "glassMaterial": "SAPPHIRE",
       "thicknessMm": 12.50,
       "waterResistanceAtm": 30.0,
       "powerReserveHours": 48,
@@ -256,6 +260,51 @@
       "categoryName": "The Thao"
     }
   ]
+}
+```
+
+---
+
+### GET `/watches/slug/{slug}` — Lấy đồng hồ theo slug
+
+**Auth:** Public
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "sku": "RLX-SUB-001",
+    "name": "Rolex Submariner",
+    "slug": "rolex-submariner",
+    "segmentId": 1,
+    "segmentName": "Luxury",
+    "description": "Dong ho the thao cao cap chong nuoc",
+    "movementType": "AUTOMATIC",
+    "glassMaterial": "SAPPHIRE",
+    "thicknessMm": 12.50,
+    "waterResistanceAtm": 30.0,
+    "powerReserveHours": 48,
+    "batteryType": null,
+    "features": "Chronograph, Date display",
+    "isActive": true,
+    "createdAt": "2026-05-25T07:00:00Z",
+    "updatedAt": "2026-05-25T07:00:00Z",
+    "brandId": 1,
+    "brandName": "Rolex",
+    "categoryId": 2,
+    "categoryName": "The Thao"
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2001,
+  "message": "Khong tim thay dong ho"
 }
 ```
 
@@ -278,7 +327,7 @@
     "segmentName": "Luxury",
     "description": "Dong ho the thao cao cap chong nuoc",
     "movementType": "AUTOMATIC",
-    "glassMaterial": "Sapphire",
+    "glassMaterial": "SAPPHIRE",
     "thicknessMm": 12.50,
     "waterResistanceAtm": 30.0,
     "powerReserveHours": 48,
@@ -319,7 +368,7 @@
   "categoryId": 2,
   "movementType": "AUTOMATIC",
   "description": "Dong ho the thao cao cap chong nuoc",
-  "glassMaterial": "Sapphire",
+  "glassMaterial": "SAPPHIRE",
   "thicknessMm": 12.50,
   "waterResistanceAtm": 30.0,
   "powerReserveHours": 48,
@@ -442,6 +491,38 @@
       "updatedAt": "2026-05-25T07:00:00Z"
     }
   ]
+}
+```
+
+---
+
+### GET `/brands/slug/{slug}` — Lấy thương hiệu theo slug
+
+**Auth:** Public
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "name": "Rolex",
+    "country": "Switzerland",
+    "description": "Thuong hieu dong ho cao cap hang dau the gioi",
+    "logoUrl": "https://example.com/rolex-logo.png",
+    "isActive": true,
+    "createdAt": "2026-05-25T07:00:00Z",
+    "updatedAt": "2026-05-25T07:00:00Z"
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2003,
+  "message": "Khong tim thay thuong hieu"
 }
 ```
 
@@ -1017,6 +1098,11 @@
 
 ## 6. Watch Variants
 
+> **Enum values:**
+> - `strapMaterial`: `STAINLESS_STEEL` | `LEATHER` | `RUBBER` | `NYLON` | `GOLD` | `TITANIUM` | `CERAMIC` | `MESH`
+>
+> `dialColorId` / `strapColorId` là ID lấy từ API `/colors`. Response trả về đầy đủ id + tên + mã hex của màu.
+
 ### GET `/watch-variants?watchId={id}` — Lấy tất cả biến thể theo đồng hồ
 
 **Auth:** Public
@@ -1031,9 +1117,13 @@
       "id": 1,
       "watchId": 1,
       "watchName": "Rolex Submariner",
-      "dialColor": "Black",
-      "strapColor": "Black",
-      "strapMaterial": "Oystersteel",
+      "dialColorId": 1,
+      "dialColorName": "Black",
+      "dialColorHex": "#000000",
+      "strapColorId": 1,
+      "strapColorName": "Black",
+      "strapColorHex": "#000000",
+      "strapMaterial": "STAINLESS_STEEL",
       "caseSizeMm": 41.00,
       "price": 250000000,
       "stockQuantity": 10,
@@ -1058,9 +1148,13 @@
     "id": 1,
     "watchId": 1,
     "watchName": "Rolex Submariner",
-    "dialColor": "Black",
-    "strapColor": "Black",
-    "strapMaterial": "Oystersteel",
+    "dialColorId": 1,
+    "dialColorName": "Black",
+    "dialColorHex": "#000000",
+    "strapColorId": 1,
+    "strapColorName": "Black",
+    "strapColorHex": "#000000",
+    "strapMaterial": "STAINLESS_STEEL",
     "caseSizeMm": 41.00,
     "price": 250000000,
     "stockQuantity": 10,
@@ -1087,15 +1181,17 @@
 ```json
 {
   "watchId": 1,
-  "dialColor": "Black",
-  "strapColor": "Black",
-  "strapMaterial": "Oystersteel",
+  "dialColorId": 1,
+  "strapColorId": 1,
+  "strapMaterial": "STAINLESS_STEEL",
   "caseSizeMm": 41.00,
   "price": 250000000,
   "stockQuantity": 10,
   "isActive": true
 }
 ```
+
+> `dialColorId`, `strapColorId`, `strapMaterial` là optional.
 
 **Response:**
 ```json
@@ -1106,15 +1202,24 @@
     "id": 1,
     "watchId": 1,
     "watchName": "Rolex Submariner",
-    "dialColor": "Black",
-    "strapColor": "Black",
-    "strapMaterial": "Oystersteel",
+    "dialColorId": 1,
+    "dialColorName": "Black",
+    "dialColorHex": "#000000",
+    "strapColorId": 1,
+    "strapColorName": "Black",
+    "strapColorHex": "#000000",
+    "strapMaterial": "STAINLESS_STEEL",
     "caseSizeMm": 41.00,
     "price": 250000000,
     "stockQuantity": 10,
     "isActive": true
   }
 }
+```
+
+**Lỗi (không tìm thấy màu):**
+```json
+{ "code": 11001, "message": "Khong tim thay mau sac" }
 ```
 
 ---
@@ -1127,9 +1232,9 @@
 ```json
 {
   "watchId": 1,
-  "dialColor": "Blue",
-  "strapColor": "Blue",
-  "strapMaterial": "Oystersteel",
+  "dialColorId": 3,
+  "strapColorId": 3,
+  "strapMaterial": "LEATHER",
   "caseSizeMm": 41.00,
   "price": 260000000,
   "stockQuantity": 5,
@@ -1146,9 +1251,13 @@
     "id": 1,
     "watchId": 1,
     "watchName": "Rolex Submariner",
-    "dialColor": "Blue",
-    "strapColor": "Blue",
-    "strapMaterial": "Oystersteel",
+    "dialColorId": 3,
+    "dialColorName": "Blue",
+    "dialColorHex": "#0000FF",
+    "strapColorId": 3,
+    "strapColorName": "Blue",
+    "strapColorHex": "#0000FF",
+    "strapMaterial": "LEATHER",
     "caseSizeMm": 41.00,
     "price": 260000000,
     "stockQuantity": 5,
@@ -1438,6 +1547,33 @@
       "deliveryMethod": "DIRECT_SHOP"
     }
   ]
+}
+```
+
+---
+
+### GET `/segments/slug/{slug}` — Lấy phân khúc theo slug
+
+**Auth:** Public
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 3,
+    "name": "Luxury",
+    "deliveryMethod": "DIRECT_SHOP"
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{
+  "code": 2005,
+  "message": "Khong tim thay phan khuc"
 }
 ```
 
@@ -2175,7 +2311,7 @@
           "brand": "Rolex",
           "dialColor": "Black",
           "strapColor": "Black",
-          "strapMaterial": "Oystersteel",
+          "strapMaterial": "STAINLESS_STEEL",
           "caseSizeMm": 41.00,
           "imageUrl": "https://example.com/rolex-sub-black.jpg",
           "price": 250000000
@@ -2246,7 +2382,7 @@
 
 ### GET `/orders/my/{userId}` — Lịch sử đơn hàng của user
 
-**Auth:** Authenticated
+**Auth:**    Authenticated
 
 **Response:**
 ```json
@@ -2718,6 +2854,639 @@
 
 ---
 
+## 15. Colors
+
+> Danh sách màu sắc chuẩn dùng để tham chiếu khi tạo `WatchVariant` (dialColor, strapColor). Mỗi màu có mã hex để frontend render color swatch.
+
+### GET `/colors` — Lấy tất cả màu sắc
+
+**Auth:** Public
+
+**Query Params:** `isActive` (optional, boolean) — `true` chỉ trả màu đang dùng
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "name": "Black",
+      "hexCode": "#000000",
+      "isActive": true,
+      "createdAt": "2026-06-01T07:00:00Z",
+      "updatedAt": "2026-06-01T07:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Silver",
+      "hexCode": "#C0C0C0",
+      "isActive": true,
+      "createdAt": "2026-06-01T07:00:00Z",
+      "updatedAt": "2026-06-01T07:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/colors/{id}` — Lấy màu theo ID
+
+**Auth:** Public
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "name": "Black",
+    "hexCode": "#000000",
+    "isActive": true,
+    "createdAt": "2026-06-01T07:00:00Z",
+    "updatedAt": "2026-06-01T07:00:00Z"
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{ "code": 11001, "message": "Khong tim thay mau sac" }
+```
+
+---
+
+### POST `/colors` — Tạo màu mới
+
+**Auth:** ADMIN
+
+**Request Body:**
+```json
+{
+  "name": "Rose Gold",
+  "hexCode": "#B76E79",
+  "isActive": true
+}
+```
+
+> `hexCode` phải có định dạng `#RRGGBB` hoặc `#RGB`. `hexCode` và `isActive` là optional.
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Tao mau thanh cong",
+  "data": {
+    "id": 3,
+    "name": "Rose Gold",
+    "hexCode": "#B76E79",
+    "isActive": true,
+    "createdAt": "2026-06-13T08:00:00Z",
+    "updatedAt": "2026-06-13T08:00:00Z"
+  }
+}
+```
+
+**Lỗi (tên trùng):**
+```json
+{ "code": 11002, "message": "Ten mau sac da ton tai" }
+```
+
+---
+
+### PUT `/colors/{id}` — Cập nhật màu
+
+**Auth:** ADMIN
+
+**Request Body:** _(giống POST)_
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Cap nhat mau thanh cong",
+  "data": {
+    "id": 3,
+    "name": "Rose Gold",
+    "hexCode": "#C07B83",
+    "isActive": true,
+    "createdAt": "2026-06-13T08:00:00Z",
+    "updatedAt": "2026-06-13T09:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE `/colors/{id}` — Xóa màu
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{ "code": 200, "message": "Xoa mau thanh cong" }
+```
+
+---
+
+## 16. Promotions
+
+> Quản lý chương trình khuyến mãi. Mỗi promotion có thể sinh ra nhiều coupon code.
+> - `promoType`: `PRODUCT` | `ORDER` | `CATEGORY` | `BRAND`
+> - `discountType`: `PERCENTAGE` | `FIXED_AMOUNT`
+
+### GET `/promotions` — Lấy tất cả chương trình khuyến mãi
+
+**Auth:** ADMIN
+
+**Query Params:** `isActive` (optional, boolean)
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "name": "Khuyen mai Tet 2026",
+      "promoType": "ORDER",
+      "discountType": "PERCENTAGE",
+      "discountValue": 10.00,
+      "minOrderValue": 5000000,
+      "maxDiscountAmount": 2000000,
+      "maxUses": 100,
+      "usedCount": 15,
+      "startDate": "2026-01-25T00:00:00Z",
+      "endDate": "2026-02-10T23:59:59Z",
+      "isActive": true,
+      "createdAt": "2026-01-20T07:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/promotions/{id}` — Lấy chương trình khuyến mãi theo ID
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "name": "Khuyen mai Tet 2026",
+    "promoType": "ORDER",
+    "discountType": "PERCENTAGE",
+    "discountValue": 10.00,
+    "minOrderValue": 5000000,
+    "maxDiscountAmount": 2000000,
+    "maxUses": 100,
+    "usedCount": 15,
+    "startDate": "2026-01-25T00:00:00Z",
+    "endDate": "2026-02-10T23:59:59Z",
+    "isActive": true,
+    "createdAt": "2026-01-20T07:00:00Z"
+  }
+}
+```
+
+---
+
+### POST `/promotions` — Tạo chương trình khuyến mãi mới
+
+**Auth:** ADMIN
+
+**Request Body:**
+```json
+{
+  "name": "Khuyen mai Tet 2026",
+  "promoType": "ORDER",
+  "discountType": "PERCENTAGE",
+  "discountValue": 10.00,
+  "minOrderValue": 5000000,
+  "maxDiscountAmount": 2000000,
+  "maxUses": 100,
+  "startDate": "2026-01-25T00:00:00Z",
+  "endDate": "2026-02-10T23:59:59Z",
+  "isActive": true
+}
+```
+
+> `minOrderValue`, `maxDiscountAmount`, `maxUses` là optional.
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Tao chuong trinh khuyen mai thanh cong",
+  "data": {
+    "id": 1,
+    "name": "Khuyen mai Tet 2026",
+    "promoType": "ORDER",
+    "discountType": "PERCENTAGE",
+    "discountValue": 10.00,
+    "minOrderValue": 5000000,
+    "maxDiscountAmount": 2000000,
+    "maxUses": 100,
+    "usedCount": 0,
+    "startDate": "2026-01-25T00:00:00Z",
+    "endDate": "2026-02-10T23:59:59Z",
+    "isActive": true,
+    "createdAt": "2026-01-20T07:00:00Z"
+  }
+}
+```
+
+---
+
+### PUT `/promotions/{id}` — Cập nhật chương trình khuyến mãi
+
+**Auth:** ADMIN
+
+**Request Body:** _(giống POST)_
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Cap nhat chuong trinh khuyen mai thanh cong",
+  "data": { "...promotion object..." }
+}
+```
+
+---
+
+### DELETE `/promotions/{id}` — Xóa chương trình khuyến mãi
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Xoa chuong trinh khuyen mai thanh cong"
+}
+```
+
+---
+
+## 16. Coupons
+
+> Mỗi coupon thuộc về 1 promotion. User dùng `code` để áp dụng khi đặt hàng.
+
+### GET `/coupons` — Lấy tất cả coupon
+
+**Auth:** ADMIN
+
+**Query Params:**
+- `promotionId` (optional, integer) — lọc theo promotion
+- `isUsed` (optional, boolean) — lọc theo trạng thái đã dùng
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "code": "TET2026-ABCD",
+      "promotionId": 1,
+      "promotionName": "Khuyen mai Tet 2026",
+      "userId": null,
+      "isUsed": false,
+      "usedAt": null,
+      "expiresAt": "2026-02-10T23:59:59Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/coupons/{id}` — Lấy coupon theo ID
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "code": "TET2026-ABCD",
+    "promotionId": 1,
+    "promotionName": "Khuyen mai Tet 2026",
+    "userId": null,
+    "isUsed": false,
+    "usedAt": null,
+    "expiresAt": "2026-02-10T23:59:59Z"
+  }
+}
+```
+
+---
+
+### POST `/coupons` — Tạo coupon mới
+
+**Auth:** ADMIN
+
+**Request Body:**
+```json
+{
+  "promotionId": 1,
+  "code": "TET2026-ABCD",
+  "userId": null,
+  "expiresAt": "2026-02-10T23:59:59Z"
+}
+```
+
+> `userId` để gán coupon cho 1 user cụ thể (optional). `expiresAt` là optional (mặc định theo promotion).
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Tao coupon thanh cong",
+  "data": {
+    "id": 1,
+    "code": "TET2026-ABCD",
+    "promotionId": 1,
+    "promotionName": "Khuyen mai Tet 2026",
+    "userId": null,
+    "isUsed": false,
+    "usedAt": null,
+    "expiresAt": "2026-02-10T23:59:59Z"
+  }
+}
+```
+
+---
+
+### DELETE `/coupons/{id}` — Xóa coupon
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Xoa coupon thanh cong"
+}
+```
+
+---
+
+### POST `/coupons/validate` — Kiểm tra coupon hợp lệ
+
+**Auth:** Public
+
+> Dùng trước khi đặt hàng để kiểm tra coupon và tính số tiền giảm.
+
+**Request Body:**
+```json
+{
+  "code": "TET2026-ABCD",
+  "subtotal": 10000000
+}
+```
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Coupon hop le",
+  "data": {
+    "couponId": 1,
+    "code": "TET2026-ABCD",
+    "promotionName": "Khuyen mai Tet 2026",
+    "discountAmount": 1000000,
+    "finalAmount": 9000000
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{ "code": 5005, "message": "Khong tim thay coupon" }
+```
+
+**Lỗi (đã sử dụng):**
+```json
+{ "code": 5006, "message": "Coupon nay da duoc su dung" }
+```
+
+**Lỗi (hết hạn):**
+```json
+{ "code": 5007, "message": "Coupon da het han" }
+```
+
+**Lỗi (không hoạt động):**
+```json
+{ "code": 5008, "message": "Coupon khong con hoat dong" }
+```
+
+**Lỗi (chưa đủ giá trị đơn hàng):**
+```json
+{ "code": 5009, "message": "Gia tri don hang chua dat muc toi thieu de ap dung coupon" }
+```
+
+---
+
+## 17. Reviews
+
+> User chỉ có thể review sau khi đơn hàng đã `DELIVERED`. Mỗi (user, watch, order) chỉ được review 1 lần. Review cần admin duyệt trước khi hiển thị công khai.
+
+### GET `/reviews` — Lấy tất cả review (Admin)
+
+**Auth:** ADMIN
+
+**Query Params:** `isApproved` (optional, boolean) — lọc theo trạng thái duyệt
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": [
+    {
+      "id": 1,
+      "userId": 1,
+      "userFullName": "Nguyen Van A",
+      "watchId": 1,
+      "watchName": "Rolex Submariner",
+      "orderId": 5,
+      "orderCode": "ORD-20260527-7654321",
+      "rating": 5,
+      "comment": "San pham rat tot, giao hang nhanh",
+      "isApproved": false,
+      "createdAt": "2026-06-01T10:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+### GET `/reviews/watch/{watchId}` — Lấy review theo đồng hồ
+
+**Auth:** Public
+
+**Query Params:** `isApproved` (optional, boolean, mặc định `true`)
+
+> Mặc định chỉ trả về review đã được duyệt. Admin có thể truyền `isApproved=false` để xem review chờ duyệt.
+
+**Response:** _(giống GET `/reviews`)_
+
+---
+
+### GET `/reviews/user/{userId}` — Lấy review của user
+
+**Auth:** Authenticated
+
+**Response:** _(giống GET `/reviews`)_
+
+---
+
+### GET `/reviews/{id}` — Lấy review theo ID
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Success",
+  "data": {
+    "id": 1,
+    "userId": 1,
+    "userFullName": "Nguyen Van A",
+    "watchId": 1,
+    "watchName": "Rolex Submariner",
+    "orderId": 5,
+    "orderCode": "ORD-20260527-7654321",
+    "rating": 5,
+    "comment": "San pham rat tot, giao hang nhanh",
+    "isApproved": false,
+    "createdAt": "2026-06-01T10:00:00Z"
+  }
+}
+```
+
+**Lỗi (không tìm thấy):**
+```json
+{ "code": 10001, "message": "Khong tim thay danh gia" }
+```
+
+---
+
+### POST `/reviews` — Tạo review mới
+
+**Auth:** Authenticated
+
+**Request Body:**
+```json
+{
+  "userId": 1,
+  "watchId": 1,
+  "orderId": 5,
+  "rating": 5,
+  "comment": "San pham rat tot, giao hang nhanh"
+}
+```
+
+> `rating`: từ 1 đến 5. `comment` là optional.
+
+**Response:**
+```json
+{
+  "code": 201,
+  "message": "Tao danh gia thanh cong, dang cho duyet",
+  "data": {
+    "id": 1,
+    "userId": 1,
+    "userFullName": "Nguyen Van A",
+    "watchId": 1,
+    "watchName": "Rolex Submariner",
+    "orderId": 5,
+    "orderCode": "ORD-20260527-7654321",
+    "rating": 5,
+    "comment": "San pham rat tot, giao hang nhanh",
+    "isApproved": false,
+    "createdAt": "2026-06-01T10:00:00Z"
+  }
+}
+```
+
+**Lỗi (đơn hàng chưa giao):**
+```json
+{ "code": 10003, "message": "Chi co the danh gia khi don hang da giao thanh cong" }
+```
+
+**Lỗi (đơn hàng không thuộc user):**
+```json
+{ "code": 10004, "message": "Don hang nay khong thuoc ve ban" }
+```
+
+**Lỗi (sản phẩm không có trong đơn):**
+```json
+{ "code": 10005, "message": "San pham nay khong co trong don hang" }
+```
+
+**Lỗi (đã review rồi):**
+```json
+{ "code": 10002, "message": "Ban da danh gia san pham nay cho don hang nay" }
+```
+
+---
+
+### PATCH `/reviews/{id}/approve` — Admin duyệt review
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{
+  "code": 200,
+  "message": "Duyet danh gia thanh cong",
+  "data": {
+    "id": 1,
+    "userId": 1,
+    "userFullName": "Nguyen Van A",
+    "watchId": 1,
+    "watchName": "Rolex Submariner",
+    "orderId": 5,
+    "orderCode": "ORD-20260527-7654321",
+    "rating": 5,
+    "comment": "San pham rat tot, giao hang nhanh",
+    "isApproved": true,
+    "createdAt": "2026-06-01T10:00:00Z"
+  }
+}
+```
+
+---
+
+### DELETE `/reviews/{id}` — Admin xóa review
+
+**Auth:** ADMIN
+
+**Response:**
+```json
+{ "code": 200, "message": "Xoa danh gia thanh cong" }
+```
+
+---
+
 ## Error Codes
 
 | Code | Ý nghĩa |
@@ -2775,3 +3544,13 @@
 | 8003 | Chỉ cập nhật mã vận đơn khi đơn hàng ở trạng thái SHIPPING |
 | 8004 | Chỉ gán shipper khi đơn hàng ở trạng thái CONFIRMED hoặc PROCESSING |
 | 9001 | Upload ảnh thất bại, vui lòng thử lại |
+| 9002 | Không tìm thấy chương trình khuyến mãi |
+| 9003 | Mã coupon này đã tồn tại |
+| 11001 | Không tìm thấy màu sắc |
+| 11002 | Tên màu sắc đã tồn tại |
+| 10001 | Không tìm thấy đánh giá |
+| 10002 | Bạn đã đánh giá sản phẩm này cho đơn hàng này |
+| 10003 | Chỉ có thể đánh giá khi đơn hàng đã giao thành công |
+| 10004 | Đơn hàng này không thuộc về bạn |
+| 10005 | Sản phẩm này không có trong đơn hàng |
+| 10006 | Điểm đánh giá phải từ 1 đến 5 |

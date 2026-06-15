@@ -32,6 +32,12 @@ public class WatchService {
     private WatchMapper watchMapper;
 
     public List<WatchResponse> getAllWatches() {
+        return watchRepo.findByIsActiveTrue().stream()
+                .map(watchMapper::toResponse)
+                .toList();
+    }
+
+    public List<WatchResponse> getAllWatchesAdmin() {
         return watchRepo.findAll().stream()
                 .map(watchMapper::toResponse)
                 .toList();
@@ -119,10 +125,21 @@ public class WatchService {
         return resolveWatchSlug(requestSlug, name, sku, id);
     }
 
-    public void deleteWatch(int id) {
-        if (!watchRepo.existsById(id)) {
-            throw new AppException(ErrorCode.WATCH_NOT_FOUND);
+    public WatchResponse updateWatchStatus(int id, Boolean isActive) {
+        Watch watch = watchRepo.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.WATCH_NOT_FOUND));
+        if (isActive != null) {
+            watch.setIsActive(isActive);
         }
-        watchRepo.deleteById(id);
+        watch.setUpdatedAt(Instant.now());
+        return watchMapper.toResponse(watchRepo.save(watch));
+    }
+
+    public void deleteWatch(int id) {
+        Watch watch = watchRepo.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.WATCH_NOT_FOUND));
+        watch.setIsActive(false);
+        watch.setUpdatedAt(Instant.now());
+        watchRepo.save(watch);
     }
 }

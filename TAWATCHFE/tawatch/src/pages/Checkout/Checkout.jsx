@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import { cartService } from '../../services/cartService.js'
+import { couponService } from '../../services/couponService.js'
 import { orderService } from '../../services/orderService.js'
 import { addressService } from '../../services/userService.js'
 
@@ -73,7 +74,7 @@ function AddressPicker({ userId, selectedId, onSelect }) {
       })
       .catch(() => setAddresses([]))
       .finally(() => setLoading(false))
-  }, [userId])
+  }, [onSelect, selectedId, userId])
 
   const handleSaveAddress = async () => {
     if (!newAddr.recipientName || !newAddr.phone || !newAddr.addressDetail || !newAddr.province || !newAddr.district || !newAddr.ward) {
@@ -265,8 +266,14 @@ function OrderSuccess({ order, onContinue }) {
           TIẾP TỤC MUA SẮM
         </button>
         <Link
-          to="/orders"
+          to="/cart"
           className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant underline underline-offset-4 transition-opacity hover:opacity-70"
+        >
+          Xem lại giỏ hàng
+        </Link>
+        <Link
+          to="/orders"
+          className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant/60 underline underline-offset-4 transition-opacity hover:opacity-70"
         >
           Xem lịch sử đơn hàng
         </Link>
@@ -278,6 +285,7 @@ function OrderSuccess({ order, onContinue }) {
 // ---------- Main Checkout ----------
 export default function Checkout() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated, user } = useAuth()
 
   const [cart, setCart] = useState(null)
@@ -288,6 +296,10 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [deliveryMethod, setDeliveryMethod] = useState('EXTERNAL_SHIPPER')
   const [note, setNote] = useState('')
+  const [couponCode, setCouponCode] = useState('')
+  const [appliedCoupon, setAppliedCoupon] = useState(null)
+  const [couponLoading, setCouponLoading] = useState(false)
+  const [couponError, setCouponError] = useState('')
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -304,12 +316,63 @@ export default function Checkout() {
     setGuest((prev) => ({ ...prev, [name]: value }))
   }
 
-  const items = cart?.items ?? []
-  const subtotal = cart?.totalAmount ?? 0
+  const handleCouponCodeChange = (value) => {
+    setCouponCode(value)
+    setCouponError('')
+
+    if (appliedCoupon?.code?.toLowerCase() !== value.trim().toLowerCase()) {
+      setAppliedCoupon(null)
+    }
+  }
+
+  const selectedItemIds = location.state?.selectedItemIds
+  const allCartItems = cart?.items ?? []
+  const items = selectedItemIds
+    ? allCartItems.filter((i) => selectedItemIds.includes(i.id))
+    : allCartItems
+  const subtotal = items.reduce((sum, i) => sum + (i.subtotal ?? i.unitPrice * i.quantity), 0)
+  const discountAmount = appliedCoupon?.discountAmount ?? 0
+  const totalAmount = Math.max(subtotal - discountAmount, 0)
+
+  const applyCoupon = async () => {
+    const code = couponCode.trim()
+
+    if (!code) {
+      setCouponError('Vui lòng nhập mã giảm giá.')
+      return null
+    }
+
+    if (subtotal <= 0) {
+      setCouponError('Không thể áp dụng mã giảm giá cho đơn hàng rỗng.')
+      return null
+    }
+
+    setCouponLoading(true)
+    setCouponError('')
+
+    try {
+      const result = await couponService.validate({ code, subtotal })
+      setAppliedCoupon(result)
+      setCouponCode(result.code ?? code)
+      return result
+    } catch (err) {
+      setAppliedCoupon(null)
+      setCouponError(err?.message || 'Không thể áp dụng mã giảm giá.')
+      return null
+    } finally {
+      setCouponLoading(false)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitError('')
+
+    let coupon = appliedCoupon
+    if (couponCode.trim() && (!coupon || coupon.code?.toLowerCase() !== couponCode.trim().toLowerCase())) {
+      coupon = await applyCoupon()
+      if (!coupon) return
+    }
 
     if (items.length === 0) {
       setSubmitError('Giỏ hàng đang trống.')
@@ -332,12 +395,19 @@ export default function Checkout() {
     setSubmitting(true)
     try {
       const orderItems = items.map((i) => ({ watchVariantId: i.watchVariantId, quantity: i.quantity }))
+      const couponId = coupon?.couponId ?? null
 
       const payload = isAuthenticated
-        ? { userId: user.id, addressId: selectedAddressId, paymentMethod, deliveryMethod, couponId: null, note: note || null, items: orderItems }
-        : { userId: null, ...guest, paymentMethod, deliveryMethod, couponId: null, note: note || null, items: orderItems }
+        ? { userId: user.id, addressId: selectedAddressId, paymentMethod, deliveryMethod, couponId, note: note || null, items: orderItems }
+        : { userId: null, ...guest, paymentMethod, deliveryMethod, couponId, note: note || null, items: orderItems }
 
       const order = await orderService.createOrder(payload)
+
+      // Remove only the ordered items from cart (not clear all)
+      if (cart?.id) {
+        await Promise.all(items.map((i) => cartService.removeItem(cart.id, i.id).catch(() => {})))
+      }
+
       window.dispatchEvent(new Event('cart:updated'))
       setSuccessOrder(order)
     } catch (err) {
@@ -380,11 +450,17 @@ export default function Checkout() {
         <Navbar />
         <main className="mx-auto max-w-7xl px-8 pb-section-gap-desktop pt-32 md:px-[80px]">
           <div className="py-24 text-center">
-            <p className="font-headline-sm text-headline-sm text-on-surface">Giỏ hàng đang trống</p>
-            <p className="mt-3 font-body-md text-on-surface-variant">Hãy chọn sản phẩm trước khi thanh toán.</p>
-            <Link className="mt-8 inline-block border border-primary px-8 py-4 font-label-caps text-[10px] tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-background" to="/products">
-              KHÁM PHÁ SẢN PHẨM
-            </Link>
+            <span className="material-symbols-outlined mb-6 block text-5xl text-on-surface-variant/20">shopping_bag</span>
+            <p className="font-headline-sm text-headline-sm text-on-surface">Chưa có sản phẩm nào được chọn</p>
+            <p className="mt-3 font-body-md text-on-surface-variant">Vui lòng quay lại giỏ hàng và chọn sản phẩm để thanh toán.</p>
+            <div className="mt-8 flex flex-col items-center gap-4">
+              <Link className="border border-primary px-8 py-4 font-label-caps text-[10px] tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-background" to="/cart">
+                QUAY LẠI GIỎ HÀNG
+              </Link>
+              <Link className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant underline underline-offset-4 transition-opacity hover:opacity-70" to="/products">
+                Khám phá sản phẩm
+              </Link>
+            </div>
           </div>
         </main>
         <Footer />
@@ -452,9 +528,40 @@ export default function Checkout() {
                 </div>
               </section>
 
+              <section>
+                <SectionLabel step="03">Mã giảm giá</SectionLabel>
+                <div className="space-y-3">
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <input
+                      type="text"
+                      value={couponCode}
+                      onChange={(e) => handleCouponCodeChange(e.target.value)}
+                      placeholder="Nhập mã giảm giá"
+                      className="flex-1 border border-outline-variant/20 bg-transparent px-4 py-3 font-body-md text-sm text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/30 focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={couponLoading}
+                      className="border border-primary px-6 py-3 font-label-caps text-[10px] tracking-[0.2em] text-primary transition-colors hover:bg-primary hover:text-background disabled:opacity-50"
+                    >
+                      {couponLoading ? 'ĐANG ÁP DỤNG...' : 'ÁP DỤNG'}
+                    </button>
+                  </div>
+                  {couponError && <p className="font-body-md text-xs text-red-400">{couponError}</p>}
+                  {appliedCoupon && (
+                    <div className="border border-primary/20 bg-primary/5 px-4 py-3 font-body-md text-xs text-on-surface-variant">
+                      <p className="font-label-caps text-[9px] tracking-[0.2em] text-primary">ĐÃ ÁP DỤNG</p>
+                      <p className="mt-1 text-on-surface">{appliedCoupon.promotionName || appliedCoupon.code}</p>
+                      <p className="mt-1 text-primary">Giảm {formatVnd(appliedCoupon.discountAmount)}</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+
               {/* Payment method */}
               <section>
-                <SectionLabel step="03">Phương thức thanh toán</SectionLabel>
+                <SectionLabel step="04">Phương thức thanh toán</SectionLabel>
                 <div className="space-y-3">
                   {PAYMENT_METHODS.map((m) => (
                     <RadioCard key={m.value} selected={paymentMethod === m.value} onClick={() => setPaymentMethod(m.value)}>
@@ -475,7 +582,7 @@ export default function Checkout() {
 
               {/* Note */}
               <section>
-                <SectionLabel step="04">Ghi chú</SectionLabel>
+                <SectionLabel step="05">Ghi chú</SectionLabel>
                 <textarea
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -489,9 +596,14 @@ export default function Checkout() {
             {/* Right: Order summary */}
             <aside className="lg:col-span-5">
               <div className="sticky top-32 border border-outline-variant/10 bg-surface-container-low p-8">
-                <h2 className="mb-6 border-b border-outline-variant/15 pb-4 font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant">
-                  ORDER SUMMARY
-                </h2>
+                <div className="mb-6 border-b border-outline-variant/15 pb-4">
+                  <h2 className="font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant">ORDER SUMMARY</h2>
+                  {selectedItemIds && allCartItems.length > items.length && (
+                    <p className="mt-1.5 font-body-md text-[11px] text-on-surface-variant/60">
+                      {items.length} / {allCartItems.length} sản phẩm được chọn
+                    </p>
+                  )}
+                </div>
 
                 {/* Items */}
                 <div className="mb-6 max-h-72 space-y-4 overflow-y-auto pr-1">
@@ -519,6 +631,12 @@ export default function Checkout() {
                     <span className="text-on-surface-variant">Tạm tính</span>
                     <span className="text-on-surface">{formatVnd(subtotal)}</span>
                   </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between font-body-md text-sm">
+                      <span className="text-on-surface-variant">Giảm giá</span>
+                      <span className="text-primary">− {formatVnd(discountAmount)}</span>
+                    </div>
+                  )}
                   <div className="flex justify-between font-body-md text-sm">
                     <span className="text-on-surface-variant">Phí vận chuyển</span>
                     <span className="text-primary">Miễn phí</span>
@@ -529,7 +647,7 @@ export default function Checkout() {
 
                 <div className="mb-8 mt-6 flex items-end justify-between">
                   <span className="font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant">TỔNG CỘNG</span>
-                  <span className="font-headline-sm text-headline-sm text-primary">{formatVnd(subtotal)}</span>
+                  <span className="font-headline-sm text-headline-sm text-primary">{formatVnd(totalAmount)}</span>
                 </div>
 
                 {submitError && (

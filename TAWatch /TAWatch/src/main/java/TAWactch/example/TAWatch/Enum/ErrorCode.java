@@ -71,6 +71,18 @@ public enum ErrorCode {
 
     // Cloudinary
     IMAGE_UPLOAD_FAILED(9001, "Upload anh that bai, vui long thu lai"),
+
+    // Color
+    COLOR_NOT_FOUND(11001, "Khong tim thay mau sac"),
+    COLOR_NAME_EXISTS(11002, "Ten mau sac da ton tai"),
+
+    // Review
+    REVIEW_NOT_FOUND(10001, "Khong tim thay danh gia"),
+    REVIEW_ALREADY_EXISTS(10002, "Ban da danh gia san pham nay cho don hang nay"),
+    ORDER_NOT_DELIVERED(10003, "Chi co the danh gia khi don hang da giao thanh cong"),
+    ORDER_NOT_BELONG_TO_USER(10004, "Don hang nay khong thuoc ve ban"),
+    WATCH_NOT_IN_ORDER(10005, "San pham nay khong co trong don hang"),
+    RATING_INVALID(10006, "Diem danh gia phai tu 1 den 5"),
     ;
 
     private final int code;

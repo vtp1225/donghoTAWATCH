@@ -1,5 +1,6 @@
 package TAWactch.example.TAWatch.entity;
 
+import TAWactch.example.TAWatch.Enum.StrapMaterialType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -29,17 +30,17 @@ public class WatchVariant {
     @JoinColumn(name = "watch_id", nullable = false)
     private Watch watch;
 
-    @Size(max = 80)
-    @Column(name = "dial_color", length = 80)
-    private String dialColor;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "dial_color_id")
+    private Color dialColor;
 
-    @Size(max = 80)
-    @Column(name = "strap_color", length = 80)
-    private String strapColor;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "strap_color_id")
+    private Color strapColor;
 
-    @Size(max = 100)
-    @Column(name = "strap_material", length = 100)
-    private String strapMaterial;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "strap_material", length = 50)
+    private StrapMaterialType strapMaterial;
 
     @Column(name = "case_size_mm", precision = 5, scale = 2)
     private BigDecimal caseSizeMm;
