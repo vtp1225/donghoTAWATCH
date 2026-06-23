@@ -15,16 +15,16 @@ import TAWactch.example.TAWatch.entity.PaymentTransaction;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.repository.OrderRepo;
 import TAWactch.example.TAWatch.repository.PaymentTransactionRepo;
+import TAWactch.example.TAWatch.utils.VNPayUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 @Service
 public class PaymentService {
@@ -41,11 +41,23 @@ public class PaymentService {
     @Value("${app.bank.account-name:CONG TY TAWATCH}")
     private String bankAccountName;
 
-    @Value("${app.vnpay.payment-url:http://localhost:8080/tawatch/payments/vnpay/callback}")
+    @Value("${app.vnpay.tmn-code:TAWATCH00}")
+    private String vnpayTmnCode;
+
+    @Value("${app.vnpay.hash-secret:your_hash_secret_here}")
+    private String vnpayHashSecret;
+
+    @Value("${app.vnpay.payment-url:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}")
     private String vnpayPaymentUrl;
 
+    @Value("${app.vnpay.return-url:http://localhost:5173/payment/vnpay-return}")
+    private String vnpayReturnUrl;
+
+    private static final DateTimeFormatter VNP_DATE_FMT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss").withZone(ZoneId.of("Asia/Ho_Chi_Minh"));
+
     // -------------------------------------------------------
-    // VNPay — Khởi tạo thanh toán
+    // VNPay — Khởi tạo thanh toán (build URL thật)
     // -------------------------------------------------------
     @Transactional
     public VnpayInitiateResponse initiateVnpay(VnpayPaymentRequest request) {
@@ -53,11 +65,12 @@ public class PaymentService {
         validateOrderForPayment(order, PaymentMethodType.VNPAY);
 
         String txCode = "VNPAY-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        String createDate = VNP_DATE_FMT.format(Instant.now());
 
+        // Lưu transaction vào DB trước
         Map<String, Object> meta = new HashMap<>();
-        meta.put("partnerCode", "TAWATCH");
-        meta.put("requestId", txCode);
         meta.put("orderId", order.getOrderCode());
+        meta.put("createDate", createDate);
 
         PaymentTransaction tx = new PaymentTransaction();
         tx.setOrder(order);
@@ -73,19 +86,67 @@ public class PaymentService {
         order.setPaymentStatus(PaymentStatusType.PENDING);
         orderRepo.save(order);
 
-        // Trong thực tế sẽ gọi VNPay API để lấy paymentUrl
-        String paymentUrl = vnpayPaymentUrl + "?txCode=" + txCode;
+        // Build params VNPay (không bao gồm vnp_SecureHash)
+        Map<String, String> vnpParams = new TreeMap<>();
+        vnpParams.put("vnp_Version", "2.1.0");
+        vnpParams.put("vnp_Command", "pay");
+        vnpParams.put("vnp_TmnCode", vnpayTmnCode);
+        // VNPay yêu cầu amount * 100 (không có phần thập phân)
+        long amountVnd = order.getTotalAmount().longValue() * 100L;
+        vnpParams.put("vnp_Amount", String.valueOf(amountVnd));
+        vnpParams.put("vnp_CurrCode", "VND");
+        vnpParams.put("vnp_TxnRef", txCode);
+        vnpParams.put("vnp_OrderInfo", "Thanh toan don hang " + order.getOrderCode());
+        vnpParams.put("vnp_OrderType", "other");
+        vnpParams.put("vnp_Locale", "vn");
+        vnpParams.put("vnp_ReturnUrl", vnpayReturnUrl);
+        vnpParams.put("vnp_IpAddr", "127.0.0.1");
+        vnpParams.put("vnp_CreateDate", createDate);
+
+        // Hash trên raw values (không encode) — URL params encode riêng
+        String rawHashString = VNPayUtil.buildRawHashString(vnpParams);
+        String secureHash = VNPayUtil.hmacSHA512(vnpayHashSecret, rawHashString);
+        String urlParams = VNPayUtil.buildQueryString(vnpParams);
+
+        String paymentUrl = vnpayPaymentUrl + "?" + urlParams + "&vnp_SecureHash=" + secureHash;
 
         return new VnpayInitiateResponse(tx.getId(), order.getOrderCode(), order.getTotalAmount(), paymentUrl, tx.getStatus());
     }
 
     // -------------------------------------------------------
-    // VNPay — Callback từ gateway (gateway gọi vào)
+    // VNPay — Callback từ gateway (VNPay redirect về frontend, frontend gọi vào đây)
     // -------------------------------------------------------
     @Transactional
-    public PaymentTransactionResponse handleVnpayCallback(Map<String, Object> payload) {
-        String txCode = (String) payload.get("transactionCode");
-        String resultCode = String.valueOf(payload.getOrDefault("resultCode", "1"));
+    public PaymentTransactionResponse handleVnpayCallback(Map<String, String> params) {
+        // Debug log — xem params và hash thực tế để chẩn đoán sai chữ ký
+        Map<String, String> filtered = new java.util.TreeMap<>(params);
+        filtered.remove("vnp_SecureHash");
+        filtered.remove("vnp_SecureHashType");
+        String rawHashStr = VNPayUtil.buildRawHashString(filtered);
+        String encodedHashStr = VNPayUtil.buildQueryString(filtered);
+        System.out.println("=== VNPay callback params ===");
+        params.forEach((k, v) -> System.out.println("  " + k + " = " + v));
+        System.out.println("--- Raw hash string ---");
+        System.out.println(rawHashStr);
+        System.out.println("--- Encoded hash string ---");
+        System.out.println(encodedHashStr);
+        System.out.println("--- Received  vnp_SecureHash ---");
+        System.out.println(params.get("vnp_SecureHash"));
+        System.out.println("--- Computed (raw)     ---");
+        System.out.println(VNPayUtil.hmacSHA512(vnpayHashSecret, rawHashStr));
+        System.out.println("--- Computed (encoded) ---");
+        System.out.println(VNPayUtil.hmacSHA512(vnpayHashSecret, encodedHashStr));
+        System.out.println("--- Secret prefix (6 chars) ---");
+        System.out.println(vnpayHashSecret.substring(0, Math.min(6, vnpayHashSecret.length())));
+        System.out.println("=============================");
+
+        // Verify checksum trước
+        if (!VNPayUtil.verifySignature(params, vnpayHashSecret)) {
+            throw new AppException(ErrorCode.PAYMENT_INVALID_SIGNATURE);
+        }
+
+        String txCode = params.get("vnp_TxnRef");
+        String responseCode = params.getOrDefault("vnp_ResponseCode", "99");
 
         PaymentTransaction tx = transactionRepo.findByTransactionCode(txCode)
                 .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_TRANSACTION_NOT_FOUND));
@@ -94,9 +155,9 @@ public class PaymentService {
             throw new AppException(ErrorCode.PAYMENT_ALREADY_PROCESSED);
         }
 
-        boolean success = "0".equals(resultCode);
+        boolean success = "00".equals(responseCode);
         tx.setStatus(success ? "COMPLETED" : "FAILED");
-        tx.setResponseData(payload);
+        tx.setResponseData(new HashMap<>(params));
         tx.setUpdatedAt(Instant.now());
         transactionRepo.save(tx);
 

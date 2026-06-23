@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
@@ -6,7 +6,9 @@ import useAuth from '../../hooks/useAuth.js'
 import { cartService } from '../../services/cartService.js'
 import { couponService } from '../../services/couponService.js'
 import { orderService } from '../../services/orderService.js'
+import { paymentService } from '../../services/paymentService.js'
 import { addressService } from '../../services/userService.js'
+import { ghnService } from '../../services/ghnService.js'
 
 function formatVnd(value) {
   if (value == null) return '0 đ'
@@ -52,6 +54,100 @@ function RadioCard({ selected, onClick, children }) {
   )
 }
 
+// ---------- GHN Dropdown (dùng chung trong AddressPicker và GuestForm) ----------
+function GhnLocationSelects({ onChange }) {
+  const [provinces, setProvinces] = useState([])
+  const [districts, setDistricts] = useState([])
+  const [wards, setWards] = useState([])
+  const [loadingProvinces, setLoadingProvinces] = useState(true)
+  const [loadingDistricts, setLoadingDistricts] = useState(false)
+  const [loadingWards, setLoadingWards] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    setLoadingProvinces(true)
+    ghnService.getProvinces()
+      .then((list) => {
+        setProvinces(Array.isArray(list) && list.length > 0 ? list : [])
+        if (!list || list.length === 0) setError('Không thể tải danh sách tỉnh thành. Kiểm tra kết nối backend.')
+      })
+      .catch(() => setError('Không thể tải danh sách tỉnh thành. Kiểm tra kết nối backend.'))
+      .finally(() => setLoadingProvinces(false))
+  }, [])
+
+  const handleProvinceChange = async (e) => {
+    const opt = e.target.options[e.target.selectedIndex]
+    const provinceId = Number(opt.value)
+    const provinceName = opt.text
+    setDistricts([])
+    setWards([])
+    onChange({ province: provinceName, district: '', ward: '', ghnDistrictId: null, ghnWardCode: '' })
+    setLoadingDistricts(true)
+    const list = await ghnService.getDistricts(provinceId).catch(() => [])
+    setDistricts(Array.isArray(list) ? list : [])
+    setLoadingDistricts(false)
+  }
+
+  const handleDistrictChange = async (e) => {
+    const opt = e.target.options[e.target.selectedIndex]
+    const districtId = Number(opt.value)
+    const districtName = opt.text
+    setWards([])
+    onChange({ district: districtName, ward: '', ghnDistrictId: districtId, ghnWardCode: '' })
+    setLoadingWards(true)
+    const list = await ghnService.getWards(districtId).catch(() => [])
+    setWards(Array.isArray(list) ? list : [])
+    setLoadingWards(false)
+  }
+
+  const handleWardChange = (e) => {
+    const opt = e.target.options[e.target.selectedIndex]
+    onChange({ ward: opt.text, ghnWardCode: opt.value })
+  }
+
+  const selectClass = "w-full border-b border-outline-variant/25 bg-transparent py-2 font-body-md text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:opacity-40 disabled:cursor-not-allowed"
+
+  if (error) {
+    return (
+      <div className="col-span-2 rounded border border-red-400/30 bg-red-400/5 px-4 py-3">
+        <p className="font-body-md text-xs text-red-400">{error}</p>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div>
+        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Tỉnh / Thành phố</label>
+        <select onChange={handleProvinceChange} defaultValue="" disabled={loadingProvinces} className={selectClass}>
+          <option value="" disabled>{loadingProvinces ? 'Đang tải...' : 'Chọn tỉnh / thành phố'}</option>
+          {provinces.map((p) => (
+            <option key={p.provinceId} value={p.provinceId}>{p.provinceName}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Quận / Huyện</label>
+        <select onChange={handleDistrictChange} defaultValue="" disabled={districts.length === 0 || loadingDistricts} className={selectClass}>
+          <option value="" disabled>{loadingDistricts ? 'Đang tải...' : 'Chọn quận / huyện'}</option>
+          {districts.map((d) => (
+            <option key={d.districtId} value={d.districtId}>{d.districtName}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Phường / Xã</label>
+        <select onChange={handleWardChange} defaultValue="" disabled={wards.length === 0 || loadingWards} className={selectClass}>
+          <option value="" disabled>{loadingWards ? 'Đang tải...' : 'Chọn phường / xã'}</option>
+          {wards.map((w) => (
+            <option key={w.wardCode} value={w.wardCode}>{w.wardName}</option>
+          ))}
+        </select>
+      </div>
+    </>
+  )
+}
+
 // ---------- Address picker (logged-in) ----------
 function AddressPicker({ userId, selectedId, onSelect }) {
   const [addresses, setAddresses] = useState([])
@@ -61,7 +157,8 @@ function AddressPicker({ userId, selectedId, onSelect }) {
   const [formError, setFormError] = useState('')
   const [newAddr, setNewAddr] = useState({
     recipientName: '', phone: '', addressDetail: '',
-    province: '', district: '', ward: '', isDefault: false,
+    province: '', district: '', ward: '',
+    ghnDistrictId: null, ghnWardCode: '', isDefault: false,
   })
 
   useEffect(() => {
@@ -70,7 +167,7 @@ function AddressPicker({ userId, selectedId, onSelect }) {
         const list = Array.isArray(data) ? data : []
         setAddresses(list)
         const def = list.find((a) => a.isDefault) ?? list[0]
-        if (def && !selectedId) onSelect(def.id)
+        if (def && !selectedId) onSelect(def)
       })
       .catch(() => setAddresses([]))
       .finally(() => setLoading(false))
@@ -86,9 +183,9 @@ function AddressPicker({ userId, selectedId, onSelect }) {
     try {
       const created = await addressService.createAddress(userId, newAddr)
       setAddresses((prev) => [...prev, created])
-      onSelect(created.id)
+      onSelect(created)
       setShowForm(false)
-      setNewAddr({ recipientName: '', phone: '', addressDetail: '', province: '', district: '', ward: '', isDefault: false })
+      setNewAddr({ recipientName: '', phone: '', addressDetail: '', province: '', district: '', ward: '', ghnDistrictId: null, ghnWardCode: '', isDefault: false })
     } catch (err) {
       setFormError(err?.message || 'Không thể lưu địa chỉ.')
     } finally {
@@ -103,7 +200,7 @@ function AddressPicker({ userId, selectedId, onSelect }) {
   return (
     <div className="space-y-3">
       {addresses.map((addr) => (
-        <RadioCard key={addr.id} selected={selectedId === addr.id} onClick={() => onSelect(addr.id)}>
+        <RadioCard key={addr.id} selected={selectedId === addr.id} onClick={() => onSelect(addr)}>
           <div className="flex items-start gap-3">
             <div className={`mt-0.5 h-4 w-4 flex-shrink-0 rounded-full border-2 transition-colors ${selectedId === addr.id ? 'border-primary bg-primary' : 'border-outline-variant/40'}`} />
             <div>
@@ -140,11 +237,8 @@ function AddressPicker({ userId, selectedId, onSelect }) {
             {[
               { field: 'recipientName', label: 'Họ tên người nhận' },
               { field: 'phone', label: 'Số điện thoại' },
-              { field: 'province', label: 'Tỉnh / Thành phố' },
-              { field: 'district', label: 'Quận / Huyện' },
-              { field: 'ward', label: 'Phường / Xã' },
             ].map(({ field, label }) => (
-              <div key={field} className={field === 'ward' ? 'col-span-2 md:col-span-1' : ''}>
+              <div key={field}>
                 <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">{label}</label>
                 <input
                   type="text"
@@ -154,6 +248,9 @@ function AddressPicker({ userId, selectedId, onSelect }) {
                 />
               </div>
             ))}
+            <GhnLocationSelects
+              onChange={(fields) => setNewAddr((p) => ({ ...p, ...fields }))}
+            />
             <div className="col-span-2">
               <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Địa chỉ chi tiết</label>
               <input
@@ -200,30 +297,49 @@ function AddressPicker({ userId, selectedId, onSelect }) {
 
 // ---------- Guest form ----------
 function GuestForm({ data, onChange }) {
-  const fields = [
-    { name: 'guestName', label: 'Họ tên', type: 'text', placeholder: 'Nguyen Van A', required: true },
-    { name: 'guestEmail', label: 'Email', type: 'email', placeholder: 'email@example.com', required: true },
-    { name: 'guestPhone', label: 'Số điện thoại', type: 'tel', placeholder: '0901234567', required: true },
-    { name: 'guestAddressDetail', label: 'Địa chỉ nhận hàng', type: 'text', placeholder: '123 Nguyễn Trãi, Q.1, TP.HCM', required: true },
+  const textFields = [
+    { name: 'guestName', label: 'Họ tên', type: 'text', placeholder: 'Nguyen Van A' },
+    { name: 'guestEmail', label: 'Email', type: 'email', placeholder: 'email@example.com' },
+    { name: 'guestPhone', label: 'Số điện thoại', type: 'tel', placeholder: '0901234567' },
   ]
 
   return (
     <div className="space-y-6">
-      {fields.map(({ name, label, type, placeholder, required }) => (
+      {textFields.map(({ name, label, type, placeholder }) => (
         <div key={name}>
           <label className="mb-2 block font-label-caps text-[9px] tracking-[0.3em] text-on-surface-variant/60 uppercase">
-            {label} {required && <span className="text-primary">*</span>}
+            {label} <span className="text-primary">*</span>
           </label>
           <input
             type={type}
             value={data[name]}
             onChange={(e) => onChange(name, e.target.value)}
             placeholder={placeholder}
-            required={required}
             className="w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/30 focus:border-primary"
           />
         </div>
       ))}
+      <div className="grid grid-cols-2 gap-4">
+        <GhnLocationSelects
+          onChange={(fields) => {
+            Object.entries(fields).forEach(([k, v]) => onChange(
+              k === 'province' ? 'guestProvince' : k === 'district' ? 'guestDistrict' : k === 'ward' ? 'guestWard' : k, v
+            ))
+          }}
+        />
+      </div>
+      <div>
+        <label className="mb-2 block font-label-caps text-[9px] tracking-[0.3em] text-on-surface-variant/60 uppercase">
+          Địa chỉ chi tiết <span className="text-primary">*</span>
+        </label>
+        <input
+          type="text"
+          value={data.guestAddressDetail}
+          onChange={(e) => onChange('guestAddressDetail', e.target.value)}
+          placeholder="Số nhà, tên đường..."
+          className="w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/30 focus:border-primary"
+        />
+      </div>
     </div>
   )
 }
@@ -291,8 +407,10 @@ export default function Checkout() {
   const [cart, setCart] = useState(null)
   const [cartLoading, setCartLoading] = useState(true)
 
-  const [selectedAddressId, setSelectedAddressId] = useState(null)
-  const [guest, setGuest] = useState({ guestName: '', guestEmail: '', guestPhone: '', guestAddressDetail: '' })
+  const [selectedAddress, setSelectedAddress] = useState(null)
+  const [guest, setGuest] = useState({ guestName: '', guestEmail: '', guestPhone: '', guestAddressDetail: '', guestProvince: '', guestDistrict: '', guestWard: '', ghnDistrictId: null, ghnWardCode: '' })
+  const [shippingFee, setShippingFee] = useState(0)
+  const [shippingFeeLoading, setShippingFeeLoading] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('COD')
   const [deliveryMethod, setDeliveryMethod] = useState('EXTERNAL_SHIPPER')
   const [note, setNote] = useState('')
@@ -325,6 +443,22 @@ export default function Checkout() {
     }
   }
 
+  // Tính phí ship khi địa chỉ hoặc phương thức vận chuyển thay đổi
+  useEffect(() => {
+    if (deliveryMethod !== 'EXTERNAL_SHIPPER') { setShippingFee(0); return }
+
+    const districtId = isAuthenticated ? selectedAddress?.ghnDistrictId : guest.ghnDistrictId
+    const wardCode = isAuthenticated ? selectedAddress?.ghnWardCode : guest.ghnWardCode
+
+    if (!districtId || !wardCode) { setShippingFee(0); return }
+
+    setShippingFeeLoading(true)
+    ghnService.calculateFee({ toDistrictId: districtId, toWardCode: wardCode, weight: 500 })
+      .then((fee) => setShippingFee(fee ?? 0))
+      .catch(() => setShippingFee(0))
+      .finally(() => setShippingFeeLoading(false))
+  }, [selectedAddress, guest.ghnDistrictId, guest.ghnWardCode, deliveryMethod, isAuthenticated])
+
   const selectedItemIds = location.state?.selectedItemIds
   const allCartItems = cart?.items ?? []
   const items = selectedItemIds
@@ -332,7 +466,7 @@ export default function Checkout() {
     : allCartItems
   const subtotal = items.reduce((sum, i) => sum + (i.subtotal ?? i.unitPrice * i.quantity), 0)
   const discountAmount = appliedCoupon?.discountAmount ?? 0
-  const totalAmount = Math.max(subtotal - discountAmount, 0)
+  const totalAmount = Math.max(subtotal + shippingFee - discountAmount, 0)
 
   const applyCoupon = async () => {
     const code = couponCode.trim()
@@ -379,7 +513,7 @@ export default function Checkout() {
       return
     }
 
-    if (isAuthenticated && !selectedAddressId) {
+    if (isAuthenticated && !selectedAddress) {
       setSubmitError('Vui lòng chọn địa chỉ giao hàng.')
       return
     }
@@ -396,16 +530,35 @@ export default function Checkout() {
     try {
       const orderItems = items.map((i) => ({ watchVariantId: i.watchVariantId, quantity: i.quantity }))
       const couponId = coupon?.couponId ?? null
+      const ghnDistrictId = isAuthenticated ? selectedAddress?.ghnDistrictId : guest.ghnDistrictId
+      const ghnWardCode = isAuthenticated ? selectedAddress?.ghnWardCode : guest.ghnWardCode
 
       const payload = isAuthenticated
-        ? { userId: user.id, addressId: selectedAddressId, paymentMethod, deliveryMethod, couponId, note: note || null, items: orderItems }
-        : { userId: null, ...guest, paymentMethod, deliveryMethod, couponId, note: note || null, items: orderItems }
+        ? { userId: user.id, addressId: selectedAddress.id, paymentMethod, deliveryMethod, couponCode: coupon?.code ?? null, note: note || null, shippingFee, ghnDistrictId, ghnWardCode, items: orderItems }
+        : { userId: null, guestName: guest.guestName, guestEmail: guest.guestEmail, guestPhone: guest.guestPhone, guestAddressDetail: `${guest.guestAddressDetail}, ${guest.guestWard}, ${guest.guestDistrict}, ${guest.guestProvince}`, paymentMethod, deliveryMethod, couponCode: coupon?.code ?? null, note: note || null, shippingFee, ghnDistrictId, ghnWardCode, items: orderItems }
 
       const order = await orderService.createOrder(payload)
 
       // Remove only the ordered items from cart (not clear all)
       if (cart?.id) {
         await Promise.all(items.map((i) => cartService.removeItem(cart.id, i.id).catch(() => {})))
+      }
+
+      // If VNPAY selected, initiate payment and redirect to paymentUrl
+      if (paymentMethod === 'VNPAY') {
+        try {
+          const init = await paymentService.initiateVnpay(order.id || order.orderId || order.transactionId)
+          const paymentUrl = init?.paymentUrl || init?.data?.paymentUrl
+          if (paymentUrl) {
+            window.location.href = paymentUrl
+            return
+          }
+          setSubmitError('Không nhận được đường dẫn thanh toán VNPay. Vui lòng thử lại.')
+          return
+        } catch (err) {
+          setSubmitError(err?.message || 'Không thể khởi tạo thanh toán VNPay.')
+          return
+        }
       }
 
       window.dispatchEvent(new Event('cart:updated'))
@@ -490,8 +643,8 @@ export default function Checkout() {
                 {isAuthenticated ? (
                   <AddressPicker
                     userId={user.id}
-                    selectedId={selectedAddressId}
-                    onSelect={setSelectedAddressId}
+                    selectedId={selectedAddress?.id}
+                    onSelect={setSelectedAddress}
                   />
                 ) : (
                   <>
@@ -639,7 +792,9 @@ export default function Checkout() {
                   )}
                   <div className="flex justify-between font-body-md text-sm">
                     <span className="text-on-surface-variant">Phí vận chuyển</span>
-                    <span className="text-primary">Miễn phí</span>
+                    <span className={shippingFeeLoading ? 'text-on-surface-variant/40' : shippingFee > 0 ? 'text-on-surface' : 'text-primary'}>
+                      {shippingFeeLoading ? 'Đang tính...' : shippingFee > 0 ? formatVnd(shippingFee) : deliveryMethod === 'EXTERNAL_SHIPPER' ? 'Chọn địa chỉ để tính' : 'Miễn phí'}
+                    </span>
                   </div>
                 </div>
 

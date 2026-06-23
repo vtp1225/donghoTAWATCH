@@ -11,5 +11,7 @@ public record UserAddressResponse(
         String province,
         String district,
         String ward,
+        Integer ghnDistrictId,
+        String ghnWardCode,
         Boolean isDefault
 ) implements Serializable {}

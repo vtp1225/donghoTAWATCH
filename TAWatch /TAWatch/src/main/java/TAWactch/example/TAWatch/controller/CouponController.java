@@ -30,6 +30,15 @@ public class CouponController {
         return response;
     }
 
+    @GetMapping("/featured")
+    public ApiRespone<List<CouponResponse>> getFeatured() {
+        ApiRespone<List<CouponResponse>> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(couponService.getFeatured());
+        return response;
+    }
+
     @GetMapping("/{id}")
     public ApiRespone<CouponResponse> getById(@PathVariable int id) {
         ApiRespone<CouponResponse> response = new ApiRespone<>();

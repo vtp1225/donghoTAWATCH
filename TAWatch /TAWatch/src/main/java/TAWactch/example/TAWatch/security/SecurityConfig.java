@@ -43,7 +43,8 @@ public class SecurityConfig {
 
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",
-                "https://dongho-tawatch.vercel.app"
+                "https://dongho-tawatch.vercel.app",
+                "http://localhost:8080/"
         ));
 
         configuration.setAllowedMethods(List.of(
@@ -80,6 +81,7 @@ public class SecurityConfig {
                         // Public API
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/otp/**").permitAll()
+                        .requestMatchers("/ghn/**").permitAll()
 
                         // Swagger
                         .requestMatchers(
@@ -97,7 +99,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/watches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/watches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/watches/**").hasRole("ADMIN")
-
+                        .requestMatchers(
+                                "/payments/vnpay/callback",
+                                "/payments/vnpay/**"
+                        ).permitAll()
                         // Watch Variant APIs - public read, admin write
                         .requestMatchers(HttpMethod.GET, "/watch-variants/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/watch-variants").hasRole("ADMIN")
@@ -142,7 +147,11 @@ public class SecurityConfig {
                         // User APIs
                         .requestMatchers(HttpMethod.GET, "/users/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.POST, "/users").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/users/*/role").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
+
+                        // Wishlist APIs — require authentication
+                        .requestMatchers("/wishlist/**").authenticated()
 
                         // Cart APIs — public (guest dùng sessionId, user dùng userId)
                         .requestMatchers(HttpMethod.GET, "/cart/**").permitAll()
@@ -175,6 +184,7 @@ public class SecurityConfig {
 
                         // Coupon APIs - validate public, rest admin
                         .requestMatchers(HttpMethod.POST, "/coupons/validate").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/coupons/featured").permitAll()
                         .requestMatchers(HttpMethod.GET, "/coupons/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/coupons").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/coupons/**").hasRole("ADMIN")

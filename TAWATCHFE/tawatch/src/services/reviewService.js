@@ -14,6 +14,19 @@ export const reviewService = {
     return request(`/reviews/user/${userId}`).then(unwrap)
   },
 
+  getAll(isApproved) {
+    const query = typeof isApproved === 'boolean' ? `?isApproved=${isApproved}` : ''
+    return request(`/reviews${query}`).then(unwrap)
+  },
+
+  approve(id) {
+    return request(`/reviews/${id}/approve`, { method: 'PATCH' }).then(unwrap)
+  },
+
+  deleteReview(id) {
+    return request(`/reviews/${id}`, { method: 'DELETE' }).then(unwrap)
+  },
+
   createReview(payload) {
     return request('/reviews', {
       method: 'POST',

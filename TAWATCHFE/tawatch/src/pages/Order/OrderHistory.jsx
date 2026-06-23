@@ -296,25 +296,37 @@ function OrderCard({ order, userId, onCancelled }) {
             <div className="lg:col-span-7">
               <p className="mb-5 font-label-caps text-[9px] tracking-[0.3em] text-on-surface-variant/50">SẢN PHẨM</p>
               <div className="space-y-4">
-                {(order.items ?? []).map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 border border-outline-variant/8 bg-surface-container-low p-3">
-                    <div className="h-20 w-20 flex-shrink-0 overflow-hidden bg-surface-container">
-                      <img alt={item.watchName} src={resolveImage(item)} className="h-full w-full object-cover" />
+                {(order.items ?? []).map((item) => {
+                  const watchId = item.productSnapshot?.watchId
+                  return (
+                    <div key={item.id} className="flex items-center gap-4 border border-outline-variant/8 bg-surface-container-low p-3">
+                      <div className="h-20 w-20 flex-shrink-0 overflow-hidden bg-surface-container">
+                        <img alt={item.watchName} src={resolveImage(item)} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-body-md text-sm font-medium text-on-surface">{item.watchName}</p>
+                        <p className="mt-1 font-label-caps text-[9px] tracking-[0.2em] text-on-surface-variant/60">
+                          {item.dialColor} / {item.strapColor}
+                        </p>
+                        <p className="mt-1 font-label-caps text-[9px] tracking-[0.15em] text-on-surface-variant/40">
+                          SL: {item.quantity} × {formatVnd(item.unitPrice)}
+                        </p>
+                        {watchId && order.orderStatus === 'DELIVERED' && (
+                          <Link
+                            to={`/product/${watchId}#reviews`}
+                            className="mt-2 inline-flex items-center gap-1.5 border border-primary/30 px-3 py-1.5 font-label-caps text-[8px] tracking-[0.2em] text-primary transition-colors hover:bg-primary/10"
+                          >
+                            <span className="material-symbols-outlined text-[11px]">rate_review</span>
+                            ĐI ĐẾN ĐÁNH GIÁ
+                          </Link>
+                        )}
+                      </div>
+                      <div className="flex-shrink-0 text-right">
+                        <p className="font-body-md text-sm text-primary">{formatVnd(item.totalPrice ?? item.unitPrice * item.quantity)}</p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-body-md text-sm font-medium text-on-surface">{item.watchName}</p>
-                      <p className="mt-1 font-label-caps text-[9px] tracking-[0.2em] text-on-surface-variant/60">
-                        {item.dialColor} / {item.strapColor}
-                      </p>
-                      <p className="mt-1 font-label-caps text-[9px] tracking-[0.15em] text-on-surface-variant/40">
-                        SL: {item.quantity} × {formatVnd(item.unitPrice)}
-                      </p>
-                    </div>
-                    <div className="flex-shrink-0 text-right">
-                      <p className="font-body-md text-sm text-primary">{formatVnd(item.totalPrice ?? item.unitPrice * item.quantity)}</p>
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Price breakdown */}

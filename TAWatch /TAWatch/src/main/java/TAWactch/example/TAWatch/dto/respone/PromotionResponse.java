@@ -2,6 +2,7 @@ package TAWactch.example.TAWatch.dto.respone;
 
 import TAWactch.example.TAWatch.Enum.DiscountType;
 import TAWactch.example.TAWatch.Enum.PromoType;
+import java.util.List;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -19,5 +20,7 @@ public record PromotionResponse(
         Instant startDate,
         Instant endDate,
         Boolean isActive,
-        Instant createdAt
+        Instant createdAt,
+        List<Integer> watchIds,
+        List<String> watchNames
 ) {}

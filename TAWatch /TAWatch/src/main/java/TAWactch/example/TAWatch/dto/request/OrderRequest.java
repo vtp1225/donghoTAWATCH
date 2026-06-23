@@ -6,14 +6,12 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public record OrderRequest(
-        // Nếu null → đơn khách vãng lai
         Integer userId,
-        // ID địa chỉ đã lưu (chỉ dùng khi userId != null)
         Integer addressId,
-        // Thông tin giao hàng cho khách vãng lai
         String guestName,
         String guestEmail,
         String guestPhone,
@@ -22,5 +20,8 @@ public record OrderRequest(
         @NotNull DeliveryMethodType deliveryMethod,
         String couponCode,
         String note,
+        BigDecimal shippingFee,
+        Integer ghnDistrictId,
+        String ghnWardCode,
         @NotNull @NotEmpty @Valid List<OrderItemRequest> items
 ) {}

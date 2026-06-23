@@ -41,9 +41,9 @@ public class PaymentController {
         return res;
     }
 
-    // POST /payments/vnpay/callback — VNPay gateway callback
+    // POST /payments/vnpay/callback — Frontend gửi params VNPay sau khi redirect về
     @PostMapping("/vnpay/callback")
-    public ApiRespone<PaymentTransactionResponse> vnpayCallback(@RequestBody Map<String, Object> payload) {
+    public ApiRespone<PaymentTransactionResponse> vnpayCallback(@RequestBody Map<String, String> payload) {
         ApiRespone<PaymentTransactionResponse> res = new ApiRespone<>();
         res.setCode(200);
         res.setMessage("Xu ly callback VNPay thanh cong");

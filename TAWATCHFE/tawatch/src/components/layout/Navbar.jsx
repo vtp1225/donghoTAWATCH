@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 import useCart from '../../hooks/useCart.js'
+import useWishlist from '../../hooks/useWishlist.js'
 import useCategoryTree from '../../hooks/useCategoryTree.js'
 import { brandService } from '../../services/brandService.js'
 
@@ -130,10 +131,12 @@ export default function Navbar() {
   const [accountOpen, setAccountOpen] = useState(false)
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
-  const { isAuthenticated, displayName, logout } = useAuth()
+  const { isAuthenticated, displayName, user, logout } = useAuth()
   const { cartCount } = useCart()
+  const { count: wishlistCount } = useWishlist()
   const { categories } = useCategoryTree()
   const dongHoCategory = buildMenuRoot(categories)
+  const isAdmin = user?.role === 'ADMIN'
 
   const preferNames = ['smart', 'men', 'women', 'sport']
   const roots = Array.isArray(categories) ? categories : []
@@ -244,6 +247,20 @@ export default function Navbar() {
 
       {/* Right actions */}
       <div className="flex items-center gap-5">
+        {isAdmin && (
+          <Link
+            className="flex items-center gap-2 text-on-surface/65 transition-colors duration-200 hover:text-primary"
+            to="/admin"
+            title="Trở lại trang Admin"
+            aria-label="Trở lại trang Admin"
+          >
+            <span className="material-symbols-outlined text-[22px]">admin_panel_settings</span>
+            <span className="hidden font-label-caps text-[10px] tracking-[0.18em] uppercase md:inline-block">
+              Admin
+            </span>
+          </Link>
+        )}
+
         {/* Account */}
         <div className="relative" ref={dropdownRef}>
           <button
@@ -288,6 +305,14 @@ export default function Navbar() {
                     >
                       <span className="material-symbols-outlined text-[17px]">receipt_long</span>
                       Đơn hàng của tôi
+                    </Link>
+                    <Link
+                      className="flex w-full items-center gap-3 px-5 py-3.5 text-left font-label-caps text-[10px] tracking-[0.15em] uppercase text-on-surface/65 transition-all duration-200 hover:bg-surface-container-high hover:pl-6 hover:text-primary"
+                      to="/wishlist"
+                      onClick={() => setAccountOpen(false)}
+                    >
+                      <span className="material-symbols-outlined text-[17px]">favorite</span>
+                      Sản phẩm yêu thích
                     </Link>
                     <div className="mx-5 h-px bg-outline-variant/10" />
                     <button
@@ -358,6 +383,22 @@ export default function Navbar() {
             </div>
           )}
         </div>
+
+        {/* Wishlist */}
+        {isAuthenticated && (
+          <Link
+            className="relative text-on-surface/65 transition-colors duration-200 hover:text-primary"
+            to="/wishlist"
+            aria-label="Yêu thích"
+          >
+            <span className="material-symbols-outlined text-[22px]">favorite</span>
+            {wishlistCount > 0 && (
+              <span className="absolute -right-2 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-400 px-1 font-label-caps text-[9px] font-semibold leading-none text-white">
+                {wishlistCount > 99 ? '99+' : wishlistCount}
+              </span>
+            )}
+          </Link>
+        )}
 
         {/* Cart */}
         <Link

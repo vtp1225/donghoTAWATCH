@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import CustomerTable from '../../components/admin/CustomerTable'
+import CustomerDetailModal from '../../components/admin/CustomerDetailModal'
 import { userService } from '../../services/userService'
 import useAuth from '../../hooks/useAuth'
 
@@ -147,35 +148,15 @@ export default function ManageCustomer() {
         </div>
       )}
 
-      {viewTarget && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setViewTarget(null)} />
-          <div className="relative bg-surface-container-low border border-outline-variant/20 p-8 max-w-lg w-full mx-4">
-            <h3 className="font-headline-sm text-headline-sm mb-2">Thông tin khách hàng</h3>
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div>
-                <p className="font-label-caps text-[10px] text-on-surface-variant/60">Họ tên</p>
-                <p className="font-body-md text-sm">{viewTarget.fullName || viewTarget.name || '—'}</p>
-              </div>
-              <div>
-                <p className="font-label-caps text-[10px] text-on-surface-variant/60">Email</p>
-                <p className="font-body-md text-sm">{viewTarget.email || '—'}</p>
-              </div>
-              <div>
-                <p className="font-label-caps text-[10px] text-on-surface-variant/60">Số điện thoại</p>
-                <p className="font-body-md text-sm">{viewTarget.phone || '—'}</p>
-              </div>
-              <div>
-                <p className="font-label-caps text-[10px] text-on-surface-variant/60">Vai trò</p>
-                <p className="font-body-md text-sm">{viewTarget.role || 'CUSTOMER'}</p>
-              </div>
-            </div>
-            <div className="flex justify-end">
-              <button onClick={() => setViewTarget(null)} className="px-6 py-2 border border-outline-variant/30 hover:border-primary hover:text-primary">Đóng</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CustomerDetailModal
+        user={viewTarget}
+        authUser={authUser}
+        onClose={() => setViewTarget(null)}
+        onUpdate={(updated) => {
+          setViewTarget((prev) => prev ? { ...prev, ...updated } : prev)
+          setRefreshKey((k) => k + 1)
+        }}
+      />
 
       {deleteTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">

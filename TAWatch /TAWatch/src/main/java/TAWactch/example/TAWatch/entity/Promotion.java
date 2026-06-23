@@ -13,6 +13,8 @@ import org.hibernate.annotations.OnDeleteAction;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -32,13 +34,11 @@ public class Promotion {
     private String name;
 
     @NotNull
-    @Lob
     @Enumerated(EnumType.STRING)
     @Column(name = "promo_type", nullable = false)
     private PromoType promoType;
 
     @NotNull
-    @Lob
     @Enumerated(EnumType.STRING)
     @Column(name = "discount_type", nullable = false)
     private DiscountType discountType;
@@ -72,6 +72,14 @@ public class Promotion {
     @OnDelete(action = OnDeleteAction.SET_NULL)
     @JoinColumn(name = "watch_variant_id")
     private WatchVariant watchVariant;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "promotion_watch",
+        joinColumns = @JoinColumn(name = "promotion_id"),
+        inverseJoinColumns = @JoinColumn(name = "watch_id")
+    )
+    private Set<Watch> watches = new HashSet<>();
 
     @NotNull
     @ColumnDefault("1")

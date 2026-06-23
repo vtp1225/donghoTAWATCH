@@ -19,6 +19,10 @@ public interface WatchMapper {
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "segment.id", target = "segmentId")
     @Mapping(source = "segment.name", target = "segmentName")
+    @Mapping(target = "minPrice", ignore = true)
+    @Mapping(target = "mainImageUrl", ignore = true)
+    @Mapping(target = "defaultVariantId", ignore = true)
+    @Mapping(target = "totalStock", ignore = true)
     WatchResponse toResponse(Watch watch);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)

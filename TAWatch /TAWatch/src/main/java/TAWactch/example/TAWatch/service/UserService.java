@@ -75,6 +75,15 @@ public class UserService {
         return userMappers.toRespone(user);
     }
 
+    // ---- Update role (ADMIN only) ----
+    public UserRespone updateRole(int id, RoleType role) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+        user.setRole(role);
+        user.setUpdatedAt(Instant.now());
+        return userMappers.toRespone(userRepo.save(user));
+    }
+
     // ---- Delete ----
     public void deleteUser(int id) {
         if (!userRepo.existsById(id)) {

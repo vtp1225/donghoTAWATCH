@@ -873,6 +873,7 @@ export default function Profile() {
               <nav className="p-2">
                 {[
                   { to: '/orders', icon: 'receipt_long', label: 'Đơn hàng của tôi' },
+                  { to: '/wishlist', icon: 'favorite', label: 'Sản phẩm yêu thích' },
                   { to: '/cart', icon: 'shopping_bag', label: 'Giỏ hàng' },
                 ].map(({ to, icon, label }) => (
                   <Link

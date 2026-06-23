@@ -85,6 +85,11 @@ public class Watch {
     private Boolean isActive = false;
 
     @NotNull
+    @ColumnDefault("0")
+    @Column(name = "is_featured", nullable = false)
+    private Boolean isFeatured = false;
+
+    @NotNull
     @ColumnDefault("CURRENT_TIMESTAMP(6)")
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;

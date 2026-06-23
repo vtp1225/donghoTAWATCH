@@ -1,6 +1,6 @@
 package TAWactch.example.TAWatch.Enum;
 
 public enum DiscountType {
-    PERCENTAGE,
+    PERCENT,
     FIXED_AMOUNT
 }

@@ -55,6 +55,13 @@ public class UserAddress {
     @Column(name = "ward", nullable = false, length = 100)
     private String ward;
 
+    @Column(name = "ghn_district_id")
+    private Integer ghnDistrictId;
+
+    @Size(max = 20)
+    @Column(name = "ghn_ward_code", length = 20)
+    private String ghnWardCode;
+
     @NotNull
     @ColumnDefault("0")
     @Column(name = "is_default", nullable = false)

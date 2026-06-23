@@ -1,5 +1,6 @@
 package TAWactch.example.TAWatch.controller;
 
+import TAWactch.example.TAWatch.dto.request.RoleUpdateRequest;
 import TAWactch.example.TAWatch.dto.request.UserRequest;
 import TAWactch.example.TAWatch.dto.respone.ApiRespone;
 import TAWactch.example.TAWatch.dto.respone.UserRespone;
@@ -44,6 +45,16 @@ public class UserController {
         response.setCode(200);
         response.setMessage("Tao user thanh cong");
         response.setData(userService.createUser(userRequest));
+        return response;
+    }
+
+    // PATCH /tawatch/users/{id}/role  — đổi vai trò (ADMIN)
+    @PatchMapping("/{id}/role")
+    public ApiRespone<UserRespone> updateRole(@PathVariable int id, @Valid @RequestBody RoleUpdateRequest request) {
+        ApiRespone<UserRespone> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Cap nhat quyen thanh cong");
+        response.setData(userService.updateRole(id, request.role()));
         return response;
     }
 

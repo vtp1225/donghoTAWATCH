@@ -14,8 +14,20 @@ export const watchService = {
   getAll() {
     return request('/watches').then(unwrap)
   },
+  getPaged(page = 0, size = 10) {
+    return request(`/watches/paged?page=${page}&size=${size}`).then(unwrap)
+  },
   getAllAdmin() {
     return request('/watches/admin').then(unwrap)
+  },
+  getAdminPaged({ page = 0, size = 20, search, brandId, categoryId, segmentId, isActive } = {}) {
+    const params = new URLSearchParams({ page, size })
+    if (search) params.set('search', search)
+    if (brandId != null) params.set('brandId', brandId)
+    if (categoryId != null) params.set('categoryId', categoryId)
+    if (segmentId != null) params.set('segmentId', segmentId)
+    if (isActive != null) params.set('isActive', isActive)
+    return request(`/watches/admin/paged?${params}`).then(unwrap)
   },
   getById(id) {
     return request(`/watches/${id}`).then(unwrap)
@@ -45,6 +57,32 @@ export const watchService = {
     return request(`/watches/${id}`, {
       method: 'DELETE',
       headers: authHeaders(),
+    }).then(unwrap)
+  },
+  getByIds(ids = []) {
+    return request(`/watches/by-ids?ids=${ids.join(',')}`).then(unwrap)
+  },
+  search(filters = {}) {
+    return request('/watches/search', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(filters),
+    }).then(unwrap)
+  },
+  getFeatured() {
+    return request('/watches/featured').then(unwrap)
+  },
+  getNewest(limit = 8) {
+    return request(`/watches/newest?limit=${limit}`).then(unwrap)
+  },
+  getByCategory(categoryId, limit = 8) {
+    return request(`/watches/by-category/${categoryId}?limit=${limit}`).then(unwrap)
+  },
+  toggleFeatured(id, isFeatured) {
+    return request(`/watches/${id}/featured`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ isFeatured }),
     }).then(unwrap)
   },
 }

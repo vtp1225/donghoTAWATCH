@@ -1,9 +1,9 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 
 export default function AdminTopBar() {
   const navigate = useNavigate()
-  const { isAuthenticated, displayName, logout } = useAuth()
+  const { isAuthenticated, logout } = useAuth()
 
   function handleLogout() {
     logout()
@@ -26,6 +26,14 @@ export default function AdminTopBar() {
       </div>
 
       <div className="flex items-center gap-8">
+        <Link
+          to="/"
+          className="flex items-center gap-2 font-label-caps text-xs tracking-widest text-on-surface-variant hover:text-primary transition-colors"
+          title="Về trang chủ shop"
+        >
+          <span className="material-symbols-outlined">storefront</span>
+          Trang chủ shop
+        </Link>
         <div className="font-label-caps text-label-caps tracking-widest text-primary">DASHBOARD</div>
         <div className="flex items-center gap-4">
           <button className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" title="Notifications">

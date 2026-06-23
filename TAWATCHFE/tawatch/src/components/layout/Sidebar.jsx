@@ -7,8 +7,10 @@ const navItems = [
   { icon: 'category', label: 'Danh mục', to: '/admin/categories' },
   { icon: 'storefront', label: 'Thương hiệu', to: '/admin/brands' },
   { icon: 'shopping_cart', label: 'Đơn hàng', to: '/admin/orders' },
+  { icon: 'local_offer', label: 'Khuyến mãi', to: '/admin/promotions' },
   { icon: 'group', label: 'Khách hàng', to: '/admin/customers' },
   { icon: 'palette', label: 'Màu sắc', to: '/admin/colors' },
+  { icon: 'rate_review', label: 'Đánh giá', to: '/admin/reviews' },
   { icon: 'settings', label: 'Cài đặt', to: '/admin/settings' },
 ]
 
@@ -20,7 +22,7 @@ export default function Sidebar() {
         <p className="font-label-caps text-label-caps tracking-[0.3em] text-on-surface-variant/60">ADMIN PAGE</p>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-2 overflow-y-auto sidebar-scroll">
         {navItems.map(({ icon, label, to }) => (
           <NavLink
             key={to}

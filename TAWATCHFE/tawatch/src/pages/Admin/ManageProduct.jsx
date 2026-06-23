@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import StatsGrid from '../../components/admin/StatsGrid'
 import InventoryTable from '../../components/admin/InventoryTable'
 import WatchModal from '../../components/admin/WatchModal'
@@ -10,6 +10,48 @@ export default function ManageProduct() {
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+
+  // Stats come FREE from InventoryTable's existing load — no extra API call
+  const [tableStats, setTableStats] = useState(null)
+
+  const handleStatsLoad = useCallback(({ total, outOfStock, lowStock, isFiltered }) => {
+    if (!isFiltered) setTableStats({ total, outOfStock, lowStock })
+  }, [])
+
+  const stats = useMemo(() => {
+    const total      = tableStats?.total      ?? null
+    const outOfStock = tableStats?.outOfStock ?? null
+    const lowStock   = tableStats?.lowStock   ?? null
+
+    return [
+      {
+        label: 'Tổng sản phẩm',
+        value: total != null ? total.toString() : null,
+        icon: 'inventory_2',
+        detail: total != null ? 'Trong kho hàng' : null,
+      },
+      {
+        label: 'Sắp hết hàng',
+        value: lowStock != null ? lowStock.toString() : null,
+        icon: 'warning',
+        accent: lowStock > 0 ? 'text-amber-400' : 'text-on-background',
+        detail: lowStock != null
+          ? (lowStock > 0 ? 'Tồn kho dưới 5 chiếc' : 'Không có')
+          : null,
+        detailColor: lowStock > 0 ? 'text-amber-400/70' : 'text-on-surface-variant/40',
+      },
+      {
+        label: 'Hết hàng',
+        value: outOfStock != null ? outOfStock.toString() : null,
+        icon: 'remove_shopping_cart',
+        accent: outOfStock > 0 ? 'text-error' : 'text-on-background',
+        detail: outOfStock != null
+          ? (outOfStock > 0 ? 'Cần nhập thêm hàng' : 'Tất cả còn hàng')
+          : null,
+        detailColor: outOfStock > 0 ? 'text-error/60' : 'text-on-surface-variant/40',
+      },
+    ]
+  }, [tableStats])
 
   function handleSuccess() {
     setRefreshKey((k) => k + 1)
@@ -30,7 +72,7 @@ export default function ManageProduct() {
   }
 
   return (
-    <main className="ml-72 mt-20 p-gutter min-h-screen">
+    <main className="ml-72 mt-20 min-h-screen overflow-x-hidden" style={{ padding: '24px 32px' }}>
       {/* Header */}
       <section className="mb-16 pt-8">
         <div className="flex justify-between items-end mb-6">
@@ -56,8 +98,8 @@ export default function ManageProduct() {
         />
       </section>
 
-      <StatsGrid />
-      <InventoryTable refreshKey={refreshKey} onDelete={setDeleteTarget} onEdit={(watch) => {
+      <StatsGrid stats={stats} loading={tableStats === null} />
+      <InventoryTable refreshKey={refreshKey} onStatsLoad={handleStatsLoad} onDelete={setDeleteTarget} onEdit={(watch) => {
         setEditTarget(watch)
         setModalOpen(true)
       }} />

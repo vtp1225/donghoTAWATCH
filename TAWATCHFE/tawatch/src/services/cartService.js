@@ -20,6 +20,17 @@ function getStoredSessionId() {
 	return nextSessionId
 }
 
+function resetStoredSessionId() {
+	if (typeof window === 'undefined') {
+		return 'guest-session'
+	}
+
+	const storageKey = 'cart_session_id'
+	const nextSessionId = `guest-${crypto.randomUUID?.() ?? Date.now().toString(36)}`
+	window.localStorage.setItem(storageKey, nextSessionId)
+	return nextSessionId
+}
+
 function getStoredUserId() {
 	if (typeof window === 'undefined') {
 		return null
@@ -48,7 +59,22 @@ export const cartService = {
 	async getCurrentCart() {
 		const owner = getCartOwner()
 		const path = owner.type === 'user' ? `/cart/user/${owner.id}` : `/cart/session/${owner.id}`
-		return request(path).then(unwrap)
+		try {
+			return await request(path).then(unwrap)
+		} catch (error) {
+			const isGuestOwner = owner.type === 'session'
+			const isRecoveryCandidate =
+				isGuestOwner &&
+				typeof error?.message === 'string' &&
+				(error.message.includes('StrapMaterialType') || error.message.includes('IllegalArgumentException'))
+
+			if (!isRecoveryCandidate) {
+				throw error
+			}
+
+			const retryOwnerId = resetStoredSessionId()
+			return request(`/cart/session/${retryOwnerId}`).then(unwrap)
+		}
 	},
 	async addItem(cartId, watchVariantId, quantity = 1) {
 		return request(`/cart/${cartId}/items`, {

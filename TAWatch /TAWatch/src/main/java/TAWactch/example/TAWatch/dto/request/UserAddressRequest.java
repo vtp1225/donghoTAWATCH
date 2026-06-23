@@ -10,5 +10,7 @@ public record UserAddressRequest(
         @NotBlank @Size(max = 100) String province,
         @NotBlank @Size(max = 100) String district,
         @NotBlank @Size(max = 100) String ward,
+        Integer ghnDistrictId,
+        String ghnWardCode,
         Boolean isDefault
 ) {}

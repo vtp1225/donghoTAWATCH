@@ -2382,7 +2382,7 @@
 
 ### GET `/orders/my/{userId}` — Lịch sử đơn hàng của user
 
-**Auth:**    Authenticated
+**Auth:**        Authenticated
 
 **Response:**
 ```json

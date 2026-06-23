@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
 import ProductHero from '../../components/product/ProductHero.jsx'
@@ -32,9 +32,17 @@ export default function ProductPageList() {
   const [productCount, setProductCount] = useState(0)
   const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [sort, setSort] = useState('newest')
+  const [currentPage, setCurrentPage] = useState(0)
 
   const selectedCategoryId = searchParams.get('categoryId')
   const selectedBrandId = searchParams.get('brandId') ? Number(searchParams.get('brandId')) : null
+
+  const promoIds = useMemo(() => {
+    const raw = searchParams.get('ids')
+    if (!raw) return null
+    const parsed = raw.split(',').map(Number).filter((n) => !isNaN(n) && n > 0)
+    return parsed.length > 0 ? parsed : null
+  }, [searchParams])
 
   const selectedCategory = useMemo(() => {
     if (!selectedCategoryId) return null
@@ -46,25 +54,21 @@ export default function ProductPageList() {
     return collectCategoryIds(selectedCategory)
   }, [selectedCategory])
 
-  // Sync URL brandId into filters
+  // Reset filters when URL params change
   useEffect(() => {
-    setFilters((prev) => ({
-      ...DEFAULT_FILTERS,
-      brandIds: selectedBrandId ? [selectedBrandId] : [],
-    }))
+    setFilters({ ...DEFAULT_FILTERS, brandIds: selectedBrandId ? [selectedBrandId] : [] })
+    setCurrentPage(0)
   }, [selectedCategoryId, selectedBrandId])
+
+  // Sync URL categoryId into filters.categoryIds so sidebar shows it selected
+  useEffect(() => {
+    if (!selectedCategoryId || !categoryIds || categoryIds.length === 0) return
+    setFilters((prev) => ({ ...prev, categoryIds }))
+  }, [categoryIds, selectedCategoryId])
 
   useEffect(() => {
     const divider = document.getElementById('hero-divider')
     const timer = window.setTimeout(() => divider?.classList.add('divider-visible'), 300)
-
-    const handleScroll = () => {
-      const scrolled = window.pageYOffset
-      document.querySelectorAll('.product-card-hover').forEach((card, index) => {
-        const img = card.querySelector('img')
-        if (img) img.style.transform = `translateY(${scrolled * (index % 2 === 0 ? 0.05 : -0.05)}px)`
-      })
-    }
 
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
@@ -80,12 +84,8 @@ export default function ProductPageList() {
       observer.observe(card)
     })
 
-    window.addEventListener('scroll', handleScroll)
-    handleScroll()
-
     return () => {
       window.clearTimeout(timer)
-      window.removeEventListener('scroll', handleScroll)
       observer.disconnect()
     }
   }, [])
@@ -101,17 +101,35 @@ export default function ProductPageList() {
           <ProductFiltersSidebar filters={filters} onChange={setFilters} />
 
           <div className="lg:col-span-9">
+            {promoIds && (
+              <div className="mb-6 flex items-center justify-between border border-primary/25 bg-primary/5 px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-[18px] text-primary">local_offer</span>
+                  <span className="font-label-caps text-[10px] tracking-[0.25em] uppercase text-primary">
+                    Sản phẩm trong khuyến mãi — {promoIds.length} sản phẩm
+                  </span>
+                </div>
+                <Link
+                  to="/products"
+                  className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary"
+                >
+                  Xem tất cả ×
+                </Link>
+              </div>
+            )}
             <ProductSortBar
               count={productCount}
               label={selectedCategory?.name || ''}
               sort={sort}
-              onSortChange={setSort}
+              onSortChange={(s) => { setSort(s); setCurrentPage(0) }}
             />
             <ProductListGrid
-              categoryIds={categoryIds}
               onLoaded={setProductCount}
               filters={filters}
               sort={sort}
+              currentPage={currentPage}
+              onPageChange={(p) => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+              watchIds={promoIds}
             />
           </div>
         </section>

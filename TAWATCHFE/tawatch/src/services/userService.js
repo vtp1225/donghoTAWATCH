@@ -31,6 +31,14 @@ export const userService = {
 		}).then(unwrapApiResponse)
 	},
 
+	updateRole(id, role) {
+		return request(`/users/${id}/role`, {
+			method: 'PATCH',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ role }),
+		}).then(unwrapApiResponse)
+	},
+
 	deleteUser(id) {
 		return request(`/users/${id}`, {
 			method: 'DELETE',

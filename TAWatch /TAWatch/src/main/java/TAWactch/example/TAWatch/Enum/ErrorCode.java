@@ -53,6 +53,7 @@ public enum ErrorCode {
     PAYMENT_ALREADY_PROCESSED(7002, "Giao dich nay da duoc xu ly"),
     PAYMENT_ORDER_MISMATCH(7003, "Giao dich khong thuoc don hang nay"),
     PAYMENT_INVALID_METHOD(7004, "Phuong thuc thanh toan khong hop le cho hanh dong nay"),
+    PAYMENT_INVALID_SIGNATURE(7005, "Chu ky VNPay khong hop le"),
 
     // Shipper
     SHIPPER_NOT_FOUND(8001, "Khong tim thay shipper"),
@@ -76,6 +77,10 @@ public enum ErrorCode {
     COLOR_NOT_FOUND(11001, "Khong tim thay mau sac"),
     COLOR_NAME_EXISTS(11002, "Ten mau sac da ton tai"),
 
+    // Wishlist
+    WISHLIST_ALREADY_EXISTS(12001, "San pham da co trong danh sach yeu thich"),
+    WISHLIST_NOT_FOUND(12002, "Khong tim thay san pham trong danh sach yeu thich"),
+
     // Review
     REVIEW_NOT_FOUND(10001, "Khong tim thay danh gia"),
     REVIEW_ALREADY_EXISTS(10002, "Ban da danh gia san pham nay cho don hang nay"),
@@ -83,6 +88,7 @@ public enum ErrorCode {
     ORDER_NOT_BELONG_TO_USER(10004, "Don hang nay khong thuoc ve ban"),
     WATCH_NOT_IN_ORDER(10005, "San pham nay khong co trong don hang"),
     RATING_INVALID(10006, "Diem danh gia phai tu 1 den 5"),
+    REVIEW_CONTAINS_PROFANITY(10007, "Danh gia chua noi dung khong phu hop. Vui long chinh sua truoc khi gui."),
     ;
 
     private final int code;

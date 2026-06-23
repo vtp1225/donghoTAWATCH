@@ -12,6 +12,7 @@ import TAWactch.example.TAWatch.entity.User;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.mapper.CouponMapper;
 import TAWactch.example.TAWatch.repository.CouponRepo;
+import TAWactch.example.TAWatch.repository.PromotionRepo;
 import TAWactch.example.TAWatch.repository.UserRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -33,12 +34,31 @@ public class CouponService {
     private PromotionService promotionService;
 
     @Autowired
+    private PromotionRepo promotionRepo;
+
+    @Autowired
     private UserRepo userRepo;
 
     public List<CouponResponse> getAll(Integer promotionId, Boolean isUsed) {
         return couponRepo.findAll().stream()
                 .filter(c -> promotionId == null || c.getPromotion().getId().equals(promotionId))
                 .filter(c -> isUsed == null || c.getIsUsed().equals(isUsed))
+                .map(couponMapper::toResponse)
+                .toList();
+    }
+
+    public List<CouponResponse> getFeatured() {
+        Instant now = Instant.now();
+        return couponRepo.findAll().stream()
+                .filter(c -> !Boolean.TRUE.equals(c.getIsUsed()))
+                .filter(c -> c.getUser() == null)
+                .filter(c -> c.getExpiresAt() == null || c.getExpiresAt().isAfter(now))
+                .filter(c -> {
+                    Promotion promo = c.getPromotion();
+                    return Boolean.TRUE.equals(promo.getIsActive())
+                            && !promo.getStartDate().isAfter(now)
+                            && !promo.getEndDate().isBefore(now);
+                })
                 .map(couponMapper::toResponse)
                 .toList();
     }
@@ -97,12 +117,15 @@ public class CouponService {
         if (!Boolean.TRUE.equals(promo.getIsActive())) {
             throw new AppException(ErrorCode.COUPON_INACTIVE);
         }
+        if (promo.getMaxUses() != null && promo.getUsedCount() >= promo.getMaxUses()) {
+            throw new AppException(ErrorCode.COUPON_INACTIVE);
+        }
         if (subtotal.compareTo(promo.getMinOrderValue()) < 0) {
             throw new AppException(ErrorCode.ORDER_BELOW_MIN_VALUE);
         }
 
         BigDecimal discount;
-        if (promo.getDiscountType() == DiscountType.PERCENTAGE) {
+        if (promo.getDiscountType() == DiscountType.PERCENT) {
             discount = subtotal.multiply(promo.getDiscountValue()).divide(BigDecimal.valueOf(100));
             if (promo.getMaxDiscountAmount() != null) {
                 discount = discount.min(promo.getMaxDiscountAmount());
@@ -111,6 +134,16 @@ public class CouponService {
             discount = promo.getDiscountValue();
         }
         return discount.min(subtotal);
+    }
+
+    public void markAsUsed(Coupon coupon) {
+        coupon.setIsUsed(true);
+        coupon.setUsedAt(Instant.now());
+        couponRepo.save(coupon);
+
+        Promotion promo = coupon.getPromotion();
+        promo.setUsedCount(promo.getUsedCount() + 1);
+        promotionRepo.save(promo);
     }
 
     public Coupon requireCoupon(int id) {

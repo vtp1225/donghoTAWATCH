@@ -45,7 +45,10 @@ app:
     account-number: ${BANK_ACCOUNT_NUMBER:1234567890}
     account-name: ${BANK_ACCOUNT_NAME:CONG TY TAWATCH}
   vnpay:
-    payment-url: ${VNPAY_PAYMENT_URL:http://localhost:8080/tawatch/payments/vnpay/callback}
+    tmn-code: ${VNPAY_TMN_CODE:9ANL2H3D}
+    hash-secret: ${VNPAY_HASH_SECRET:F6O7RX7KNH63AFTD9ZELJCFVJ5QDV9FC}
+    payment-url: ${VNPAY_PAYMENT_URL:https://sandbox.vnpayment.vn/paymentv2/vpcpay.html}
+    return-url: ${VNPAY_RETURN_URL:http://localhost:5173/payment/vnpay-return}
 jwt:
   secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
@@ -58,3 +61,7 @@ cloudinary:
   cloud-name: ${CLOUD_NAME}
   api-key: ${CLOUD_API_KEY}
   api-secret: ${CLOUD_API_SECRET}
+ghn:
+  token: ${GHN_TOKEN}
+  shop-id: ${GHN_SHOP_ID}
+  base-url: ${GHN_BASE_URL:https://online-gateway.ghn.vn/shiip/public-api}

@@ -23,10 +23,17 @@ public record WatchResponse(
         String batteryType,
         String features,
         Boolean isActive,
+        Boolean isFeatured,
         Instant createdAt,
         Instant updatedAt,
         Integer brandId,
         String brandName,
         Integer categoryId,
-        String categoryName
+        String categoryName,
+        BigDecimal minPrice,
+        String mainImageUrl,
+        Integer defaultVariantId,
+        Integer totalStock,
+        BigDecimal salePrice,
+        Integer discountPercent
 ) implements Serializable {}

@@ -13,5 +13,6 @@ public record ReviewResponse(
         Integer rating,
         String comment,
         Boolean isApproved,
-        Instant createdAt
+        Instant createdAt,
+        String watchMainImageUrl
 ) {}

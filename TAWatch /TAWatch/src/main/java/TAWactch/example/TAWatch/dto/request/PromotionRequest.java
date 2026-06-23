@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public record PromotionRequest(
         @NotNull @Size(max = 255) String name,
@@ -19,5 +20,6 @@ public record PromotionRequest(
         Integer maxUses,
         @NotNull Instant startDate,
         @NotNull Instant endDate,
-        Boolean isActive
+        Boolean isActive,
+        List<Integer> watchIds
 ) {}

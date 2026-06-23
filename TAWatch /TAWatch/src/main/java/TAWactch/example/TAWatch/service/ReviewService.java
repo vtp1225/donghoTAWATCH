@@ -10,16 +10,21 @@ import TAWactch.example.TAWatch.entity.User;
 import TAWactch.example.TAWatch.entity.Watch;
 import TAWactch.example.TAWatch.exception.AppException;
 import TAWactch.example.TAWatch.mapper.ReviewMapper;
+import TAWactch.example.TAWatch.entity.WatchVariantImage;
 import TAWactch.example.TAWatch.repository.OrderItemRepo;
 import TAWactch.example.TAWatch.repository.OrderRepo;
 import TAWactch.example.TAWatch.repository.ReviewRepo;
 import TAWactch.example.TAWatch.repository.UserRepo;
 import TAWactch.example.TAWatch.repository.WatchRepo;
+import TAWactch.example.TAWatch.repository.WatchVariantImageRepo;
+import TAWactch.example.TAWatch.utils.ProfanityFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ReviewService {
@@ -42,14 +47,15 @@ public class ReviewService {
     @Autowired
     private OrderItemRepo orderItemRepo;
 
+    @Autowired
+    private WatchVariantImageRepo watchVariantImageRepo;
+
     // Admin: lấy tất cả hoặc lọc theo isApproved
     public List<ReviewResponse> getAll(Boolean isApproved) {
-        if (isApproved != null) {
-            return reviewRepo.findByIsApprovedOrderByCreatedAtDesc(isApproved)
-                    .stream().map(reviewMapper::toResponse).toList();
-        }
-        return reviewRepo.findAllByOrderByCreatedAtDesc()
-                .stream().map(reviewMapper::toResponse).toList();
+        List<Review> reviews = isApproved != null
+                ? reviewRepo.findByIsApprovedOrderByCreatedAtDesc(isApproved)
+                : reviewRepo.findAllByOrderByCreatedAtDesc();
+        return enrichWithImages(reviews);
     }
 
     // Public: lấy review của 1 đồng hồ (mặc định chỉ trả về đã duyệt)
@@ -58,8 +64,8 @@ public class ReviewService {
             throw new AppException(ErrorCode.WATCH_NOT_FOUND);
         }
         boolean approved = isApproved == null || isApproved;
-        return reviewRepo.findByWatchIdAndIsApprovedOrderByCreatedAtDesc(watchId, approved)
-                .stream().map(reviewMapper::toResponse).toList();
+        List<Review> reviews = reviewRepo.findByWatchIdAndIsApprovedOrderByCreatedAtDesc(watchId, approved);
+        return enrichWithImages(reviews);
     }
 
     // User: lấy review của chính mình
@@ -105,6 +111,11 @@ public class ReviewService {
             throw new AppException(ErrorCode.REVIEW_ALREADY_EXISTS);
         }
 
+        // Kiểm tra nội dung không phù hợp
+        if (ProfanityFilter.contains(request.comment())) {
+            throw new AppException(ErrorCode.REVIEW_CONTAINS_PROFANITY);
+        }
+
         Review review = new Review();
         review.setUser(user);
         review.setWatch(watch);
@@ -135,5 +146,30 @@ public class ReviewService {
     private Review requireReview(int id) {
         return reviewRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.REVIEW_NOT_FOUND));
+    }
+
+    private List<ReviewResponse> enrichWithImages(List<Review> reviews) {
+        if (reviews.isEmpty()) return List.of();
+        List<Integer> watchIds = reviews.stream()
+                .map(r -> r.getWatch().getId())
+                .distinct().toList();
+        Map<Integer, String> imageMap = watchVariantImageRepo
+                .findMainImagesByWatchIds(watchIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        img -> img.getVariant().getWatch().getId(),
+                        WatchVariantImage::getUrl,
+                        (a, b) -> a
+                ));
+        return reviews.stream().map(r -> {
+            ReviewResponse base = reviewMapper.toResponse(r);
+            return new ReviewResponse(
+                    base.id(), base.userId(), base.userFullName(),
+                    base.watchId(), base.watchName(),
+                    base.orderId(), base.orderCode(),
+                    base.rating(), base.comment(), base.isApproved(), base.createdAt(),
+                    imageMap.get(r.getWatch().getId())
+            );
+        }).toList();
     }
 }

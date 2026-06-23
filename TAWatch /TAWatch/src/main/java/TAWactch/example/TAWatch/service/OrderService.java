@@ -84,7 +84,9 @@ public class OrderService {
             discountAmount = couponService.validateAndCalculate(coupon, subtotal);
         }
 
-        BigDecimal shippingFee = BigDecimal.ZERO;
+        BigDecimal shippingFee = (request.shippingFee() != null && request.shippingFee().compareTo(BigDecimal.ZERO) > 0)
+                ? request.shippingFee()
+                : BigDecimal.ZERO;
         BigDecimal totalAmount = subtotal.add(shippingFee).subtract(discountAmount).max(BigDecimal.ZERO);
 
         // Tạo order
@@ -133,11 +135,9 @@ public class OrderService {
             watchVariantRepo.save(variant);
         }
 
-        // Đánh dấu coupon đã dùng
+        // Đánh dấu coupon đã dùng và tăng usedCount trên promotion
         if (coupon != null) {
-            coupon.setIsUsed(true);
-            coupon.setUsedAt(Instant.now());
-            couponRepo.save(coupon);
+            couponService.markAsUsed(coupon);
         }
 
         saveHistory(order, OrderStatusType.PENDING, null, "Don hang moi duoc tao");
@@ -216,6 +216,9 @@ public class OrderService {
         validateStatusTransition(order.getOrderStatus(), request.newStatus());
 
         order.setOrderStatus(request.newStatus());
+        if (request.newStatus() == OrderStatusType.DELIVERED) {
+            order.setPaymentStatus(PaymentStatusType.PAID);
+        }
         order.setUpdatedAt(Instant.now());
         orderRepo.save(order);
 

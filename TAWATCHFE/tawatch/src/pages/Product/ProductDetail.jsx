@@ -3,12 +3,13 @@
 
 
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
 import { watchService, variantService, variantImageService } from '../../services/watchService.js'
 import { cartService } from '../../services/cartService.js'
+import { wishlistService } from '../../services/wishlistService.js'
 import ProductReviews from './ProductReviews.jsx'
 
 function formatVnd(value) {
@@ -19,6 +20,34 @@ function formatVnd(value) {
     maximumFractionDigits: 0,
   }).format(value)
 }
+
+// Each axis describes one dimension that can differ between variants
+const VARIANT_AXES = [
+  {
+    key: 'dialColor',
+    label: 'Màu mặt số',
+    getValue: (v) => v.dialColorId != null ? String(v.dialColorId) : null,
+    getDisplay: (v) => ({ label: v.dialColorName, hex: v.dialColorHex }),
+  },
+  {
+    key: 'strapMaterial',
+    label: 'Chất liệu dây',
+    getValue: (v) => v.strapMaterial ?? null,
+    getDisplay: (v) => ({ label: v.strapMaterial, hex: null }),
+  },
+  {
+    key: 'strapColor',
+    label: 'Màu dây',
+    getValue: (v) => v.strapColorId != null ? String(v.strapColorId) : null,
+    getDisplay: (v) => ({ label: v.strapColorName, hex: v.strapColorHex }),
+  },
+  {
+    key: 'caseSizeMm',
+    label: 'Kích thước vỏ',
+    getValue: (v) => v.caseSizeMm != null ? String(v.caseSizeMm) : null,
+    getDisplay: (v) => ({ label: v.caseSizeMm != null ? `${v.caseSizeMm}mm` : null, hex: null }),
+  },
+]
 
 const SPEC_ITEMS = [
   { key: 'movementType', label: 'Bộ máy' },
@@ -56,8 +85,19 @@ function ErrorScreen({ message }) {
   )
 }
 
+function getStoredUserId() {
+  try {
+    const stored = window.localStorage.getItem('auth_user')
+    if (!stored) return null
+    return JSON.parse(stored)?.id ?? null
+  } catch {
+    return null
+  }
+}
+
 export default function ProductDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [watch, setWatch] = useState(null)
   const [variants, setVariants] = useState([])
   const [selectedVariant, setSelectedVariant] = useState(null)
@@ -66,6 +106,22 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [addState, setAddState] = useState('idle') // idle | loading | added | error
+  const [selectedParams, setSelectedParams] = useState({})
+  const [wishlisted, setWishlisted] = useState(false)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+  const [wishlistToast, setWishlistToast] = useState('')
+
+  const loadImages = useCallback((variant) => {
+    if (!variant) { setImages([]); setActiveImage(null); return }
+    variantImageService
+      .getByVariant(variant.id)
+      .then((imgs) => {
+        const sorted = Array.isArray(imgs) ? imgs : []
+        setImages(sorted)
+        setActiveImage((sorted.find((img) => img.isPrimary) ?? sorted[0])?.url ?? null)
+      })
+      .catch(() => { setImages([]); setActiveImage(null) })
+  }, [])
 
   useEffect(() => {
     if (!id) return
@@ -80,30 +136,57 @@ export default function ProductDetail() {
         setWatch(watchData)
         const list = Array.isArray(variantList) ? variantList : []
         setVariants(list)
-        if (list.length > 0) setSelectedVariant(list[0])
+        const first = list[0] ?? null
+        setSelectedVariant(first)
+        loadImages(first)
+        if (first) {
+          const initParams = {}
+          VARIANT_AXES.forEach(axis => {
+            const val = axis.getValue(first)
+            if (val != null) initParams[axis.key] = val
+          })
+          setSelectedParams(initParams)
+        }
       })
       .catch((err) => setError(err.message || 'Không thể tải sản phẩm.'))
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, loadImages])
 
   useEffect(() => {
-    if (!selectedVariant) {
-      setImages([])
-      setActiveImage(null)
+    const userId = getStoredUserId()
+    if (!userId || !selectedVariant) { setWishlisted(false); return }
+    wishlistService.check(userId, selectedVariant.id)
+      .then((res) => setWishlisted(res === true || res?.wishlisted === true))
+      .catch(() => setWishlisted(false))
+  }, [selectedVariant])
+
+  const handleToggleWishlist = useCallback(async () => {
+    const userId = getStoredUserId()
+    if (!userId) {
+      navigate('/login', { state: { from: `/product/${id}` } })
       return
     }
-    variantImageService
-      .getByVariant(selectedVariant.id)
-      .then((imgs) => {
-        const sorted = Array.isArray(imgs) ? imgs : []
-        setImages(sorted)
-        setActiveImage((sorted.find((img) => img.isPrimary) ?? sorted[0])?.url ?? null)
-      })
-      .catch(() => {
-        setImages([])
-        setActiveImage(null)
-      })
-  }, [selectedVariant])
+    if (!selectedVariant || wishlistLoading) return
+    setWishlistLoading(true)
+    const next = !wishlisted
+    setWishlisted(next)
+    try {
+      if (next) {
+        await wishlistService.add(userId, selectedVariant.id)
+        setWishlistToast('added')
+        setTimeout(() => setWishlistToast(''), 2000)
+      } else {
+        await wishlistService.remove(userId, selectedVariant.id)
+        setWishlistToast('removed')
+        setTimeout(() => setWishlistToast(''), 2000)
+      }
+      window.dispatchEvent(new Event('wishlist:updated'))
+    } catch {
+      setWishlisted(!next)
+    } finally {
+      setWishlistLoading(false)
+    }
+  }, [selectedVariant, wishlisted, wishlistLoading, navigate, id])
 
   const handleAddToCart = useCallback(async () => {
     if (!selectedVariant || addState === 'loading') return
@@ -120,21 +203,92 @@ export default function ProductDetail() {
     }
   }, [selectedVariant, addState])
 
+  // Axes that actually differ across variants (≥ 2 distinct values)
+  const activeAxes = useMemo(() => {
+    if (!variants.length) return []
+    return VARIANT_AXES.filter(axis => {
+      const vals = new Set(variants.map(v => axis.getValue(v)).filter(v => v != null))
+      return vals.size >= 2
+    })
+  }, [variants])
+
+  // Unique options per axis (value → display)
+  const optionsByAxis = useMemo(() => {
+    return Object.fromEntries(
+      activeAxes.map(axis => {
+        const seen = new Map()
+        variants.forEach(v => {
+          const val = axis.getValue(v)
+          if (val != null && !seen.has(val)) seen.set(val, axis.getDisplay(v))
+        })
+        return [axis.key, [...seen.entries()].map(([val, display]) => ({ val, ...display }))]
+      })
+    )
+  }, [activeAxes, variants])
+
+  const isAvailable = useCallback((axisKey, optionValue) => {
+    return variants.some(v =>
+      activeAxes.every(axis => {
+        if (axis.key === axisKey) return axis.getValue(v) === optionValue
+        const sel = selectedParams[axis.key]
+        return sel == null || axis.getValue(v) === sel
+      })
+    )
+  }, [variants, activeAxes, selectedParams])
+
+  const handleSelectParam = useCallback((axisKey, optionValue) => {
+    const newParams = { ...selectedParams, [axisKey]: optionValue }
+
+    // Find exact variant matching all selected params
+    let match = variants.find(v =>
+      activeAxes.every(axis => {
+        const sel = newParams[axis.key]
+        return sel == null || axis.getValue(v) === sel
+      })
+    )
+
+    if (!match) {
+      // No exact match — pick best candidate that matches the clicked axis,
+      // then maximizes overlap with other selected params
+      const clickedAxis = activeAxes.find(a => a.key === axisKey)
+      const candidates = clickedAxis
+        ? variants.filter(v => clickedAxis.getValue(v) === optionValue)
+        : variants
+
+      match = candidates.reduce((best, v) => {
+        const score = activeAxes.filter(axis => {
+          const sel = newParams[axis.key]
+          return sel != null && axis.getValue(v) === sel
+        }).length
+        const bestScore = best
+          ? activeAxes.filter(axis => {
+              const sel = newParams[axis.key]
+              return sel != null && axis.getValue(best) === sel
+            }).length
+          : -1
+        return score > bestScore ? v : best
+      }, null) ?? variants[0]
+
+      // Sync selectedParams to reflect actual variant chosen
+      const synced = {}
+      activeAxes.forEach(axis => {
+        const val = axis.getValue(match)
+        if (val != null) synced[axis.key] = val
+      })
+      setSelectedParams(synced)
+    } else {
+      setSelectedParams(newParams)
+    }
+
+    setSelectedVariant(match)
+    loadImages(match)
+  }, [variants, activeAxes, selectedParams, loadImages])
+
   if (loading) return <><Navbar /><LoadingScreen /></>
   if (error || !watch) return <><Navbar /><ErrorScreen message={error} /></>
 
   const hasStock = (selectedVariant?.stockQuantity ?? 0) > 0
   const specs = SPEC_ITEMS.filter(({ key }) => watch[key] != null && watch[key] !== '')
-  const variantLabel = selectedVariant
-    ? [
-        selectedVariant.dialColorName,
-        selectedVariant.strapColorName && `Dây ${selectedVariant.strapColorName}`,
-        selectedVariant.strapMaterial,
-        selectedVariant.caseSizeMm != null && `${selectedVariant.caseSizeMm}mm`,
-      ]
-        .filter(Boolean)
-        .join(' · ')
-    : ''
 
   return (
     <div className="min-h-screen bg-background text-on-surface">
@@ -165,6 +319,7 @@ export default function ProductDetail() {
                   key={activeImage}
                   src={activeImage}
                   alt={watch.name}
+                  loading="eager"
                   className="h-full w-full object-cover transition-all duration-[2000ms] group-hover:scale-105"
                 />
               ) : (
@@ -209,6 +364,7 @@ export default function ProductDetail() {
                       <img
                         src={img.url}
                         alt={img.altText || watch.name}
+                        loading="lazy"
                         className="h-full w-full object-cover"
                       />
                       {active && <div className="absolute inset-x-0 bottom-0 h-0.5 bg-primary" />}
@@ -261,41 +417,63 @@ export default function ProductDetail() {
 
             <div className="h-px bg-outline-variant/15" />
 
-            {/* Variant selector */}
-            {variants.length > 0 && (
-              <div>
-                <p className="mb-1.5 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
-                  Biến thể ({variants.length})
-                </p>
-                {variantLabel && (
-                  <p className="mb-4 font-body-md text-sm text-on-surface-variant/65">{variantLabel}</p>
-                )}
-                <div className="flex flex-wrap gap-2.5">
-                  {variants.map((variant) => {
-                    const active = selectedVariant?.id === variant.id
-                    return (
-                      <button
-                        key={variant.id}
-                        onClick={() => setSelectedVariant(variant)}
-                        className={`flex min-w-[80px] flex-col items-start border px-4 py-3.5 text-left transition-all duration-200 ${
-                          active
-                            ? 'border-primary bg-primary/8 text-primary'
-                            : 'border-outline-variant/20 text-on-surface-variant/60 hover:border-outline-variant/45 hover:text-on-surface/80'
-                        }`}
-                      >
-                        <span className="font-label-caps text-[11px] tracking-[0.18em] uppercase leading-tight">
-                          {variant.dialColorName || '—'}
-                        </span>
-                        {variant.caseSizeMm != null && (
-                          <span className="mt-1 font-body-md text-xs text-on-surface-variant/60">
-                            {variant.caseSizeMm}mm
+            {/* Variant selector — one row per differing parameter */}
+            {variants.length > 0 && activeAxes.length > 0 && (
+              <div className="flex flex-col gap-5">
+                {activeAxes.map(axis => {
+                  const options = optionsByAxis[axis.key] ?? []
+                  const currentVal = selectedParams[axis.key]
+                  const currentLabel = options.find(o => o.val === currentVal)?.label
+                  return (
+                    <div key={axis.key}>
+                      <p className="mb-3 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
+                        {axis.label}
+                        {currentLabel && (
+                          <span className="ml-2 font-body-md normal-case tracking-normal text-on-surface-variant/70">
+                            — {currentLabel}
                           </span>
                         )}
-                      </button>
-                    )
-                  })}
-                </div>
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {options.map(({ val, label, hex }) => {
+                          const active = currentVal === val
+                          const available = isAvailable(axis.key, val)
+                          return (
+                            <button
+                              key={val}
+                              onClick={() => available && handleSelectParam(axis.key, val)}
+                              title={!available ? 'Không có sẵn với lựa chọn hiện tại' : undefined}
+                              className={`relative flex items-center gap-2 border px-4 py-2.5 font-label-caps text-[11px] tracking-[0.15em] uppercase transition-all duration-200
+                                ${active
+                                  ? 'border-primary bg-primary/8 text-primary'
+                                  : available
+                                    ? 'border-outline-variant/25 text-on-surface-variant/65 hover:border-outline-variant/50 hover:text-on-surface/80'
+                                    : 'cursor-not-allowed border-outline-variant/10 text-on-surface-variant/25 line-through'
+                                }`}
+                            >
+                              {hex && (
+                                <span
+                                  className="h-3.5 w-3.5 flex-shrink-0 rounded-full border border-outline-variant/30"
+                                  style={{ background: hex }}
+                                />
+                              )}
+                              {label}
+                              {active && (
+                                <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
+            )}
+            {variants.length > 0 && activeAxes.length === 0 && (
+              <p className="font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
+                1 biến thể duy nhất
+              </p>
             )}
 
             <div className="h-px bg-outline-variant/15" />
@@ -344,13 +522,47 @@ export default function ProductDetail() {
                 )}
               </button>
 
-              <Link
-                to="/cart"
-                className="flex items-center justify-center gap-2 border border-outline-variant/20 py-4 font-label-caps text-xs tracking-[0.2em] uppercase text-on-surface-variant/55 transition-all duration-300 hover:border-primary/35 hover:text-primary/80"
-              >
-                <span className="material-symbols-outlined text-lg leading-none">shopping_cart</span>
-                Xem giỏ hàng
-              </Link>
+              <div className="flex gap-3">
+                <Link
+                  to="/cart"
+                  className="flex flex-1 items-center justify-center gap-2 border border-outline-variant/20 py-4 font-label-caps text-xs tracking-[0.2em] uppercase text-on-surface-variant/55 transition-all duration-300 hover:border-primary/35 hover:text-primary/80"
+                >
+                  <span className="material-symbols-outlined text-lg leading-none">shopping_cart</span>
+                  Xem giỏ hàng
+                </Link>
+
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={handleToggleWishlist}
+                    disabled={wishlistLoading}
+                    title={wishlisted ? 'Xoá khỏi yêu thích' : 'Thêm vào yêu thích'}
+                    className={`flex items-center justify-center gap-2 border px-5 py-4 font-label-caps text-xs tracking-[0.2em] uppercase transition-all duration-300 disabled:cursor-not-allowed ${
+                      wishlisted
+                        ? 'border-red-400/50 bg-red-400/8 text-red-400'
+                        : 'border-outline-variant/20 text-on-surface-variant/55 hover:border-red-400/40 hover:text-red-400'
+                    }`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-lg leading-none"
+                      style={wishlisted ? { fontVariationSettings: "'FILL' 1" } : {}}
+                    >
+                      favorite
+                    </span>
+                  </button>
+                  {wishlistToast && (
+                    <div className="fixed top-5 right-5 z-[9999] flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in pointer-events-none">
+                      <span
+                        className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
+                        style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
+                      >favorite</span>
+                      <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+                        {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
 
               <button
                 type="button"

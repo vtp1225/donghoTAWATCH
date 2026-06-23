@@ -1,56 +1,35 @@
-const stats = [
-  {
-    label: 'Doanh thu',
-    value: '$4,820,000',
-    accent: 'text-primary',
-    detail: (
-      <div className="flex items-center gap-2 text-[10px] font-label-caps text-green-400">
-        <span className="material-symbols-outlined text-xs">trending_up</span>
-        +12% so với tháng trước
-      </div>
-    ),
-    bg: '',
-  },
-  {
-    label: 'Sản phẩm đang bán',
-    value: '142 Sản phẩm',
-    accent: 'text-on-background',
-    detail: (
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1 text-[10px] font-label-caps text-primary">
-          <span className="w-1.5 h-1.5 rounded-full bg-primary" /> 82 Heritage
-        </div>
-        <div className="flex items-center gap-1 text-[10px] font-label-caps text-secondary">
-          <span className="w-1.5 h-1.5 rounded-full bg-secondary" /> 60 Minimalist
-        </div>
-      </div>
-    ),
-    bg: '',
-  },
-  {
-    label: 'Cần chú ý',
-    value: '4 Sản phẩm sắp hết hàng',
-    accent: 'text-error',
-    detail: (
-      <p className="text-[10px] font-label-caps text-on-surface-variant/60 leading-relaxed">
-        CRITICAL UPDATES NEEDED FOR CHRONOS SERIES G3.
-      </p>
-    ),
-    bg: 'bg-surface-container-lowest',
-  },
-]
+function Skeleton({ className }) {
+  return <div className={`animate-pulse rounded-sm bg-surface-container ${className}`} />
+}
 
-export default function StatsGrid() {
+export default function StatsGrid({ stats = [], loading = false }) {
   return (
-    <section className="grid grid-cols-12 gap-gutter mb-section-gap-desktop">
-      {stats.map(({ label, value, accent, detail, bg }) => (
+    <section className="mb-10 grid grid-cols-4 gap-4">
+      {stats.map(({ label, value, icon, accent = 'text-on-background', detail, detailColor }) => (
         <div
           key={label}
-          className={`col-span-4 p-8 border border-outline-variant/10 hover:border-primary/40 transition-colors ${bg}`}
+          className="border border-outline-variant/10 bg-surface-container-lowest p-7 transition-colors hover:border-primary/25"
         >
-          <p className="font-label-caps text-[10px] text-on-surface-variant tracking-widest uppercase mb-2">{label}</p>
-          <h3 className={`font-headline-md text-headline-md mb-4 ${accent}`}>{value}</h3>
-          {detail}
+          <div className="mb-5 flex items-start justify-between">
+            <p className="font-label-caps text-xs tracking-[0.25em] uppercase text-on-surface-variant/55">
+              {label}
+            </p>
+            <span className="material-symbols-outlined text-2xl text-on-surface-variant/20">{icon}</span>
+          </div>
+
+          {loading ? (
+            <Skeleton className="mb-4 h-10 w-3/4" />
+          ) : (
+            <p className={`mb-4 font-headline-md text-4xl leading-none ${accent}`}>{value ?? '—'}</p>
+          )}
+
+          {loading ? (
+            <Skeleton className="h-4 w-1/2" />
+          ) : detail != null ? (
+            <p className={`font-label-caps text-xs tracking-wider ${detailColor ?? 'text-on-surface-variant/45'}`}>
+              {detail}
+            </p>
+          ) : null}
         </div>
       ))}
     </section>
