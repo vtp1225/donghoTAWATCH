@@ -26,7 +26,8 @@ function hasActiveFilters(filters) {
     filters.brandIds?.length > 0 ||
     filters.movementTypes?.length > 0 ||
     filters.categoryIds?.length > 0 ||
-    filters.priceMax != null
+    filters.priceMax != null ||
+    (filters.name && filters.name.trim().length > 0)
   )
 }
 
@@ -59,11 +60,12 @@ export default function ProductList({ onLoaded, filters = {}, sort = 'newest', c
   const filtering = hasActiveFilters(filters)
   // Serialize filters để detect thay đổi thực sự, tránh re-fetch do object reference mới
   const filtersKey = useMemo(() => JSON.stringify({
+    n: filters.name,
     b: filters.brandIds,
     c: filters.categoryIds,
     m: filters.movementTypes,
     p: filters.priceMax,
-  }), [filters.brandIds, filters.categoryIds, filters.movementTypes, filters.priceMax])
+  }), [filters.name, filters.brandIds, filters.categoryIds, filters.movementTypes, filters.priceMax])
 
   useEffect(() => {
     let active = true
@@ -84,6 +86,7 @@ export default function ProductList({ onLoaded, filters = {}, sort = 'newest', c
     if (filtering || isPriceSort) {
       // Server-side filter với phân trang — không cần load toàn bộ
       productService.search({
+        name: filters.name?.trim() || undefined,
         brandIds: filters.brandIds?.length ? filters.brandIds : undefined,
         categoryIds: filters.categoryIds?.length ? filters.categoryIds : undefined,
         movementTypes: filters.movementTypes?.length ? filters.movementTypes : undefined,

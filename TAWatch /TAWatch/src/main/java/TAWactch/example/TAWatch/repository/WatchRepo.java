@@ -51,6 +51,7 @@ public interface WatchRepo extends JpaRepository<Watch, Integer> {
     @Query("""
         SELECT w FROM Watch w
         WHERE w.isActive = true
+        AND (:name IS NULL OR LOWER(w.name) LIKE LOWER(CONCAT('%', :name, '%')))
         AND (:hasBrands = false OR w.brand.id IN :brandIds)
         AND (:hasCategories = false OR w.category.id IN :categoryIds)
         AND (:hasSegments = false OR w.segment.id IN :segmentIds)
@@ -63,6 +64,7 @@ public interface WatchRepo extends JpaRepository<Watch, Integer> {
         ))
         """)
     Page<Watch> searchPublic(
+        @Param("name") String name,
         @Param("brandIds") List<Integer> brandIds,
         @Param("hasBrands") boolean hasBrands,
         @Param("categoryIds") List<Integer> categoryIds,

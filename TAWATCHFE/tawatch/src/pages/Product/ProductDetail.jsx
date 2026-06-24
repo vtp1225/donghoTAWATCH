@@ -309,7 +309,7 @@ export default function ProductDetail() {
         <div className="grid grid-cols-1 gap-14 lg:grid-cols-12 lg:gap-20">
 
           {/* Left — Image gallery */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-6">
             {/* Main image */}
             <div className="group relative mb-4 aspect-square overflow-hidden bg-surface-container">
               <div className="pointer-events-none absolute inset-0 z-10 border border-primary/0 transition-all duration-700 group-hover:border-primary/20" />
@@ -355,7 +355,7 @@ export default function ProductDetail() {
                     <button
                       key={img.id}
                       onClick={() => setActiveImage(img.url)}
-                      className={`relative h-24 w-24 flex-shrink-0 overflow-hidden border transition-all duration-200 ${
+                      className={`relative h-12 w-12 flex-shrink-0 overflow-hidden border transition-all duration-200 ${
                         active
                           ? 'border-primary'
                           : 'border-outline-variant/20 opacity-50 hover:opacity-85 hover:border-outline-variant/50'
@@ -376,7 +376,7 @@ export default function ProductDetail() {
           </div>
 
           {/* Right — Product info */}
-          <div className="flex flex-col gap-8 lg:col-span-5 lg:pt-1">
+          <div className="flex flex-col gap-8 lg:col-span-6 lg:pt-1">
 
             {/* Identity */}
             <div>

@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public record WatchFilterRequest(
+        String name,
         List<Integer> brandIds,
         List<Integer> categoryIds,
         List<Integer> segmentIds,

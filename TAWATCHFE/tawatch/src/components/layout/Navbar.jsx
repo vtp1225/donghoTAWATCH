@@ -1,10 +1,151 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate } from 'react-router-dom'
 import useAuth from '../../hooks/useAuth.js'
 import useCart from '../../hooks/useCart.js'
 import useWishlist from '../../hooks/useWishlist.js'
 import useCategoryTree from '../../hooks/useCategoryTree.js'
 import { brandService } from '../../services/brandService.js'
+import { productService } from '../../services/productService.js'
+
+function formatVnd(value) {
+  if (value == null) return ''
+  return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(value)
+}
+
+function SearchOverlay({ onClose }) {
+  const navigate = useNavigate()
+  const inputRef = useRef(null)
+  const [query, setQuery] = useState('')
+  const [results, setResults] = useState([])
+  const [loading, setLoading] = useState(false)
+  const timerRef = useRef(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const search = useCallback((q) => {
+    if (!q.trim()) { setResults([]); setLoading(false); return }
+    setLoading(true)
+    productService.search({ name: q.trim(), size: 6, page: 0 })
+      .then((data) => setResults(data.content ?? []))
+      .catch(() => setResults([]))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const handleChange = (e) => {
+    const val = e.target.value
+    setQuery(val)
+    clearTimeout(timerRef.current)
+    if (!val.trim()) { setResults([]); setLoading(false); return }
+    setLoading(true)
+    timerRef.current = setTimeout(() => search(val), 350)
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!query.trim()) return
+    onClose()
+    navigate(`/products?q=${encodeURIComponent(query.trim())}`)
+  }
+
+  const handleSelect = (id) => {
+    onClose()
+    navigate(`/product/${id}`)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[9998] flex flex-col" onClick={onClose}>
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+
+      {/* Panel */}
+      <div
+        className="relative z-10 mx-auto mt-20 w-full max-w-2xl px-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Input */}
+        <form onSubmit={handleSubmit} className="flex items-center border border-primary/40 bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.6)]">
+          <span className="material-symbols-outlined pl-4 text-[22px] text-primary">search</span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={query}
+            onChange={handleChange}
+            placeholder="Tìm kiếm đồng hồ..."
+            className="flex-1 bg-transparent px-4 py-4 font-body-md text-base text-on-surface placeholder-on-surface-variant/70 outline-none"
+          />
+          {loading && (
+            <span className="mr-4 flex gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:0ms]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:150ms]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-bounce [animation-delay:300ms]" />
+            </span>
+          )}
+          {query && !loading && (
+            <button type="button" onClick={() => { setQuery(''); setResults([]); inputRef.current?.focus() }} className="pr-4 text-on-surface-variant/70 hover:text-on-surface">
+              <span className="material-symbols-outlined text-[20px]">close</span>
+            </button>
+          )}
+        </form>
+
+        {/* Results */}
+        {results.length > 0 && (
+          <div className="border border-t-0 border-primary/20 bg-surface shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
+            {results.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleSelect(item.id)}
+                className="flex w-full items-center gap-4 border-b border-outline-variant/15 px-4 py-3.5 text-left transition-colors hover:bg-surface-container last:border-b-0"
+              >
+                <div className="h-14 w-14 flex-shrink-0 overflow-hidden bg-surface-container">
+                  {item.image ? (
+                    <img src={item.image} alt={item.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <span className="material-symbols-outlined text-[20px] text-on-surface-variant/50">watch</span>
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-body-md text-[15px] text-on-surface">{item.title}</p>
+                  <p className="mt-0.5 truncate font-body-md text-xs text-on-surface-variant">{item.description?.slice(0, 70)}</p>
+                </div>
+                <span className="flex-shrink-0 font-body-md text-[15px] text-primary">{item.price}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={handleSubmit}
+              className="flex w-full items-center justify-center gap-2 py-3.5 font-label-caps text-xs tracking-[0.18em] uppercase text-primary transition-colors hover:bg-surface-container"
+            >
+              Xem tất cả kết quả cho &ldquo;{query}&rdquo;
+              <span className="material-symbols-outlined text-[15px]">arrow_forward</span>
+            </button>
+          </div>
+        )}
+
+        {query.trim() && !loading && results.length === 0 && (
+          <div className="border border-t-0 border-primary/20 bg-surface px-4 py-8 text-center">
+            <span className="material-symbols-outlined text-3xl text-on-surface-variant/40">search_off</span>
+            <p className="mt-2 font-body-md text-sm text-on-surface-variant">Không tìm thấy sản phẩm phù hợp</p>
+          </div>
+        )}
+
+        <p className="mt-3 text-center font-body-md text-xs text-on-surface-variant/60">
+          Nhấn <kbd className="rounded border border-outline-variant/30 px-1.5 py-0.5 font-label-caps text-[10px]">ESC</kbd> để đóng
+          &nbsp;·&nbsp;
+          <kbd className="rounded border border-outline-variant/30 px-1.5 py-0.5 font-label-caps text-[10px]">Enter</kbd> để xem tất cả
+        </p>
+      </div>
+    </div>
+  )
+}
 
 function buildCategoryLink(categoryId) {
   return `/products?categoryId=${categoryId}`
@@ -172,6 +313,7 @@ export default function Navbar() {
   }
 
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   return (
     <nav
@@ -245,8 +387,23 @@ export default function Navbar() {
         )}
       </div>
 
+      {searchOpen && createPortal(
+        <SearchOverlay onClose={() => setSearchOpen(false)} />,
+        document.body
+      )}
+
       {/* Right actions */}
       <div className="flex items-center gap-5">
+        {/* Search */}
+        <button
+          type="button"
+          aria-label="Tìm kiếm"
+          onClick={() => setSearchOpen(true)}
+          className="text-on-surface/65 transition-colors duration-200 hover:text-primary"
+        >
+          <span className="material-symbols-outlined text-[22px]">search</span>
+        </button>
+
         {isAdmin && (
           <Link
             className="flex items-center gap-2 text-on-surface/65 transition-colors duration-200 hover:text-primary"

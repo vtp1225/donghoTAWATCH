@@ -95,6 +95,7 @@ public class SecurityConfig {
 
                         // Watch APIs - public read, admin write
                         .requestMatchers(HttpMethod.GET, "/watches/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/watches/search").permitAll()
                         .requestMatchers(HttpMethod.POST, "/watches").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/watches/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PATCH, "/watches/**").hasRole("ADMIN")

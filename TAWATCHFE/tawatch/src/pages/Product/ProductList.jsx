@@ -24,7 +24,7 @@ function findCategoryById(categories, id) {
   return null
 }
 
-const DEFAULT_FILTERS = { brandIds: [], movementTypes: [], categoryIds: [], priceMax: null }
+const DEFAULT_FILTERS = { brandIds: [], movementTypes: [], categoryIds: [], priceMax: null, name: '' }
 
 export default function ProductPageList() {
   const [searchParams] = useSearchParams()
@@ -36,6 +36,7 @@ export default function ProductPageList() {
 
   const selectedCategoryId = searchParams.get('categoryId')
   const selectedBrandId = searchParams.get('brandId') ? Number(searchParams.get('brandId')) : null
+  const searchQuery = searchParams.get('q') || ''
 
   const promoIds = useMemo(() => {
     const raw = searchParams.get('ids')
@@ -56,9 +57,9 @@ export default function ProductPageList() {
 
   // Reset filters when URL params change
   useEffect(() => {
-    setFilters({ ...DEFAULT_FILTERS, brandIds: selectedBrandId ? [selectedBrandId] : [] })
+    setFilters({ ...DEFAULT_FILTERS, brandIds: selectedBrandId ? [selectedBrandId] : [], name: searchQuery })
     setCurrentPage(0)
-  }, [selectedCategoryId, selectedBrandId])
+  }, [selectedCategoryId, selectedBrandId, searchQuery])
 
   // Sync URL categoryId into filters.categoryIds so sidebar shows it selected
   useEffect(() => {
@@ -109,11 +110,21 @@ export default function ProductPageList() {
                     Sản phẩm trong khuyến mãi — {promoIds.length} sản phẩm
                   </span>
                 </div>
-                <Link
-                  to="/products"
-                  className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary"
-                >
+                <Link to="/products" className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary">
                   Xem tất cả ×
+                </Link>
+              </div>
+            )}
+            {searchQuery && (
+              <div className="mb-6 flex items-center justify-between border border-outline-variant/20 bg-surface-container-low px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="material-symbols-outlined text-[18px] text-on-surface-variant/60">search</span>
+                  <span className="font-label-caps text-[10px] tracking-[0.25em] uppercase text-on-surface-variant">
+                    Kết quả cho &ldquo;{searchQuery}&rdquo; — {productCount} sản phẩm
+                  </span>
+                </div>
+                <Link to="/products" className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary">
+                  Xoá tìm kiếm ×
                 </Link>
               </div>
             )}

@@ -59,7 +59,18 @@ export const productService = {
 		return watches.map(mapWatch)
 	},
 	async search(filters = {}) {
-		const paged = await watchService.search(filters)
+		const paged = await watchService.search({
+			name: filters.name ?? undefined,
+			brandIds: filters.brandIds,
+			categoryIds: filters.categoryIds,
+			segmentIds: filters.segmentIds,
+			movementTypes: filters.movementTypes,
+			minPrice: filters.minPrice,
+			maxPrice: filters.maxPrice,
+			page: filters.page ?? 0,
+			size: filters.size ?? 12,
+			sort: filters.sort,
+		})
 		return {
 			content: paged.content.map((w, i) => mapWatch(w, i)),
 			currentPage: paged.currentPage,

@@ -202,7 +202,9 @@ public class WatchService {
         if ("price_desc".equals(req.sort())) sort = Sort.by(Sort.Direction.DESC, "createdAt");
 
         PageRequest pageable = PageRequest.of(page, size, sort);
+        String nameParam = (req.name() != null && !req.name().isBlank()) ? req.name().trim() : null;
         Page<Watch> watchPage = watchRepo.searchPublic(
+                nameParam,
                 brandIds, !brandIds.isEmpty(),
                 categoryIds, !categoryIds.isEmpty(),
                 segmentIds, !segmentIds.isEmpty(),
