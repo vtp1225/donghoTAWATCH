@@ -8,9 +8,6 @@ export const segmentService = {
   getAll() {
     return request('/segments').then(unwrap)
   },
-  getById(id) {
-    return request(`/segments/${id}`).then(unwrap)
-  },
   create(payload) {
     return request('/segments', {
       method: 'POST',

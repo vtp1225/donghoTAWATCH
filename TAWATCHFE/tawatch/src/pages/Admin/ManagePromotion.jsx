@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { couponService } from '../../services/couponService.js'
 import { promotionService } from '../../services/promotionService.js'
 import { watchService } from '../../services/watchService.js'
+import { userService } from '../../services/userService.js'
 
 const PROMO_TYPES = [
   { value: 'ORDER', label: 'Toàn đơn' },
@@ -9,7 +10,10 @@ const PROMO_TYPES = [
   { value: 'CATEGORY', label: 'Danh mục' },
   { value: 'BRAND', label: 'Thương hiệu' },
 ]
-
+const PROMO_HOW_TO = [
+  { value: 'AUTO', label: 'Tự động' },
+  { value: 'MANUAL', label: 'Nhập mã' }
+]
 const DISCOUNT_TYPES = [
   { value: 'PERCENT', label: 'Phần trăm' },
   { value: 'FIXED_AMOUNT', label: 'Số tiền cố định' },
@@ -80,6 +84,7 @@ export default function ManagePromotion() {
   const [promotions, setPromotions] = useState([])
   const [coupons, setCoupons] = useState([])
   const [watches, setWatches] = useState([])
+  const [users, setUsers] = useState([])
   const [promotionForm, setPromotionForm] = useState(emptyPromotion)
   const [couponForm, setCouponForm] = useState(emptyCoupon)
   const [editingPromotion, setEditingPromotion] = useState(null)
@@ -87,7 +92,7 @@ export default function ManagePromotion() {
   const [savingPromotion, setSavingPromotion] = useState(false)
   const [savingCoupon, setSavingCoupon] = useState(false)
   const [error, setError] = useState('')
-
+  const [haveCoupon, setHaveCoupon] = useState(false)
   const activePromotions = useMemo(
     () => promotions.filter((promo) => promo.isActive),
     [promotions],
@@ -113,6 +118,7 @@ export default function ManagePromotion() {
   useEffect(() => {
     loadData()
     watchService.getAll().then((list) => setWatches(Array.isArray(list) ? list : [])).catch(() => {})
+    userService.getAllUsers().then((list) => setUsers(Array.isArray(list) ? list : [])).catch(() => {})
   }, [])
 
   function changePromotion(field, value) {
@@ -122,7 +128,6 @@ export default function ManagePromotion() {
   function changeCoupon(field, value) {
     setCouponForm((prev) => ({ ...prev, [field]: value }))
   }
-
   function startEdit(promo) {
     setEditingPromotion(promo)
     setPromotionForm({
@@ -327,11 +332,11 @@ export default function ManagePromotion() {
               <input required min="0" step="0.01" type="number" value={promotionForm.discountValue} onChange={(e) => changePromotion('discountValue', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label>
-              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Đơn tối thiểu</span>
+              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Đơn tối thiểu(VND)</span>
               <input min="0" step="1000" type="number" value={promotionForm.minOrderValue} onChange={(e) => changePromotion('minOrderValue', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label>
-              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Giảm tối đa</span>
+              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Giảm tối đa(VND)</span>
               <input min="0" step="1000" type="number" value={promotionForm.maxDiscountAmount} onChange={(e) => changePromotion('maxDiscountAmount', e.target.value)} placeholder="Không giới hạn" className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label>
@@ -340,11 +345,11 @@ export default function ManagePromotion() {
             </label>
             <label>
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Bắt đầu</span>
-              <input required type="datetime-local" value={promotionForm.startDate} onChange={(e) => changePromotion('startDate', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
+              <input required type="datetime-local" value={promotionForm.startDate} onChange={(e) => {changePromotion('startDate', e.target.value >= new Date().toISOString().slice(0, 16) ? e.target.value : new Date().toISOString().slice(0, 16))}} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label>
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Kết thúc</span>
-              <input required type="datetime-local" value={promotionForm.endDate} onChange={(e) => changePromotion('endDate', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
+              <input required type="datetime-local" value={promotionForm.endDate} onChange={(e) => {changePromotion('endDate', e.target.value>=promotionForm.startDate ? e.target.value : promotionForm.startDate)}} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label className="flex items-center gap-3 pt-6">
               <input checked={promotionForm.isActive} onChange={(e) => changePromotion('isActive', e.target.checked)} type="checkbox" className="h-4 w-4 accent-primary" />
@@ -366,7 +371,13 @@ export default function ManagePromotion() {
           <div className="mt-8 space-y-5">
             <label className="block">
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Promotion</span>
-              <select required value={couponForm.promotionId} onChange={(e) => changeCoupon('promotionId', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary">
+              <select required value={couponForm.promotionId} onChange={(e) => {
+                changeCoupon('promotionId', e.target.value);
+                const promo = activePromotions.find(p => String(p.id) === String(e.target.value));
+                if (promo && promo.endDate) {
+                  changeCoupon('expiresAt',toInputDateTime(promo.endDate));
+                }
+              }} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary">
                 <option value="">Chọn chương trình</option>
                 {activePromotions.map((promo) => <option key={promo.id} value={promo.id}>{promo.name}</option>)}
               </select>
@@ -376,8 +387,11 @@ export default function ManagePromotion() {
               <input required value={couponForm.code} onChange={(e) => changeCoupon('code', e.target.value.toUpperCase())} placeholder="VD: TAWATCH10" className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm uppercase outline-none focus:border-primary" />
             </label>
             <label className="block">
-              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">User ID riêng</span>
-              <input type="number" min="1" value={couponForm.userId} onChange={(e) => changeCoupon('userId', e.target.value)} placeholder="Bỏ trống để hiện public" className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
+              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Gán cho người dùng</span>
+              <select value={couponForm.userId} onChange={(e) => changeCoupon('userId', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary">
+                <option value="">Bỏ trống để dùng chung</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.fullName || u.email} (ID: {u.id})</option>)}
+              </select>
             </label>
             <label className="block">
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Hạn mã</span>
@@ -429,7 +443,11 @@ export default function ManagePromotion() {
                   <td className="px-6 py-5 font-body-md text-xs text-on-surface-variant/75">{formatDate(promo.startDate)} → {formatDate(promo.endDate)}</td>
                   <td className="px-6 py-5">
                     <span className={`font-label-caps text-xs uppercase tracking-widest ${promo.isActive ? 'text-primary' : 'text-on-surface-variant/50'}`}>
-                      {promo.isActive ? 'Hoạt động' : 'Tạm tắt'}
+                      {(()=> {
+                        if(promo.endDate && new Date(promo.endDate) < new Date()) return 'Hết hạn';
+                        if(promo.startDate && new Date(promo.startDate) > new Date()) return 'Chưa bắt đầu';
+                        return promo.isActive ? 'Hoạt động' : 'Tạm tắt';
+                      })()}
                     </span>
                   </td>
                   <td className="px-6 py-5">

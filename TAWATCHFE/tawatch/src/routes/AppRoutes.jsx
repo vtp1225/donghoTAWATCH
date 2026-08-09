@@ -18,6 +18,9 @@ const Brands          = lazy(() => import('../pages/Brands/Brands.jsx'))
 const Contact         = lazy(() => import('../pages/Contact/Contact.jsx'))
 const VNPayReturn     = lazy(() => import('../pages/Payment/VNPayReturn.jsx'))
 const Wishlist        = lazy(() => import('../pages/Wishlist/Wishlist.jsx'))
+const ReturnPolicy    = lazy(() => import('../pages/ReturnPolicy/ReturnPolicy.jsx'))
+
+const NotFound        = lazy(() => import('../pages/NotFound/NotFound.jsx'))
 
 const AdminLayout     = lazy(() => import('../layouts/AdminLayout.jsx'))
 const Dashboard       = lazy(() => import('../pages/Admin/Dashboard.jsx'))
@@ -31,6 +34,10 @@ const ManageColor     = lazy(() => import('../pages/Admin/ManageColor.jsx'))
 const ManagePromotion = lazy(() => import('../pages/Admin/ManagePromotion.jsx'))
 const ManageReview    = lazy(() => import('../pages/Admin/ManageReview.jsx'))
 const ManageSettings  = lazy(() => import('../pages/Admin/ManageSettings.jsx'))
+const ManageSupplier      = lazy(() => import('../pages/Admin/ManageSupplier.jsx'))
+const ManageImportReceipt = lazy(() => import('../pages/Admin/ManageImportReceipt.jsx'))
+const ManageShipper       = lazy(() => import('../pages/Admin/ManageShipper.jsx'))
+const ManageAdminLog      = lazy(() => import('../pages/Admin/ManageAdminLog.jsx'))
 
 import AdminRoute from './AdminRoute.jsx'
 
@@ -49,7 +56,7 @@ export default function AppRoutes() {
         <Route path="/verify-otp" element={<VerifyOtp />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/products" element={<ProductList />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
+        <Route path="/product/:slug" element={<ProductDetail />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
@@ -57,7 +64,11 @@ export default function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/brands" element={<Brands />} />
         <Route path="/lien-he" element={<Contact />} />
+        <Route path="/chinh-sach-doi-tra" element={<ReturnPolicy />} />
+        <Route path="/returns" element={<ReturnPolicy />} />
         <Route path="/wishlist" element={<Wishlist />} />
+
+        <Route path="*" element={<NotFound />} />
 
         <Route element={<AdminRoute />}>
           <Route path="/admin" element={<AdminLayout />}>
@@ -72,6 +83,10 @@ export default function AppRoutes() {
             <Route path="promotions" element={<ManagePromotion />} />
             <Route path="reviews" element={<ManageReview />} />
             <Route path="settings" element={<ManageSettings />} />
+            <Route path="suppliers" element={<ManageSupplier />} />
+            <Route path="import-receipts" element={<ManageImportReceipt />} />
+            {/* <Route path="shippers" element={<ManageShipper />} /> */}
+            <Route path="logs" element={<ManageAdminLog />} />
           </Route>
         </Route>
       </Routes>

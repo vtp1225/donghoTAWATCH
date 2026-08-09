@@ -34,17 +34,17 @@ export const orderService = {
     }).then(unwrap)
   },
 
-  updateTrackingCode(orderId, payload) {
-    return request(`/orders/${orderId}/tracking`, {
+  cancelOrder(orderId, payload) {
+    return request(`/orders/${orderId}/cancel`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).then(unwrap)
   },
 
-  cancelOrder(orderId, payload) {
-    return request(`/orders/${orderId}/cancel`, {
-      method: 'PATCH',
+  returnOrder(orderId, payload) {
+    return request(`/orders/${orderId}/return`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     }).then(unwrap)

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { categoryService } from '../../services/categoryService'
 
-const DEFAULTS = { name: '', slug: '', parentId: '' }
+const DEFAULTS = { name: '', slug: '', parentId: '', isActive: true }
 
 function buildForm(category) {
   if (!category) return DEFAULTS
@@ -10,6 +10,7 @@ function buildForm(category) {
     name: category.name ?? '',
     slug: category.slug ?? '',
     parentId: category.parentId ? String(category.parentId) : '',
+    isActive: category.isActive ?? true,
   }
 }
 
@@ -48,6 +49,7 @@ export default function AddCategoryModal({ onClose, onSuccess, category, categor
         name: form.name.trim(),
         slug: form.slug.trim() || undefined,
         parentId: form.parentId ? Number(form.parentId) : null,
+        isActive: form.isActive,
       }
 
       if (isEditMode) {
@@ -100,6 +102,14 @@ export default function AddCategoryModal({ onClose, onSuccess, category, categor
                 {parentOptions.map((item) => (
                   <option key={item.id} value={item.id}>{item.name}</option>
                 ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Trạng thái</label>
+              <select className="bg-transparent border-b border-outline-variant/30 py-2" value={form.isActive ? 'true' : 'false'} onChange={(e) => setField('isActive', e.target.value === 'true')}>
+                <option value="true">HIỂN THỊ (ACTIVE)</option>
+                <option value="false">ẨN (INACTIVE)</option>
               </select>
             </div>
           </div>

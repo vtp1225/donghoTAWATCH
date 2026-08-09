@@ -42,7 +42,7 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
     e.preventDefault()
     const userId = getStoredUserId()
     if (!userId) {
-      navigate('/login', { state: { from: `/product/${item.id}` } })
+      navigate('/login', { state: { from: `/product/${item.slug}` } })
       return
     }
     if (!item.variantId) return
@@ -84,7 +84,7 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
 
       {/* Image area */}
       <div className="relative mb-6 aspect-square overflow-hidden bg-surface-container cursor-pointer">
-        <Link to={`/product/${item.id}`} className="absolute inset-0 z-10">
+        <Link to={`/product/${item.slug}`} className="absolute inset-0 z-10">
           <div className="absolute inset-0 border border-primary/0 transition-all duration-700 group-hover:border-primary/40" />
           {item.image ? (
             <img
@@ -127,7 +127,7 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
 
       <div className="space-y-2 px-2">
         <div className="flex items-start justify-between gap-4">
-          <Link to={`/product/${item.id}`} className="hover:text-primary transition-colors duration-200">
+          <Link to={`/product/${item.slug}`} className="hover:text-primary transition-colors duration-200">
             <h3 className="font-headline-sm text-headline-sm text-on-surface">{item.title}</h3>
           </Link>
           <div className="flex-shrink-0 text-right">
@@ -189,7 +189,7 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
 
           {/* Detail link */}
           <Link
-            to={`/product/${item.id}`}
+            to={`/product/${item.slug}`}
             className="flex-shrink-0 border-b border-primary/40 pb-0.5 font-label-caps text-[10px] tracking-[0.14em] text-primary transition-opacity duration-300 opacity-0 group-hover:opacity-100"
           >
             Chi tiết →

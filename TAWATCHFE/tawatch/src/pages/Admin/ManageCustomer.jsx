@@ -6,8 +6,8 @@ import useAuth from '../../hooks/useAuth'
 
 export default function ManageCustomer() {
   const [refreshKey, setRefreshKey] = useState(0)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [deleting, setDeleting] = useState(false)
+  const [toggleTarget, setToggleTarget] = useState(null)
+  const [toggling, setToggling] = useState(false)
   const [viewTarget, setViewTarget] = useState(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [creating, setCreating] = useState(false)
@@ -19,17 +19,21 @@ export default function ManageCustomer() {
 
   function handleSuccess() { setRefreshKey((k) => k + 1) }
 
-  async function confirmDelete() {
-    if (!deleteTarget) return
-    setDeleting(true)
+  async function confirmToggle() {
+    if (!toggleTarget) return
+    setToggling(true)
     try {
-      await userService.deleteUser(deleteTarget.id)
-      setDeleteTarget(null)
+      if (toggleTarget.isActive === false) {
+        await userService.enableUser(toggleTarget.id)
+      } else {
+        await userService.disableUser(toggleTarget.id)
+      }
+      setToggleTarget(null)
       setRefreshKey((k) => k + 1)
     } catch (err) {
-      alert(err?.message || 'Không thể xoá người dùng.')
+      alert(err?.message || 'Không thể cập nhật trạng thái người dùng.')
     } finally {
-      setDeleting(false)
+      setToggling(false)
     }
   }
 
@@ -42,6 +46,18 @@ export default function ManageCustomer() {
     }
     if (!newUser.email || !newUser.fullName) {
       setCreateError('Vui lòng nhập họ tên và email.')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUser.email)) {
+      setCreateError('Email không hợp lệ.')
+      return
+    }
+    if (newUser.phone && !/^(0|\+84)[0-9]{9}$/.test(newUser.phone.replace(/\s/g, ''))) {
+      setCreateError('Số điện thoại không hợp lệ.')
+      return
+    }
+    if (newUser.password && newUser.password.length < 6 && !/^(?=.*[a-zA-Z])(?=.*\d)/.test(newUser.password)) {
+      setCreateError('Mật khẩu phải có ít nhất 6 ký tự và chứa cả chữ cái và số.')
       return
     }
     setCreating(true)
@@ -88,7 +104,7 @@ export default function ManageCustomer() {
 
       <CustomerTable
         refreshKey={refreshKey}
-        onDelete={setDeleteTarget}
+        onToggleActive={setToggleTarget}
         onView={(u) => setViewTarget(u)}
       />
 
@@ -158,16 +174,24 @@ export default function ManageCustomer() {
         }}
       />
 
-      {deleteTarget && (
+      {toggleTarget && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setToggleTarget(null)} />
           <div className="relative bg-surface-container-low border border-outline-variant/20 p-10 max-w-sm w-full mx-4">
-            <p className="font-label-caps text-[10px] text-error tracking-widest mb-4 uppercase">Xác nhận xoá</p>
-            <p className="font-headline-sm text-headline-sm text-on-background mb-2">{deleteTarget.fullName || deleteTarget.email}</p>
-            <p className="font-body-md text-sm text-on-surface-variant/60 mb-8">Hành động này sẽ xoá người dùng và dữ liệu liên quan. Không thể hoàn tác.</p>
+            <p className={`font-label-caps text-[10px] tracking-widest mb-4 uppercase ${toggleTarget.isActive === false ? 'text-emerald-500' : 'text-error'}`}>
+              {toggleTarget.isActive === false ? 'Xác nhận mở khóa' : 'Xác nhận vô hiệu hóa'}
+            </p>
+            <p className="font-headline-sm text-headline-sm text-on-background mb-2">{toggleTarget.fullName || toggleTarget.email}</p>
+            <p className="font-body-md text-sm text-on-surface-variant/60 mb-8">
+              {toggleTarget.isActive === false 
+                ? 'Tài khoản này sẽ được mở khóa và có thể đăng nhập lại vào hệ thống bình thường.' 
+                : 'Tài khoản này sẽ bị khóa và không thể đăng nhập, nhưng dữ liệu đánh giá và đơn hàng vẫn được giữ lại.'}
+            </p>
             <div className="flex gap-4">
-              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-label-caps text-xs tracking-widest hover:border-primary hover:text-primary transition-all">HUỶ</button>
-              <button onClick={confirmDelete} disabled={deleting} className="flex-1 py-3 bg-error text-background font-label-caps text-xs tracking-widest hover:bg-error/80 transition-all disabled:opacity-50">{deleting ? 'ĐANG XOÁ...' : 'XOÁ'}</button>
+              <button onClick={() => setToggleTarget(null)} className="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-label-caps text-xs tracking-widest hover:border-primary hover:text-primary transition-all">HUỶ</button>
+              <button onClick={confirmToggle} disabled={toggling} className={`flex-1 py-3 text-background font-label-caps text-xs tracking-widest transition-all disabled:opacity-50 ${toggleTarget.isActive === false ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-error hover:bg-error/80'}`}>
+                {toggling ? 'ĐANG XỬ LÝ...' : (toggleTarget.isActive === false ? 'MỞ KHÓA' : 'KHÓA TÀI KHOẢN')}
+              </button>
             </div>
           </div>
         </div>

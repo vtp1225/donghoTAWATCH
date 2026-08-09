@@ -1,86 +1,92 @@
+import { Link } from 'react-router-dom'
+
+const COLLECTIONS = [
+  { label: 'Tất cả sản phẩm', to: '/products' },
+  { label: 'Thương hiệu', to: '/brands' },
+  { label: 'Sản phẩm nổi bật', to: '/products?featured=true' },
+]
+
+const SUPPORT = [
+  { label: 'Chính sách đổi trả', to: '/chinh-sach-doi-tra' },
+  { label: 'Liên hệ & Tư vấn', to: '/lien-he' },
+  { label: 'Theo dõi đơn hàng', to: '/orders' },
+  { label: 'Danh sách yêu thích', to: '/wishlist' },
+]
+
+const ACCOUNT = [
+  { label: 'Đăng nhập', to: '/login' },
+  { label: 'Tạo tài khoản', to: '/register' },
+  { label: 'Thông tin cá nhân', to: '/profile' },
+]
+
 export default function Footer() {
   return (
     <footer id="footer" className="w-full border-t border-outline-variant/10 bg-surface-container-low py-section-gap-desktop">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-gutter px-8 md:grid-cols-4 md:px-[80px]">
+
+        {/* Brand */}
         <div className="col-span-1">
-          <div className="mb-6 font-headline-sm text-headline-sm text-primary">TAWatch</div>
+          <Link to="/" className="mb-6 inline-block font-headline-sm text-headline-sm text-primary hover:opacity-80 transition-opacity">
+            TAWatch
+          </Link>
           <p className="mb-6 font-body-md text-body-md text-on-surface-variant">
-            Redefining horological excellence through the lens of quiet luxury and mechanical perfection.
+            Khám phá bộ sưu tập đồng hồ cao cấp — nơi nghệ thuật cơ học gặp gỡ phong cách hiện đại.
           </p>
-          <div className="flex gap-4">
-            <span className="material-symbols-outlined cursor-pointer text-on-surface-variant transition-colors hover:text-primary">
-              language
-            </span>
-            <span className="material-symbols-outlined cursor-pointer text-on-surface-variant transition-colors hover:text-primary">
-              public
-            </span>
-          </div>
         </div>
+
+        {/* Bộ sưu tập */}
         <div>
           <h4 className="mb-6 font-label-caps text-label-caps uppercase tracking-widest text-on-surface">
-            Collections
+            Bộ sưu tập
           </h4>
           <ul className="space-y-4">
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#collections">
-                Heritage Series
-              </a>
-            </li>
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#collections">
-                Modern Minimalist
-              </a>
-            </li>
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#collections">
-                Grand Complications
-              </a>
-            </li>
+            {COLLECTIONS.map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
+
+        {/* Hỗ trợ */}
         <div>
           <h4 className="mb-6 font-label-caps text-label-caps uppercase tracking-widest text-on-surface">
-            Support
+            Hỗ trợ
           </h4>
           <ul className="space-y-4">
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#">
-                Service &amp; Care
-              </a>
-            </li>
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#">
-                Warranty
-              </a>
-            </li>
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#">
-                Contact Us
-              </a>
-            </li>
+            {SUPPORT.map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
+
+        {/* Tài khoản */}
         <div>
           <h4 className="mb-6 font-label-caps text-label-caps uppercase tracking-widest text-on-surface">
-            Legal
+            Tài khoản
           </h4>
           <ul className="space-y-4">
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#">
-                Privacy Policy
-              </a>
-            </li>
-            <li>
-              <a className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary" href="#">
-                Terms of Service
-              </a>
-            </li>
+            {ACCOUNT.map(({ label, to }) => (
+              <li key={to}>
+                <Link to={to} className="font-body-md text-body-md text-on-surface-variant transition-colors hover:text-primary">
+                  {label}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
+
+      {/* Bottom bar */}
       <div className="mx-auto mt-20 flex max-w-7xl flex-col items-center justify-between gap-4 border-t border-outline-variant/10 px-8 pt-8 md:flex-row md:px-[80px]">
         <div className="font-body-md text-body-md text-on-surface-variant opacity-50">
-          © 2024 TAWatch. Excellence in Horology.
+          © {new Date().getFullYear()} TAWatch. All rights reserved.
         </div>
         <div className="font-label-caps text-[10px] uppercase tracking-[0.3em] text-primary">
           Built for Eternity

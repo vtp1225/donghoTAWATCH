@@ -5,6 +5,8 @@ import Footer from '../../components/layout/Footer.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import { userService, addressService } from '../../services/userService.js'
 import { authService } from '../../services/authService.js'
+import GhnLocationSelects from '../../components/common/GhnLocationSelects.jsx'
+import { loyaltyService, TIER_META } from '../../services/loyaltyService.js'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -18,7 +20,7 @@ function toInputDate(iso) {
   return iso.split('T')[0]
 }
 
-const ROLE_LABEL = { CUSTOMER: 'Khách hàng', ADMIN: 'Quản trị viên', STAFF: 'Nhân viên' }
+const ROLE_LABEL = { CUSTOMER: 'Khách hàng', ADMIN: 'Quản trị viên' }
 
 // ─── SectionLabel ────────────────────────────────────────────────────────────
 
@@ -78,6 +80,8 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
     province: address.province,
     district: address.district,
     ward: address.ward,
+    ghnDistrictId: address.ghnDistrictId ?? null,
+    ghnWardCode: address.ghnWardCode ?? '',
     isDefault: address.isDefault,
   })
 
@@ -86,7 +90,23 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
     setForm((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }))
   }
 
+  const handleLocationChange = (fields) => {
+    setForm((p) => ({ ...p, ...fields }))
+  }
+
   const handleSave = async () => {
+    if (!form.recipientName || !form.phone || !form.addressDetail || !form.province || !form.district || !form.ward) {
+      setError('Vui lòng điền đầy đủ thông tin.')
+      return
+    }
+    if (!/^(0|\+84)[0-9]{9}$/.test(form.phone.replace(/\s/g, ''))) {
+      setError('Số điện thoại không hợp lệ.')
+      return
+    }
+    if (!form.ghnDistrictId || !form.ghnWardCode) {
+      setError('Vui lòng chọn lại Quận/Huyện và Phường/Xã để cập nhật thông tin giao hàng.')
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -124,14 +144,6 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
     }
   }
 
-  const ADDR_FIELDS = [
-    { name: 'recipientName', label: 'Họ tên người nhận', required: true },
-    { name: 'phone', label: 'Số điện thoại', required: true },
-    { name: 'province', label: 'Tỉnh / Thành phố', required: true },
-    { name: 'district', label: 'Quận / Huyện', required: true },
-    { name: 'ward', label: 'Phường / Xã', required: true },
-    { name: 'addressDetail', label: 'Địa chỉ chi tiết', required: true },
-  ]
 
   return (
     <div className={`border p-5 transition-all duration-200 ${address.isDefault ? 'border-primary/30 bg-primary/5' : 'border-outline-variant/10 bg-surface-container-low'}`}>
@@ -216,10 +228,13 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
         <>
           {/* Edit mode */}
           <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {ADDR_FIELDS.map(({ name, label, required }) => (
-              <div key={name} className={name === 'addressDetail' ? 'md:col-span-2' : ''}>
+            {[
+              { name: 'recipientName', label: 'Họ tên người nhận' },
+              { name: 'phone',         label: 'Số điện thoại' },
+            ].map(({ name, label }) => (
+              <div key={name}>
                 <label className="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase">
-                  {label} {required && <span className="text-primary">*</span>}
+                  {label} <span className="text-primary">*</span>
                 </label>
                 <input
                   type="text"
@@ -230,6 +245,26 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
                 />
               </div>
             ))}
+            <GhnLocationSelects
+              onChange={handleLocationChange}
+              initialProvince={address.province}
+              initialDistrict={address.district}
+              initialWard={address.ward}
+              labelClass="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase"
+            />
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase">
+                Địa chỉ chi tiết <span className="text-primary">*</span>
+              </label>
+              <input
+                type="text"
+                name="addressDetail"
+                value={form.addressDetail}
+                onChange={handleChange}
+                placeholder="Số nhà, tên đường..."
+                className="w-full border-b border-outline-variant/25 bg-transparent py-2.5 font-body-md text-sm text-on-surface outline-none transition-colors focus:border-primary"
+              />
+            </div>
           </div>
           <div className="mb-4 flex items-center gap-3">
             <input
@@ -277,10 +312,8 @@ function AddressTab({ userId }) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
-  const [newAddr, setNewAddr] = useState({
-    recipientName: '', phone: '', addressDetail: '',
-    province: '', district: '', ward: '', isDefault: false,
-  })
+  const EMPTY_ADDR = { recipientName: '', phone: '', addressDetail: '', province: '', district: '', ward: '', ghnDistrictId: null, ghnWardCode: '', isDefault: false }
+  const [newAddr, setNewAddr] = useState(EMPTY_ADDR)
 
   useEffect(() => {
     addressService.getAddresses(userId)
@@ -294,10 +327,22 @@ function AddressTab({ userId }) {
     setNewAddr((p) => ({ ...p, [name]: type === 'checkbox' ? checked : value }))
   }
 
+  const handleLocationChange = (fields) => {
+    setNewAddr((p) => ({ ...p, ...fields }))
+  }
+
   const handleCreate = async () => {
-    const { recipientName, phone, addressDetail, province, district, ward } = newAddr
+    const { recipientName, phone, addressDetail, province, district, ward, ghnDistrictId, ghnWardCode } = newAddr
     if (!recipientName || !phone || !addressDetail || !province || !district || !ward) {
       setFormError('Vui lòng điền đầy đủ thông tin.')
+      return
+    }
+    if (!/^(0|\+84)[0-9]{9}$/.test(phone.replace(/\s/g, ''))) {
+      setFormError('Số điện thoại không hợp lệ.')
+      return
+    }
+    if (!ghnDistrictId || !ghnWardCode) {
+      setFormError('Vui lòng chọn đầy đủ Quận/Huyện và Phường/Xã từ danh sách.')
       return
     }
     setSaving(true)
@@ -311,7 +356,7 @@ function AddressTab({ userId }) {
         return [...next, created]
       })
       setShowForm(false)
-      setNewAddr({ recipientName: '', phone: '', addressDetail: '', province: '', district: '', ward: '', isDefault: false })
+      setNewAddr(EMPTY_ADDR)
     } catch (err) {
       setFormError(err?.message || 'Không thể thêm địa chỉ.')
     } finally {
@@ -332,14 +377,6 @@ function AddressTab({ userId }) {
     setAddresses((prev) => prev.filter((a) => a.id !== id))
   }
 
-  const NEW_ADDR_FIELDS = [
-    { name: 'recipientName', label: 'Họ tên người nhận', required: true },
-    { name: 'phone', label: 'Số điện thoại', required: true },
-    { name: 'province', label: 'Tỉnh / Thành phố', required: true },
-    { name: 'district', label: 'Quận / Huyện', required: true },
-    { name: 'ward', label: 'Phường / Xã', required: true },
-    { name: 'addressDetail', label: 'Địa chỉ chi tiết', required: true },
-  ]
 
   if (loading) return (
     <div className="py-16 text-center">
@@ -373,10 +410,13 @@ function AddressTab({ userId }) {
         <div className="mb-6 border border-outline-variant/15 bg-surface-container-low p-6">
           <p className="mb-5 font-label-caps text-[10px] tracking-[0.25em] text-on-surface-variant/70">ĐỊA CHỈ MỚI</p>
           <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            {NEW_ADDR_FIELDS.map(({ name, label, required }) => (
-              <div key={name} className={name === 'addressDetail' ? 'md:col-span-2' : ''}>
+            {[
+              { name: 'recipientName', label: 'Họ tên người nhận' },
+              { name: 'phone',         label: 'Số điện thoại' },
+            ].map(({ name, label }) => (
+              <div key={name}>
                 <label className="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase">
-                  {label} {required && <span className="text-primary">*</span>}
+                  {label} <span className="text-primary">*</span>
                 </label>
                 <input
                   type="text"
@@ -387,6 +427,23 @@ function AddressTab({ userId }) {
                 />
               </div>
             ))}
+            <GhnLocationSelects
+              onChange={handleLocationChange}
+              labelClass="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase"
+            />
+            <div className="md:col-span-2">
+              <label className="mb-1.5 block font-label-caps text-[8px] tracking-[0.3em] text-on-surface-variant/50 uppercase">
+                Địa chỉ chi tiết <span className="text-primary">*</span>
+              </label>
+              <input
+                type="text"
+                name="addressDetail"
+                value={newAddr.addressDetail}
+                onChange={handleNewChange}
+                placeholder="Số nhà, tên đường..."
+                className="w-full border-b border-outline-variant/25 bg-transparent py-2.5 font-body-md text-sm text-on-surface outline-none transition-colors focus:border-primary"
+              />
+            </div>
           </div>
           <div className="mb-5 flex items-center gap-3">
             <input id="new-default" type="checkbox" name="isDefault" checked={newAddr.isDefault} onChange={handleNewChange} className="accent-primary" />
@@ -457,6 +514,10 @@ function InfoTab({ user, onUserUpdated }) {
   const handleSave = async () => {
     if (!form.fullName.trim()) {
       setError('Họ tên không được để trống.')
+      return
+    }
+    if (form.phone && !/^(0|\+84)[0-9]{9}$/.test(form.phone.trim().replace(/\s/g, ''))) {
+      setError('Số điện thoại không hợp lệ.')
       return
     }
     setSaving(true)
@@ -800,10 +861,19 @@ const TABS = [
   { id: 'security', label: 'Bảo mật',             icon: 'lock' },
 ]
 
+
 export default function Profile() {
   const navigate = useNavigate()
   const { isAuthenticated, user, setUser } = useAuth()
   const [activeTab, setActiveTab] = useState('info')
+  const [loyaltyInfo, setLoyaltyInfo] = useState(null)
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) return
+    loyaltyService.getLoyaltyInfo(user.id)
+      .then(setLoyaltyInfo)
+      .catch(() => {})
+  }, [isAuthenticated, user?.id])
 
   const handleUserUpdated = (updatedUser) => {
     setUser(updatedUser)
@@ -857,12 +927,41 @@ export default function Profile() {
               </div>
               <p className="font-body-md text-sm font-medium text-on-surface">{user?.fullName || user?.username}</p>
               <p className="mt-0.5 font-body-md text-xs text-on-surface-variant/60">{user?.email}</p>
-              <div className="mt-3 inline-flex items-center gap-1.5 border border-primary/30 bg-primary/8 px-3 py-1">
-                <span className="material-symbols-outlined text-[12px] text-primary">stars</span>
-                <span className="font-label-caps text-[9px] tracking-[0.2em] text-primary">
-                  {user?.loyaltyPoints ?? 0} điểm
-                </span>
-              </div>
+              {loyaltyInfo ? (() => {
+                const meta = TIER_META[loyaltyInfo.tier] ?? TIER_META.NONE
+                const nextMeta = TIER_META[loyaltyInfo.nextTier] ?? TIER_META.NONE
+                const progressMax = loyaltyInfo.ordersToNextTier + loyaltyInfo.orderCount - (loyaltyInfo.tier === 'NONE' ? 0 : loyaltyInfo.orderCount - loyaltyInfo.ordersToNextTier)
+                const tierMin = loyaltyInfo.orderCount - loyaltyInfo.ordersToNextTier + (loyaltyInfo.tier === 'DIAMOND' ? 0 : 0)
+                const pct = loyaltyInfo.tier === 'DIAMOND' ? 100
+                  : loyaltyInfo.ordersToNextTier === 0 ? 100
+                  : Math.round((loyaltyInfo.orderCount / (loyaltyInfo.orderCount + loyaltyInfo.ordersToNextTier)) * 100)
+                return (
+                  <div className={`mt-4 border p-3 text-left ${meta.border} ${meta.bg}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`material-symbols-outlined text-[16px] ${meta.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{meta.icon}</span>
+                      <span className={`font-label-caps text-[10px] tracking-widest uppercase ${meta.color}`}>{meta.label}</span>
+                      {loyaltyInfo.discountPercent > 0 && (
+                        <span className={`ml-auto font-label-caps text-[9px] ${meta.color}`}>−{loyaltyInfo.discountPercent}%</span>
+                      )}
+                    </div>
+                    <div className="mb-1.5 h-1 w-full bg-outline-variant/15 overflow-hidden">
+                      <div className={`h-full transition-all duration-700 ${loyaltyInfo.tier === 'DIAMOND' ? 'bg-cyan-300' : 'bg-primary'}`} style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="font-label-caps text-[8px] tracking-wider text-on-surface-variant/50">
+                      {loyaltyInfo.tier === 'DIAMOND'
+                        ? `${loyaltyInfo.orderCount} đơn — Hạng cao nhất`
+                        : `${loyaltyInfo.orderCount} đơn · Còn ${loyaltyInfo.ordersToNextTier} đơn lên ${nextMeta.label}`}
+                    </p>
+                  </div>
+                )
+              })() : (
+                <div className="mt-3 inline-flex items-center gap-1.5 border border-outline-variant/20 px-3 py-1">
+                  <span className="material-symbols-outlined text-[12px] text-on-surface-variant/40">stars</span>
+                  <span className="font-label-caps text-[9px] tracking-[0.2em] text-on-surface-variant/40">
+                    {user?.loyaltyPoints ?? 0} đơn
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Quick links */}
@@ -927,6 +1026,7 @@ export default function Profile() {
 
       </main>
       <Footer />
+
     </div>
   )
 }

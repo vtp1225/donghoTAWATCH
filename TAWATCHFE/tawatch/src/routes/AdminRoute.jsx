@@ -9,7 +9,7 @@ export default function AdminRoute() {
     return <Navigate to="/login" state={{ from: location }} replace />
   }
 
-  if (user?.role !== 'ADMIN') {
+  if (user?.role !== 'ADMIN' && user?.role !== 'STAFF') {
     return <Navigate to="/" replace />
   }
 

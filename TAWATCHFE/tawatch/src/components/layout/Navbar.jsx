@@ -53,9 +53,9 @@ function SearchOverlay({ onClose }) {
     navigate(`/products?q=${encodeURIComponent(query.trim())}`)
   }
 
-  const handleSelect = (id) => {
+  const handleSelect = (slug) => {
     onClose()
-    navigate(`/product/${id}`)
+    navigate(`/product/${slug}`)
   }
 
   return (
@@ -100,7 +100,7 @@ function SearchOverlay({ onClose }) {
               <button
                 key={item.id}
                 type="button"
-                onClick={() => handleSelect(item.id)}
+                onClick={() => handleSelect(item.slug)}
                 className="flex w-full items-center gap-4 border-b border-outline-variant/15 px-4 py-3.5 text-left transition-colors hover:bg-surface-container last:border-b-0"
               >
                 <div className="h-14 w-14 flex-shrink-0 overflow-hidden bg-surface-container">
@@ -319,8 +319,8 @@ export default function Navbar() {
     <nav
       className={`fixed top-0 z-50 flex h-20 w-full items-center justify-between px-8 backdrop-blur-xl transition-all duration-300 md:px-[80px] ${
         isScrolled
-          ? 'bg-surface/96 shadow-[0_1px_0_rgba(233,193,118,0.14),0_8px_40px_rgba(0,0,0,0.45)]'
-          : 'bg-surface/82 shadow-[0_1px_0_rgba(233,193,118,0.07)]'
+          ? 'bg-white shadow-[0_1px_0_rgba(0,0,0,0.05),0_8px_40px_rgba(0,0,0,0.1)]'
+          : 'bg-white/90 shadow-[0_1px_0_rgba(0,0,0,0.05)]'
       }`}
     >
       {/* Logo */}

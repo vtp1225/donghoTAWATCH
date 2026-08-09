@@ -28,7 +28,7 @@
   left: 0;
   width: 0%;
   height: 1px;
-  background: #e9c176;
+  background: #1e3a8a;
   transition: width 0.5s ease;
 }
 
@@ -37,12 +37,12 @@
 }
 
 .hero-overlay {
-  background: linear-gradient(0deg, rgba(26, 26, 26, 0.92) 0%, rgba(26, 26, 26, 0.22) 50%, rgba(26, 26, 26, 0.62) 100%);
+  background: radial-gradient(circle at center, rgba(20, 20, 20, 0.6) 0%, rgba(0, 0, 0, 0.95) 100%);
 }
 
 .reveal-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #e9c176 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, #1e3a8a 50%, transparent 100%);
   transform: scaleX(0);
   transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1);
 }
@@ -52,13 +52,25 @@
 }
 
 .gold-border-button {
-  border: 1px solid #e9c176;
+  border: 1px solid #1e3a8a;
   transition: all 0.5s ease;
 }
 
 .gold-border-button:hover {
-  background-color: #e9c176;
-  color: #131313;
+  background-color: #1e3a8a;
+  color: #ffffff;
+  letter-spacing: 0.1em;
+}
+
+.white-border-button {
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  color: #ffffff;
+  transition: all 0.5s ease;
+}
+
+.white-border-button:hover {
+  background-color: #ffffff;
+  color: #111111;
   letter-spacing: 0.1em;
 }
 
@@ -68,7 +80,7 @@
 }
 
 .card-hover-border:hover {
-  border-color: rgba(233, 193, 118, 0.3);
+  border-color: rgba(30, 58, 138, 0.3);
 }
 
 @keyframes fadeIn {
@@ -99,12 +111,12 @@
 }
 
 .hero-overlay {
-  background: linear-gradient(0deg, rgba(26, 26, 26, 0.92) 0%, rgba(26, 26, 26, 0.22) 50%, rgba(26, 26, 26, 0.62) 100%);
+  background: radial-gradient(circle at center, rgba(20, 20, 20, 0.6) 0%, rgba(0, 0, 0, 0.95) 100%);
 }
 
 .reveal-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent 0%, #e9c176 50%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, #1e3a8a 50%, transparent 100%);
   transform: scaleX(0);
   transition: transform 1.5s cubic-bezier(0.19, 1, 0.22, 1);
 }A
@@ -114,13 +126,13 @@
 }
 
 .gold-border-button {
-  border: 1px solid #e9c176;
+  border: 1px solid #1e3a8a;
   transition: all 0.5s ease;
 }
 
 .gold-border-button:hover {
-  background-color: #e9c176;
-  color: #131313;
+  background-color: #1e3a8a;
+  color: #ffffff;
   letter-spacing: 0.1em;
 }
 
@@ -130,7 +142,7 @@
 }
 
 .card-hover-border:hover {
-  border-color: rgba(233, 193, 118, 0.3);
+  border-color: rgba(30, 58, 138, 0.3);
 }
 
 @keyframes fadeIn {

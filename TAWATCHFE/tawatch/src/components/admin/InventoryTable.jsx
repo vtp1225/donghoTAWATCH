@@ -4,6 +4,7 @@ import { brandService } from '../../services/brandService'
 import { categoryService } from '../../services/categoryService'
 import { segmentService } from '../../services/segmentService'
 import { cached } from '../../services/cache'
+import useAuth from '../../hooks/useAuth'
 
 const PAGE_SIZE = 20
 
@@ -30,7 +31,10 @@ function statusInfo(isActive) {
     : { label: 'TẠM DỪNG', className: 'text-on-surface-variant/60 border-outline-variant/30 bg-secondary-container/30' }
 }
 
-export default function InventoryTable({ refreshKey, onEdit, onStatsLoad }) {
+export default function InventoryTable({ refreshKey, onEdit, onDelete, onStatsLoad }) {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
+
   const [activeTab, setActiveTab] = useState('all')
   const [watches, setWatches] = useState([])
   const [loading, setLoading] = useState(true)
@@ -326,24 +330,33 @@ export default function InventoryTable({ refreshKey, onEdit, onStatsLoad }) {
                       </td>
                       <td className="px-4 py-4"><p className="font-body-md text-sm text-primary whitespace-nowrap">{formatVND(watch.minPrice)}</p></td>
                       <td className="px-4 py-4 text-right">
-                        <div className="flex items-center justify-end gap-3">
-                          <button
-                            onClick={() => handleToggleFeatured(watch)}
-                            title={watch.isFeatured ? 'Bỏ nổi bật' : 'Đánh dấu nổi bật'}
-                            className={`transition-colors ${watch.isFeatured ? 'text-primary' : 'text-on-surface-variant/30 hover:text-primary/60'}`}
-                            style={watch.isFeatured ? { fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24" } : {}}
-                          >
-                            <span className="material-symbols-outlined">star</span>
-                          </button>
-                          <button onClick={() => onEdit?.(watch)} className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" title="Cập nhật">edit</button>
-                          <button
-                            onClick={() => setConfirmTarget(watch)}
-                            className={`material-symbols-outlined transition-colors ${watch.isActive ? 'text-on-surface-variant hover:text-error' : 'text-on-surface-variant/40 hover:text-green-500'}`}
-                            title={watch.isActive ? 'Tạm dừng bán' : 'Bật bán lại'}
-                          >
-                            {watch.isActive ? 'pause_circle' : 'play_circle'}
-                          </button>
-                        </div>
+                        {isAdmin && (
+                          <div className="flex items-center justify-end gap-3">
+                            <button
+                              onClick={() => handleToggleFeatured(watch)}
+                              title={watch.isFeatured ? 'Bỏ nổi bật' : 'Đánh dấu nổi bật'}
+                              className={`transition-colors ${watch.isFeatured ? 'text-primary' : 'text-on-surface-variant/30 hover:text-primary/60'}`}
+                              style={watch.isFeatured ? { fontVariationSettings: "'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24" } : {}}
+                            >
+                              <span className="material-symbols-outlined">star</span>
+                            </button>
+                            <button onClick={() => onEdit?.(watch)} className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" title="Cập nhật">edit</button>
+                            <button
+                              onClick={() => setConfirmTarget(watch)}
+                              className={`material-symbols-outlined transition-colors ${watch.isActive ? 'text-on-surface-variant hover:text-error' : 'text-on-surface-variant/40 hover:text-green-500'}`}
+                              title={watch.isActive ? 'Tạm dừng bán' : 'Bật bán lại'}
+                            >
+                              {watch.isActive ? 'pause_circle' : 'play_circle'}
+                            </button>
+                            <button
+                              onClick={() => onDelete?.(watch)}
+                              className="material-symbols-outlined text-on-surface-variant/40 hover:text-error transition-colors"
+                              title="Xoá sản phẩm"
+                            >
+                              delete
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   )

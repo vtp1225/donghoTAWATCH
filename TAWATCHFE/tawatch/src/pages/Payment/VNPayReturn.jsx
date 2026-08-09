@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
@@ -28,13 +27,6 @@ export default function VNPayReturn() {
       return
     }
 
-    // Nếu VNPay trả về lỗi ngay (responseCode != 00) → không cần gọi backend
-    if (responseCode && responseCode !== '00') {
-      setError('Giao dịch bị từ chối bởi VNPay (mã: ' + responseCode + ').')
-      setStatus('failed')
-      return
-    }
-
     const process = async () => {
       let callbackResult = null
       try {
@@ -43,7 +35,7 @@ export default function VNPayReturn() {
         const vnpParams = Object.fromEntries(searchParams.entries())
         callbackResult = await paymentService.callbackVnpay(vnpParams)
       } catch (err) {
-        // code 7002 = đã xử lý rồi → coi như thành công
+        // code 7002 = đã xử lý rồi → coi như thành công hoặc cần check kỹ hơn, nhưng tạm coi là success payload nếu có
         if (err?.data?.code !== 7002) {
           setError(err?.message || 'Thanh toán thất bại.')
           setStatus('failed')
@@ -59,10 +51,15 @@ export default function VNPayReturn() {
           setOrder(o)
         }
       } catch {
-        // order fetch lỗi thì vẫn show success, không cần order details
+        // order fetch lỗi thì vẫn show success/failed tuỳ mã, không cần order details
       }
 
-      setStatus('success')
+      if (responseCode && responseCode !== '00') {
+        setError('Giao dịch không thành công (mã: ' + responseCode + ').')
+        setStatus('failed')
+      } else {
+        setStatus('success')
+      }
     }
 
     process()
@@ -74,7 +71,7 @@ export default function VNPayReturn() {
       <main className="mx-auto max-w-2xl px-8 pb-section-gap-desktop pt-32 md:px-[80px]">
         {status === 'processing' && <ProcessingState />}
         {status === 'success' && <SuccessState order={order} />}
-        {status === 'failed' && <FailedState error={error} orderId={orderId} />}
+        {status === 'failed' && <FailedState error={error} orderId={order?.id} />}
       </main>
       <Footer />
     </div>
@@ -167,20 +164,37 @@ function FailedState({ error, orderId }) {
       )}
 
       <div className="mt-10 flex flex-col items-center gap-4">
-        {orderId && (
+        {orderId ? (
+          <>
+            <button
+              onClick={() => {
+                paymentService.initiateVnpay(orderId)
+                  .then(data => {
+                    if (data && data.paymentUrl) {
+                      window.location.href = data.paymentUrl;
+                    }
+                  })
+                  .catch(err => alert(err?.message || 'Không thể tạo lại URL thanh toán'));
+              }}
+              className="w-full max-w-xs border border-primary px-8 py-4 font-label-caps text-[10px] tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-background"
+            >
+              THANH TOÁN LẠI NGAY
+            </button>
+            <Link
+              to={`/orders`}
+              className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant underline underline-offset-4 transition-opacity hover:opacity-70"
+            >
+              Xem đơn hàng
+            </Link>
+          </>
+        ) : (
           <Link
             to={`/orders`}
             className="w-full max-w-xs border border-primary px-8 py-4 font-label-caps text-[10px] tracking-[0.25em] text-primary transition-colors hover:bg-primary hover:text-background"
           >
-            XEM ĐƠN HÀNG
+            QUẢN LÝ ĐƠN HÀNG
           </Link>
         )}
-        <Link
-          to="/checkout"
-          className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant underline underline-offset-4 transition-opacity hover:opacity-70"
-        >
-          Quay lại thanh toán
-        </Link>
         <Link
           to="/"
           className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant/60 underline underline-offset-4 transition-opacity hover:opacity-70"

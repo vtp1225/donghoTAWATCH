@@ -34,7 +34,7 @@ export default function ManageBrand() {
             <span className="font-label-caps text-label-caps text-primary tracking-[0.4em] block mb-4 uppercase">BRAND MANAGEMENT</span>
             <h2 className="font-display-lg text-display-lg text-on-background">Quản lý Thương Hiệu</h2>
           </div>
-          <button onClick={() => setModalOpen(true)} className="px-8 py-3 border border-primary text-primary font-label-caps text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-background transition-all duration-500 active:scale-95 flex items-center gap-2">
+          <button  onClick={() => setModalOpen(true)} className="px-8 py-3 border border-primary text-primary font-label-caps text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-background transition-all duration-500 active:scale-95 flex items-center gap-2">
             <span className="material-symbols-outlined text-sm">add</span>
             Thêm Thương Hiệu
           </button>

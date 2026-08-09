@@ -4,7 +4,7 @@ import { addressService, userService } from '../../services/userService'
 
 const ROLES = [
   { value: 'CUSTOMER', label: 'Khách hàng',  cls: 'text-primary border-primary/30 bg-primary/10' },
-  { value: 'STAFF',    label: 'Nhân viên',    cls: 'text-blue-400 border-blue-400/30 bg-blue-400/10' },
+  { value: 'STAFF',    label: 'Nhân viên',     cls: 'text-blue-400 border-blue-400/30 bg-blue-400/10' },
   { value: 'ADMIN',    label: 'Quản trị viên', cls: 'text-red-400 border-red-400/30 bg-red-400/10' },
 ]
 
@@ -126,12 +126,11 @@ export default function CustomerDetailModal({ user, onClose, onUpdate, authUser 
           <Initials name={user.fullName || user.name} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <h3 className="font-headline-sm text-lg text-on-background">{user.fullName || user.name || '—'}</h3>
+              <h3 className="font-ok hay code chuc nang do di, thay vi xoa hay cho no active la false, chinh lai giao dien luon, thay
+  vi nut thung rac hay chuyen sang nut khacheadline-sm text-lg text-on-background">{user.fullName || user.name || '—'}</h3>
               <span className={`px-2 py-0.5 font-label-caps text-[9px] tracking-widest border ${
                 user.role === 'ADMIN'
                   ? 'text-red-400 border-red-400/30 bg-red-400/10'
-                  : user.role === 'STAFF'
-                  ? 'text-blue-400 border-blue-400/30 bg-blue-400/10'
                   : 'text-primary border-primary/30 bg-primary/10'
               }`}>
                 {user.role || 'CUSTOMER'}

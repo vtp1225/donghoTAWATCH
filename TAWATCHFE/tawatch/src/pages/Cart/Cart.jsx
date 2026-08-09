@@ -4,6 +4,7 @@ import Footer from '../../components/layout/Footer.jsx'
 import Navbar from '../../components/layout/Navbar.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import { cartService, getCartOwner } from '../../services/cartService.js'
+import { promotionService } from '../../services/promotionService.js'
 
 function formatVnd(value) {
   if (value == null) return '0 đ'
@@ -25,6 +26,8 @@ export default function Cart() {
 
   const owner = useMemo(() => getCartOwner(), [])
 
+  const [promotions, setPromotions] = useState([])
+
   const loadCart = async () => {
     setLoading(true)
     setError('')
@@ -43,6 +46,11 @@ export default function Cart() {
 
   useEffect(() => {
     loadCart()
+    promotionService.getAll({ isActive: true })
+      .then((list) => {
+        if (Array.isArray(list)) setPromotions(list)
+      })
+      .catch(() => {})
   }, [])
 
   const handleQuantityChange = async (item, quantity) => {
@@ -122,6 +130,31 @@ export default function Cart() {
 
   const selectedItems = items.filter((i) => selectedIds.has(i.id))
   const selectedSubtotal = selectedItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)
+
+  const bestDiscount = useMemo(() => {
+    if (!selectedSubtotal || promotions.length === 0) return 0
+    let maxD = 0
+    const now = Date.now()
+    const selectedWatchIds = selectedItems.map(item => item.watchId)
+    for (const p of promotions) {
+      if (p.startDate && new Date(p.startDate).getTime() > now) continue
+      if (p.endDate && new Date(p.endDate).getTime() < now) continue
+      if (p.minOrderValue && selectedSubtotal < p.minOrderValue) continue
+      if (p.promoType === 'PRODUCT' && (!p.watchIds || !selectedWatchIds.some(id => p.watchIds.includes(id)))) continue
+      
+      let d = 0
+      if (p.discountType === 'PERCENT') {
+        d = (selectedSubtotal * p.discountValue) / 100
+        if (p.maxDiscountAmount) d = Math.min(d, p.maxDiscountAmount)
+      } else {
+        d = p.discountValue
+      }
+      if (d > maxD) maxD = d
+    }
+    return maxD
+  }, [selectedSubtotal, promotions, selectedItems])
+
+  const bestPrice = Math.max(0, selectedSubtotal - bestDiscount)
 
   const handleProceedToCheckout = () => {
     navigate('/checkout', {
@@ -222,8 +255,9 @@ export default function Cart() {
                               </div>
                               <p className="font-body-md text-primary">{formatVnd(item.unitPrice)}</p>
                             </div>
+
                             <p className="mt-4 font-label-caps text-[10px] tracking-[0.25em] text-outline">
-                              REF. {item.watchVariantId} | QTY {item.quantity}
+                              KHO CÒN: {item.stockQuantity ?? 0} SẢN PHẨM
                             </p>
 
                             <div className="mt-auto flex flex-col gap-4 pt-8 md:flex-row md:items-center md:justify-between">
@@ -238,10 +272,10 @@ export default function Cart() {
                                 </button>
                                 <span className="w-10 text-center font-body-md text-on-surface">{item.quantity}</span>
                                 <button
-                                  className="px-2 text-on-surface-variant transition-colors hover:text-primary"
+                                  className="px-2 text-on-surface-variant transition-colors hover:text-primary disabled:opacity-50 disabled:cursor-not-allowed"
                                   type="button"
                                   onClick={() => handleQuantityChange(item, item.quantity + 1)}
-                                  disabled={savingItemId === item.id}
+                                  disabled={savingItemId === item.id || (item.stockQuantity != null && item.quantity >= item.stockQuantity)}
                                 >
                                   <span className="material-symbols-outlined text-sm">add</span>
                                 </button>
@@ -300,10 +334,23 @@ export default function Cart() {
                   </div>
                 </div>
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-                <div className="mb-10 mt-8 flex items-end justify-between">
+                <div className="mb-4 mt-8 flex items-end justify-between">
                   <span className="font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant">TOTAL</span>
-                  <span className="font-headline-sm text-headline-sm text-primary">{formatVnd(selectedSubtotal)}</span>
+                  <span className={`font-headline-sm text-headline-sm ${bestDiscount > 0 ? 'text-on-surface-variant/40 line-through' : 'text-primary'}`}>
+                    {formatVnd(selectedSubtotal)}
+                  </span>
                 </div>
+                {bestDiscount > 0 && (
+                  <div className="mb-10 flex flex-col items-end gap-1">
+                    <span className="font-label-caps text-[10px] tracking-[0.2em] text-primary font-bold">
+                      ƯỚC TÍNH SAU KHI NHẬP MÃ
+                    </span>
+                    <span className="font-headline-sm text-headline-sm text-primary">
+                      {formatVnd(bestPrice)}
+                    </span>
+                  </div>
+                )}
+                {bestDiscount === 0 && <div className="mb-10"></div>}
 
                 <button
                   type="button"

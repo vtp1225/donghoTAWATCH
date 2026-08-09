@@ -109,9 +109,9 @@ function ColorFormModal({ open, color, onClose, onSuccess }) {
             <button
               type="button"
               onClick={() => set('isActive', !form.isActive)}
-              className={`relative h-5 w-9 rounded-full transition-colors duration-200 ${form.isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
+              className={`flex items-center h-5 w-9 rounded-full p-[2px] transition-colors duration-200 ${form.isActive ? 'bg-primary' : 'bg-outline-variant/30'}`}
             >
-              <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${form.isActive ? 'translate-x-4' : 'translate-x-0.5'}`} />
+              <span className={`h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${form.isActive ? 'translate-x-4' : 'translate-x-0'}`} />
             </button>
             <span className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">
               {form.isActive ? 'Đang hoạt động' : 'Tắt'}

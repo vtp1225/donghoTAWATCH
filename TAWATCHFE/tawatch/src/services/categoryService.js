@@ -11,8 +11,8 @@ export const categoryService = {
   getTree() {
     return request('/categories/tree').then(unwrap)
   },
-  getById(id) {
-    return request(`/categories/${id}`).then(unwrap)
+  getBySlug(slug) {
+    return request(`/categories/slug/${encodeURIComponent(slug)}`).then(unwrap)
   },
   create(payload) {
     return request('/categories', {

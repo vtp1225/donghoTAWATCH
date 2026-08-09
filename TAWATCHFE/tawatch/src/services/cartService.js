@@ -100,4 +100,10 @@ export const cartService = {
 			method: 'DELETE',
 		}).then(unwrap)
 	},
+	async mergeCart(sessionId, userId) {
+		if (!sessionId || !userId) return;
+		return request(`/cart/merge?sessionId=${sessionId}&userId=${userId}`, {
+			method: 'POST',
+		}).then(unwrap)
+	}
 }

@@ -70,7 +70,6 @@ const VARIANT_DEFAULT = {
   strapMaterial: '',
   caseSizeMm: '',
   price: '',
-  stockQuantity: '',
   isActive: true,
   images: [{ ...IMAGE_DEFAULT }],
 }
@@ -123,7 +122,8 @@ function buildVariantForm(variant, images) {
     strapMaterial: variant.strapMaterial ?? '',
     caseSizeMm: variant.caseSizeMm ?? '',
     price: variant.price ?? '',
-    stockQuantity: variant.stockQuantity ?? '',
+    costPrice: variant.costPrice ?? 0,
+    stockQuantity: variant.stockQuantity ?? 0,
     isActive: variant.isActive ?? true,
     images: buildImageRows(images),
   }
@@ -386,6 +386,9 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
     if (!watchForm.sku.trim()) return 'SKU không được để trống'
     if (!watchForm.name.trim()) return 'Tên sản phẩm không được để trống'
     if (!watchForm.brandId) return 'Vui lòng chọn thương hiệu'
+    if (watchForm.waterResistanceAtm !== '' && Number(watchForm.waterResistanceAtm) < 0) return 'Chống nước không được là số âm'
+    if (watchForm.thicknessMm !== '' && Number(watchForm.thicknessMm) < 0) return 'Độ dày không được là số âm'
+    if (watchForm.powerReserveHours !== '' && Number(watchForm.powerReserveHours) < 0) return 'Trữ cót không được là số âm'
     return ''
   }
 
@@ -397,8 +400,9 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
       if (!variant.dialColorId) return `Biến thể ${i + 1}: màu mặt không được để trống`
       if (!variant.strapMaterial.trim()) return `Biến thể ${i + 1}: chất liệu dây không được để trống`
       if (!variant.caseSizeMm) return `Biến thể ${i + 1}: kích thước case không được để trống`
+      if (Number(variant.caseSizeMm) < 0) return `Biến thể ${i + 1}: kích thước case không được âm`
       if (!variant.price) return `Biến thể ${i + 1}: giá không được để trống`
-      if (!variant.stockQuantity) return `Biến thể ${i + 1}: tồn kho không được để trống`
+      if (Number(variant.price) < 0) return `Biến thể ${i + 1}: giá không được âm`
 
       const normalized = normalizeImages(variant.images)
       if (normalized.length === 0) return `Biến thể ${i + 1}: cần ít nhất một ảnh`
@@ -464,7 +468,7 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
           strapMaterial: variant.strapMaterial.trim(),
           caseSizeMm: Number(variant.caseSizeMm),
           price: Number(variant.price),
-          stockQuantity: Number(variant.stockQuantity),
+          costPrice: Number(variant.costPrice || 0),
           imageUrl: primaryImage,
           isActive: Boolean(variant.isActive),
         }
@@ -616,13 +620,13 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
                 </select>
               </Field>
               <Field label="Chống nước (ATM)">
-                <input className={inputCls} type="number" placeholder="30" value={watchForm.waterResistanceAtm} onChange={(e) => setWatch('waterResistanceAtm', e.target.value)} />
+                <input className={inputCls} type="number" min="0" placeholder="30" value={watchForm.waterResistanceAtm} onChange={(e) => setWatch('waterResistanceAtm', e.target.value)} />
               </Field>
               <Field label="Độ dày (mm)">
-                <input className={inputCls} type="number" step="0.1" placeholder="12.5" value={watchForm.thicknessMm} onChange={(e) => setWatch('thicknessMm', e.target.value)} />
+                <input className={inputCls} type="number" min="0" step="0.1" placeholder="12.5" value={watchForm.thicknessMm} onChange={(e) => setWatch('thicknessMm', e.target.value)} />
               </Field>
               <Field label="Trữ cót (giờ)">
-                <input className={inputCls} type="number" placeholder="48" value={watchForm.powerReserveHours} onChange={(e) => setWatch('powerReserveHours', e.target.value)} />
+                <input className={inputCls} type="number" min="0" placeholder="48" value={watchForm.powerReserveHours} onChange={(e) => setWatch('powerReserveHours', e.target.value)} />
               </Field>
               <Field label="Loại pin">
                 <input className={inputCls} placeholder="(để trống nếu không dùng pin)" value={watchForm.batteryType} onChange={(e) => setWatch('batteryType', e.target.value)} />
@@ -684,14 +688,19 @@ export default function WatchModal({ open, onClose, onSuccess, watch }) {
                       </select>
                     </Field>
                     <Field label="Case (mm)" required>
-                      <input className={inputCls} type="number" step="0.1" value={variant.caseSizeMm} onChange={(e) => setVariant(variantIndex, 'caseSizeMm', e.target.value)} />
+                      <input className={inputCls} type="number" min="0" step="0.1" value={variant.caseSizeMm} onChange={(e) => setVariant(variantIndex, 'caseSizeMm', e.target.value)} />
                     </Field>
-                    <Field label="Giá" required>
-                      <input className={inputCls} type="number" value={variant.price} onChange={(e) => setVariant(variantIndex, 'price', e.target.value)} />
+                    <Field label="Giá bán" required>
+                      <input className={inputCls} type="number" min="0" value={variant.price} onChange={(e) => setVariant(variantIndex, 'price', e.target.value)} />
                     </Field>
-                    <Field label="Tồn kho" required>
-                      <input className={inputCls} type="number" value={variant.stockQuantity} onChange={(e) => setVariant(variantIndex, 'stockQuantity', e.target.value)} />
+                    <Field label="Giá vốn (Khởi tạo)">
+                      <input className={inputCls} type="number" min="0" value={variant.costPrice} onChange={(e) => setVariant(variantIndex, 'costPrice', e.target.value)} placeholder="0" />
                     </Field>
+                    {variant.id && (
+                      <Field label="Tồn kho (Được tính tự động)">
+                        <input className={`${inputCls} bg-surface-container-high cursor-not-allowed`} type="number" readOnly value={variant.stockQuantity || 0} />
+                      </Field>
+                    )}
                   </div>
 
                   <div className="space-y-3">

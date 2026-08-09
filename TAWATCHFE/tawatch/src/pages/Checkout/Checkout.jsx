@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
+import GhnLocationSelects from '../../components/common/GhnLocationSelects.jsx'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
@@ -9,6 +10,7 @@ import { orderService } from '../../services/orderService.js'
 import { paymentService } from '../../services/paymentService.js'
 import { addressService } from '../../services/userService.js'
 import { ghnService } from '../../services/ghnService.js'
+import { loyaltyService, TIER_META } from '../../services/loyaltyService.js'
 
 function formatVnd(value) {
   if (value == null) return '0 đ'
@@ -22,7 +24,6 @@ function resolveImage(item) {
 const PAYMENT_METHODS = [
   { value: 'COD', label: 'Thanh toán khi nhận hàng', sub: 'Cash On Delivery', icon: 'payments' },
   { value: 'VNPAY', label: 'Ví VNPAY', sub: 'Thanh toán qua ứng dụng VNPAY', icon: 'account_balance_wallet' },
-  { value: 'BANK_TRANSFER', label: 'Chuyển khoản ngân hàng', sub: 'Chuyển khoản sau khi đặt hàng', icon: 'account_balance' },
 ]
 
 const DELIVERY_METHODS = [
@@ -54,104 +55,9 @@ function RadioCard({ selected, onClick, children }) {
   )
 }
 
-// ---------- GHN Dropdown (dùng chung trong AddressPicker và GuestForm) ----------
-function GhnLocationSelects({ onChange }) {
-  const [provinces, setProvinces] = useState([])
-  const [districts, setDistricts] = useState([])
-  const [wards, setWards] = useState([])
-  const [loadingProvinces, setLoadingProvinces] = useState(true)
-  const [loadingDistricts, setLoadingDistricts] = useState(false)
-  const [loadingWards, setLoadingWards] = useState(false)
-  const [error, setError] = useState('')
 
-  useEffect(() => {
-    setLoadingProvinces(true)
-    ghnService.getProvinces()
-      .then((list) => {
-        setProvinces(Array.isArray(list) && list.length > 0 ? list : [])
-        if (!list || list.length === 0) setError('Không thể tải danh sách tỉnh thành. Kiểm tra kết nối backend.')
-      })
-      .catch(() => setError('Không thể tải danh sách tỉnh thành. Kiểm tra kết nối backend.'))
-      .finally(() => setLoadingProvinces(false))
-  }, [])
-
-  const handleProvinceChange = async (e) => {
-    const opt = e.target.options[e.target.selectedIndex]
-    const provinceId = Number(opt.value)
-    const provinceName = opt.text
-    setDistricts([])
-    setWards([])
-    onChange({ province: provinceName, district: '', ward: '', ghnDistrictId: null, ghnWardCode: '' })
-    setLoadingDistricts(true)
-    const list = await ghnService.getDistricts(provinceId).catch(() => [])
-    setDistricts(Array.isArray(list) ? list : [])
-    setLoadingDistricts(false)
-  }
-
-  const handleDistrictChange = async (e) => {
-    const opt = e.target.options[e.target.selectedIndex]
-    const districtId = Number(opt.value)
-    const districtName = opt.text
-    setWards([])
-    onChange({ district: districtName, ward: '', ghnDistrictId: districtId, ghnWardCode: '' })
-    setLoadingWards(true)
-    const list = await ghnService.getWards(districtId).catch(() => [])
-    setWards(Array.isArray(list) ? list : [])
-    setLoadingWards(false)
-  }
-
-  const handleWardChange = (e) => {
-    const opt = e.target.options[e.target.selectedIndex]
-    onChange({ ward: opt.text, ghnWardCode: opt.value })
-  }
-
-  const selectClass = "w-full border-b border-outline-variant/25 bg-transparent py-2 font-body-md text-sm text-on-surface outline-none transition-colors focus:border-primary disabled:opacity-40 disabled:cursor-not-allowed"
-
-  if (error) {
-    return (
-      <div className="col-span-2 rounded border border-red-400/30 bg-red-400/5 px-4 py-3">
-        <p className="font-body-md text-xs text-red-400">{error}</p>
-      </div>
-    )
-  }
-
-  return (
-    <>
-      <div>
-        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Tỉnh / Thành phố</label>
-        <select onChange={handleProvinceChange} defaultValue="" disabled={loadingProvinces} className={selectClass}>
-          <option value="" disabled>{loadingProvinces ? 'Đang tải...' : 'Chọn tỉnh / thành phố'}</option>
-          {provinces.map((p) => (
-            <option key={p.provinceId} value={p.provinceId}>{p.provinceName}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Quận / Huyện</label>
-        <select onChange={handleDistrictChange} defaultValue="" disabled={districts.length === 0 || loadingDistricts} className={selectClass}>
-          <option value="" disabled>{loadingDistricts ? 'Đang tải...' : 'Chọn quận / huyện'}</option>
-          {districts.map((d) => (
-            <option key={d.districtId} value={d.districtId}>{d.districtName}</option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="mb-1 block font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60 uppercase">Phường / Xã</label>
-        <select onChange={handleWardChange} defaultValue="" disabled={wards.length === 0 || loadingWards} className={selectClass}>
-          <option value="" disabled>{loadingWards ? 'Đang tải...' : 'Chọn phường / xã'}</option>
-          {wards.map((w) => (
-            <option key={w.wardCode} value={w.wardCode}>{w.wardName}</option>
-          ))}
-        </select>
-      </div>
-    </>
-  )
-}
-
-// ---------- Address picker (logged-in) ----------
-function AddressPicker({ userId, selectedId, onSelect }) {
-  const [addresses, setAddresses] = useState([])
-  const [loading, setLoading] = useState(true)
+// ---------- Address picker (logged-in) — presentational only ----------
+function AddressPicker({ addresses, loading, selectedId, onSelect, onAddressCreated, userId }) {
   const [showForm, setShowForm] = useState(false)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
@@ -161,29 +67,24 @@ function AddressPicker({ userId, selectedId, onSelect }) {
     ghnDistrictId: null, ghnWardCode: '', isDefault: false,
   })
 
-  useEffect(() => {
-    addressService.getAddresses(userId)
-      .then((data) => {
-        const list = Array.isArray(data) ? data : []
-        setAddresses(list)
-        const def = list.find((a) => a.isDefault) ?? list[0]
-        if (def && !selectedId) onSelect(def)
-      })
-      .catch(() => setAddresses([]))
-      .finally(() => setLoading(false))
-  }, [onSelect, selectedId, userId])
-
   const handleSaveAddress = async () => {
     if (!newAddr.recipientName || !newAddr.phone || !newAddr.addressDetail || !newAddr.province || !newAddr.district || !newAddr.ward) {
       setFormError('Vui lòng điền đầy đủ thông tin địa chỉ.')
+      return
+    }
+    if (!/^(0|\+84)[0-9]{9}$/.test(newAddr.phone.replace(/\s/g, ''))) {
+      setFormError('Số điện thoại không hợp lệ.')
+      return
+    }
+    if (!newAddr.ghnDistrictId || !newAddr.ghnWardCode) {
+      setFormError('Vui lòng chọn đầy đủ Quận/Huyện và Phường/Xã.')
       return
     }
     setSaving(true)
     setFormError('')
     try {
       const created = await addressService.createAddress(userId, newAddr)
-      setAddresses((prev) => [...prev, created])
-      onSelect(created)
+      onAddressCreated(created)
       setShowForm(false)
       setNewAddr({ recipientName: '', phone: '', addressDetail: '', province: '', district: '', ward: '', ghnDistrictId: null, ghnWardCode: '', isDefault: false })
     } catch (err) {
@@ -407,6 +308,8 @@ export default function Checkout() {
   const [cart, setCart] = useState(null)
   const [cartLoading, setCartLoading] = useState(true)
 
+  const [addresses, setAddresses] = useState([])
+  const [addressLoading, setAddressLoading] = useState(true)
   const [selectedAddress, setSelectedAddress] = useState(null)
   const [guest, setGuest] = useState({ guestName: '', guestEmail: '', guestPhone: '', guestAddressDetail: '', guestProvince: '', guestDistrict: '', guestWard: '', ghnDistrictId: null, ghnWardCode: '' })
   const [shippingFee, setShippingFee] = useState(0)
@@ -419,6 +322,8 @@ export default function Checkout() {
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState('')
 
+  const [loyaltyInfo, setLoyaltyInfo] = useState(null)
+
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [successOrder, setSuccessOrder] = useState(null)
@@ -430,34 +335,90 @@ export default function Checkout() {
       .finally(() => setCartLoading(false))
   }, [])
 
-  const handleGuestChange = (name, value) => {
-    setGuest((prev) => ({ ...prev, [name]: value }))
-  }
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      loyaltyService.getLoyaltyInfo(user.id)
+        .then(setLoyaltyInfo)
+        .catch(() => {})
+    }
+  }, [isAuthenticated, user?.id])
 
-  const handleCouponCodeChange = (value) => {
-    setCouponCode(value)
-    setCouponError('')
+  // Load địa chỉ và tự động tính phí ship cho địa chỉ mặc định ngay khi vào trang
+  useEffect(() => {
+    if (!isAuthenticated) { setAddressLoading(false); return }
+    addressService.getAddresses(user.id)
+      .then((data) => {
+        const list = Array.isArray(data) ? data : []
+        setAddresses(list)
+        const def = list.find((a) => a.isDefault) ?? list[0]
+        if (def) {
+          setSelectedAddress(def)
+          runCalcFee(def, 'EXTERNAL_SHIPPER')
+        }
+      })
+      .catch(() => {})
+      .finally(() => setAddressLoading(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, user?.id])
 
-    if (appliedCoupon?.code?.toLowerCase() !== value.trim().toLowerCase()) {
-      setAppliedCoupon(null)
+  // Tính phí ship tường minh — gọi thủ công, không phụ thuộc vào useEffect chain
+  async function runCalcFee(addr, method) {
+    if (method !== 'EXTERNAL_SHIPPER') { setShippingFee(0); return }
+    if (!addr?.ghnDistrictId || !addr?.ghnWardCode) { setShippingFee(0); return }
+    setShippingFeeLoading(true)
+    try {
+      const fee = await ghnService.calculateFee({ toDistrictId: addr.ghnDistrictId, toWardCode: addr.ghnWardCode, weight: 500 })
+      setShippingFee(fee ?? 0)
+    } catch {
+      setShippingFee(0)
+    } finally {
+      setShippingFeeLoading(false)
     }
   }
 
-  // Tính phí ship khi địa chỉ hoặc phương thức vận chuyển thay đổi
+  // Khi chọn địa chỉ có sẵn
+  function handleSelectAddress(addr) {
+    setSelectedAddress(addr)
+    runCalcFee(addr, deliveryMethod)
+  }
+
+  // Khi thêm địa chỉ mới → tự động chọn và tính phí
+  function handleAddressCreated(addr) {
+    setAddresses((prev) => [...prev, addr])
+    setSelectedAddress(addr)
+    runCalcFee(addr, deliveryMethod)
+  }
+  function handleGuestChange(field, value) {
+    setGuest((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Khi đổi phương thức vận chuyển → tính lại phí
+  function handleDeliveryMethodChange(method) {
+    setDeliveryMethod(method)
+    if (isAuthenticated) {
+      runCalcFee(selectedAddress, method)
+    } else {
+      const districtId = guest.ghnDistrictId
+      const wardCode   = guest.ghnWardCode
+      if (method !== 'EXTERNAL_SHIPPER' || !districtId || !wardCode) { setShippingFee(0); return }
+      setShippingFeeLoading(true)
+      ghnService.calculateFee({ toDistrictId: districtId, toWardCode: wardCode, weight: 500 })
+        .then((fee) => setShippingFee(fee ?? 0))
+        .catch(() => setShippingFee(0))
+        .finally(() => setShippingFeeLoading(false))
+    }
+  }
+
+  // Guest: tính phí khi họ chọn xong địa chỉ GHN
   useEffect(() => {
-    if (deliveryMethod !== 'EXTERNAL_SHIPPER') { setShippingFee(0); return }
-
-    const districtId = isAuthenticated ? selectedAddress?.ghnDistrictId : guest.ghnDistrictId
-    const wardCode = isAuthenticated ? selectedAddress?.ghnWardCode : guest.ghnWardCode
-
-    if (!districtId || !wardCode) { setShippingFee(0); return }
-
+    if (isAuthenticated) return
+    if (deliveryMethod !== 'EXTERNAL_SHIPPER' || !guest.ghnDistrictId || !guest.ghnWardCode) { setShippingFee(0); return }
     setShippingFeeLoading(true)
-    ghnService.calculateFee({ toDistrictId: districtId, toWardCode: wardCode, weight: 500 })
+    ghnService.calculateFee({ toDistrictId: guest.ghnDistrictId, toWardCode: guest.ghnWardCode, weight: 500 })
       .then((fee) => setShippingFee(fee ?? 0))
       .catch(() => setShippingFee(0))
       .finally(() => setShippingFeeLoading(false))
-  }, [selectedAddress, guest.ghnDistrictId, guest.ghnWardCode, deliveryMethod, isAuthenticated])
+  }, [guest.ghnDistrictId, guest.ghnWardCode, deliveryMethod, isAuthenticated])
 
   const selectedItemIds = location.state?.selectedItemIds
   const allCartItems = cart?.items ?? []
@@ -465,7 +426,11 @@ export default function Checkout() {
     ? allCartItems.filter((i) => selectedItemIds.includes(i.id))
     : allCartItems
   const subtotal = items.reduce((sum, i) => sum + (i.subtotal ?? i.unitPrice * i.quantity), 0)
-  const discountAmount = appliedCoupon?.discountAmount ?? 0
+  const couponDiscount = appliedCoupon?.discountAmount ?? 0
+  const loyaltyDiscount = (isAuthenticated && loyaltyInfo?.discountPercent > 0)
+    ? Math.round(subtotal * loyaltyInfo.discountPercent / 100)
+    : 0
+  const discountAmount = couponDiscount + loyaltyDiscount
   const totalAmount = Math.max(subtotal + shippingFee - discountAmount, 0)
 
   const applyCoupon = async () => {
@@ -497,6 +462,15 @@ export default function Checkout() {
       setCouponLoading(false)
     }
   }
+  const handleCouponCodeChange = (value) => {
+    setCouponCode(value)
+  }
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null)
+    setCouponCode('')
+    setCouponError('')
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -522,6 +496,14 @@ export default function Checkout() {
       const { guestName, guestEmail, guestPhone, guestAddressDetail } = guest
       if (!guestName || !guestEmail || !guestPhone || !guestAddressDetail) {
         setSubmitError('Vui lòng điền đầy đủ thông tin nhận hàng.')
+        return
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+        setSubmitError('Email nhận hàng không hợp lệ.')
+        return
+      }
+      if (!/^(0|\+84)[0-9]{9}$/.test(guestPhone.replace(/\s/g, ''))) {
+        setSubmitError('Số điện thoại nhận hàng không hợp lệ.')
         return
       }
     }
@@ -643,8 +625,11 @@ export default function Checkout() {
                 {isAuthenticated ? (
                   <AddressPicker
                     userId={user.id}
+                    addresses={addresses}
+                    loading={addressLoading}
                     selectedId={selectedAddress?.id}
-                    onSelect={setSelectedAddress}
+                    onSelect={handleSelectAddress}
+                    onAddressCreated={handleAddressCreated}
                   />
                 ) : (
                   <>
@@ -665,7 +650,7 @@ export default function Checkout() {
                 <SectionLabel step="02">Phương thức vận chuyển</SectionLabel>
                 <div className="space-y-3">
                   {DELIVERY_METHODS.map((m) => (
-                    <RadioCard key={m.value} selected={deliveryMethod === m.value} onClick={() => setDeliveryMethod(m.value)}>
+                    <RadioCard key={m.value} selected={deliveryMethod === m.value} onClick={() => handleDeliveryMethodChange(m.value)}>
                       <div className="flex items-center gap-4">
                         <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center border transition-colors ${deliveryMethod === m.value ? 'border-primary text-primary' : 'border-outline-variant/25 text-on-surface-variant/50'}`}>
                           <span className="material-symbols-outlined text-[18px]">{m.icon}</span>
@@ -703,10 +688,20 @@ export default function Checkout() {
                   </div>
                   {couponError && <p className="font-body-md text-xs text-red-400">{couponError}</p>}
                   {appliedCoupon && (
-                    <div className="border border-primary/20 bg-primary/5 px-4 py-3 font-body-md text-xs text-on-surface-variant">
-                      <p className="font-label-caps text-[9px] tracking-[0.2em] text-primary">ĐÃ ÁP DỤNG</p>
-                      <p className="mt-1 text-on-surface">{appliedCoupon.promotionName || appliedCoupon.code}</p>
-                      <p className="mt-1 text-primary">Giảm {formatVnd(appliedCoupon.discountAmount)}</p>
+                    <div className="border border-primary/20 bg-primary/5 px-4 py-3 font-body-md text-xs text-on-surface-variant flex justify-between items-center">
+                      <div>
+                        <p className="font-label-caps text-[9px] tracking-[0.2em] text-primary">ĐÃ ÁP DỤNG</p>
+                        <p className="mt-1 text-on-surface">{appliedCoupon.promotionName || appliedCoupon.code}</p>
+                        <p className="mt-1 text-primary">Giảm {formatVnd(appliedCoupon.discountAmount)}</p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={removeCoupon}
+                        className="text-on-surface-variant/50 hover:text-red-500 transition-colors p-2"
+                        title="Bỏ áp dụng mã giảm giá"
+                      >
+                        ✕
+                      </button>
                     </div>
                   )}
                 </div>
@@ -784,10 +779,21 @@ export default function Checkout() {
                     <span className="text-on-surface-variant">Tạm tính</span>
                     <span className="text-on-surface">{formatVnd(subtotal)}</span>
                   </div>
-                  {discountAmount > 0 && (
+                  {couponDiscount > 0 && (
                     <div className="flex justify-between font-body-md text-sm">
-                      <span className="text-on-surface-variant">Giảm giá</span>
-                      <span className="text-primary">− {formatVnd(discountAmount)}</span>
+                      <span className="text-on-surface-variant">Mã giảm giá</span>
+                      <span className="text-primary">− {formatVnd(couponDiscount)}</span>
+                    </div>
+                  )}
+                  {loyaltyDiscount > 0 && loyaltyInfo && (
+                    <div className="flex justify-between font-body-md text-sm">
+                      <span className="flex items-center gap-1.5 text-on-surface-variant">
+                        <span className="material-symbols-outlined text-[13px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          {TIER_META[loyaltyInfo.tier]?.icon ?? 'military_tech'}
+                        </span>
+                        Thành viên {loyaltyInfo.tierLabel} ({loyaltyInfo.discountPercent}%)
+                      </span>
+                      <span className="text-primary">− {formatVnd(loyaltyDiscount)}</span>
                     </div>
                   )}
                   <div className="flex justify-between font-body-md text-sm">

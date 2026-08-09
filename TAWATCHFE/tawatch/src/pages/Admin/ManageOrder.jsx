@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { orderService } from '../../services/orderService.js'
+import {userService} from '../../services/userService.js'
+import GhnTrackingTimeline from '../../components/common/GhnTrackingTimeline.jsx'
 
 const STATUS_FLOW = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'REFUNDED']
-const STATUS_FILTERS = ['ALL', ...STATUS_FLOW, 'CANCELLED']
+const STATUS_FILTERS = ['ALL', ...STATUS_FLOW, 'CANCELLED', 'RETURN_REQUESTED', 'RETURN_REJECTED']
 
 const STATUS_META = {
   PENDING: {
@@ -40,6 +42,16 @@ const STATUS_META = {
     chipClass: 'border-on-secondary-container/30 bg-on-secondary-container/10 text-on-secondary-container',
     dotClass: 'bg-on-secondary-container',
   },
+  RETURN_REQUESTED: {
+    label: 'Yêu cầu đổi/trả',
+    chipClass: 'border-pink-500/40 bg-pink-500/10 text-pink-400',
+    dotClass: 'bg-pink-400',
+  },
+  RETURN_REJECTED: {
+    label: 'Từ chối đổi/trả',
+    chipClass: 'border-gray-500/40 bg-gray-500/10 text-gray-400',
+    dotClass: 'bg-gray-400',
+  },
 }
 
 const PAYMENT_META = {
@@ -52,6 +64,7 @@ const DELIVERY_LABELS = {
   EXTERNAL_SHIPPER: 'Đơn vị vận chuyển',
   DIRECT_SHOP: 'Nhận tại cửa hàng',
 }
+
 
 
 function formatCurrency(value) {
@@ -77,23 +90,31 @@ function formatDateTime(value) {
 }
 
 function parseAddress(snapshot, fallbackAddress) {
-  if (fallbackAddress) return fallbackAddress
-  if (!snapshot) return 'Không có thông tin địa chỉ'
-
+  if (snapshot) {
+    try {
+      const parsed = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot
+      const parts = [
+        parsed?.addressDetail,
+        parsed?.ward,
+        parsed?.district,
+        parsed?.province,
+      ].filter(Boolean)
+      if (parts.length) return parts.join(', ')
+    } catch {
+      if (typeof snapshot === 'string') return snapshot
+    }
+  }
+  return fallbackAddress || 'Không có thông tin địa chỉ'
+}
+function getInSnapshot(snapshot, key) {
+  if (!snapshot) return null
   try {
     const parsed = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot
-    const parts = [
-      parsed?.addressDetail,
-      parsed?.ward,
-      parsed?.district,
-      parsed?.province,
-    ].filter(Boolean)
-    return parts.length ? parts.join(', ') : 'Không có thông tin địa chỉ'
+    return parsed?.[key]
   } catch {
-    return typeof snapshot === 'string' ? snapshot : 'Không có thông tin địa chỉ'
+    return null
   }
 }
-
 function normalizeOrder(order) {
   const customerName = order?.customerName || order?.guestName || order?.fullName || `Khách #${order?.id ?? 'N/A'}`
   const itemsCount = Array.isArray(order?.items)
@@ -103,15 +124,16 @@ function normalizeOrder(order) {
   return {
     id: order?.id,
     orderCode: order?.orderCode || `ORD-${order?.id ?? 'N/A'}`,
-    customerName,
-    customerEmail: order?.guestEmail || order?.customerEmail || order?.email || '',
-    customerPhone: order?.guestPhone || order?.customerPhone || order?.phone || '',
+    customerName: order?.customerName || order?.guestName || order?.fullName || getInSnapshot(order?.shippingAddressSnapshot, 'recipientName') || `Khách #${order?.id ?? 'N/A'}`,
+    customerEmail: order?.guestEmail || order?.customerEmail || order?.email || getInSnapshot(order?.shippingAddressSnapshot, 'email') || null,
+    customerPhone: order?.guestPhone || order?.customerPhone || order?.phone || getInSnapshot(order?.shippingAddressSnapshot, 'phone') || null,
     totalAmount: Number(order?.totalAmount) || 0,
     paymentStatus: order?.paymentStatus || 'UNPAID',
     orderStatus: order?.orderStatus || 'PENDING',
     deliveryMethod: order?.deliveryMethod || 'EXTERNAL_SHIPPER',
     trackingCode: order?.trackingCode || null,
     note: order?.note || null,
+    returnReason: order?.returnReason || null,
     createdAt: order?.createdAt,
     updatedAt: order?.updatedAt,
     shippingAddress: parseAddress(order?.shippingAddressSnapshot, order?.shippingAddress),
@@ -137,6 +159,14 @@ function nextStatus(currentStatus) {
   if (currentStatus === 'PROCESSING') return 'SHIPPING'
   if (currentStatus === 'SHIPPING') return 'DELIVERED'
   return null
+}
+
+function canCancel(currentStatus) {
+  return currentStatus === 'PENDING' || currentStatus === 'CONFIRMED'
+}
+
+function isReturnRequested(currentStatus) {
+  return currentStatus === 'RETURN_REQUESTED'
 }
 
 function getActionLabel(next) {
@@ -187,7 +217,6 @@ export default function ManageOrder() {
 
   const filteredOrders = useMemo(() => {
     const search = keyword.trim().toLowerCase()
-
     return orders.filter((order) => {
       const matchStatus = activeFilter === 'ALL' || order.orderStatus === activeFilter
       if (!matchStatus) return false
@@ -240,6 +269,60 @@ export default function ManageOrder() {
       )
     } catch (err) {
       alert(err?.message || 'Không thể cập nhật trạng thái đơn hàng.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  async function handleCancelOrder(order) {
+    if (!canCancel(order.orderStatus)) return
+
+    const reason = window.prompt('Nhập lý do huỷ đơn hàng:', '')
+    if (reason === null) return
+
+    setUpdatingId(order.id)
+    try {
+      await orderService.cancelOrder(order.id, { userId: null, reason: reason.trim() || null })
+      setOrders((currentOrders) =>
+        currentOrders.map((item) =>
+          item.id === order.id
+            ? {
+                ...item,
+                orderStatus: 'CANCELLED',
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      )
+    } catch (err) {
+      alert(err?.message || 'Không thể huỷ đơn hàng.')
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  async function handleResolveReturn(order, approve) {
+    if (!isReturnRequested(order.orderStatus)) return
+
+    const targetStatus = approve ? 'REFUNDED' : 'RETURN_REJECTED'
+    if (!window.confirm(approve ? 'Xác nhận duyệt hoàn tiền cho đơn này?' : 'Xác nhận từ chối yêu cầu đổi/trả này?')) return
+
+    setUpdatingId(order.id)
+    try {
+      await orderService.updateOrderStatus(order.id, { newStatus: targetStatus })
+      setOrders((currentOrders) =>
+        currentOrders.map((item) =>
+          item.id === order.id
+            ? {
+                ...item,
+                orderStatus: targetStatus,
+                updatedAt: new Date().toISOString(),
+              }
+            : item,
+        ),
+      )
+    } catch (err) {
+      alert(err?.message || 'Không thể xử lý yêu cầu đổi/trả.')
     } finally {
       setUpdatingId(null)
     }
@@ -382,16 +465,55 @@ export default function ManageOrder() {
                       </div>
 
                       <div className="md:col-span-2 md:text-right flex md:justify-end items-center gap-3">
-                        <button
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            handleAdvanceStatus(order)
-                          }}
-                          disabled={!next || updatingId === order.id}
-                          className="px-3 py-2 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                        >
-                          {updatingId === order.id ? 'Đang cập nhật' : getActionLabel(next)}
-                        </button>
+                        {isReturnRequested(order.orderStatus) ? (
+                          <>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleResolveReturn(order, false)
+                              }}
+                              disabled={updatingId === order.id}
+                              className="px-3 py-2 border border-gray-400/40 text-gray-400 font-label-caps text-[10px] tracking-widest uppercase hover:bg-gray-400 hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              Từ chối
+                            </button>
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleResolveReturn(order, true)
+                              }}
+                              disabled={updatingId === order.id}
+                              className="px-3 py-2 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              Duyệt hoàn tiền
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {canCancel(order.orderStatus) && (
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation()
+                                  handleCancelOrder(order)
+                                }}
+                                disabled={updatingId === order.id}
+                                className="px-3 py-2 border border-error/40 text-error font-label-caps text-[10px] tracking-widest uppercase hover:bg-error hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                              >
+                                Huỷ đơn
+                              </button>
+                            )}
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                handleAdvanceStatus(order)
+                              }}
+                              disabled={!next || updatingId === order.id}
+                              className="px-3 py-2 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                            >
+                              {updatingId === order.id ? 'Đang cập nhật' : getActionLabel(next)}
+                            </button>
+                          </>
+                        )}
                       </div>
                     </article>
                   )
@@ -434,9 +556,20 @@ export default function ManageOrder() {
                     </span>
                   </div>
                   <div className="flex justify-between gap-4">
+                    <span className="text-on-surface-variant/70">Tổng Cộng</span>
+                    <span className="text-on-background text-right">
+                      {formatCurrency(selectedOrder.totalAmount)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4">
                     <span className="text-on-surface-variant/70">Mã vận đơn</span>
                     <span className="text-on-background text-right">{selectedOrder.trackingCode || 'Chưa cập nhật'}</span>
                   </div>
+                  {selectedOrder.trackingCode && (
+                    <div className="pt-2">
+                      <GhnTrackingTimeline trackingCode={selectedOrder.trackingCode} />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -448,6 +581,13 @@ export default function ManageOrder() {
                   <div className="border border-outline-variant/20 bg-background/60 p-4">
                     <p className="font-label-caps text-[10px] tracking-widest text-primary uppercase mb-2">Ghi chú</p>
                     <p className="text-sm text-on-surface-variant">{selectedOrder.note}</p>
+                  </div>
+                ) : null}
+
+                {selectedOrder.returnReason ? (
+                  <div className="border border-pink-500/20 bg-pink-500/5 p-4">
+                    <p className="font-label-caps text-[10px] tracking-widest text-pink-400 uppercase mb-2">Lý do đổi/trả</p>
+                    <p className="text-sm text-on-surface-variant">{selectedOrder.returnReason}</p>
                   </div>
                 ) : null}
 
@@ -469,6 +609,35 @@ export default function ManageOrder() {
                     })}
                   </div>
                 </div>
+
+                {isReturnRequested(selectedOrder.orderStatus) ? (
+                  <div className="border-t border-outline-variant/20 pt-5 flex gap-3">
+                    <button
+                      onClick={() => handleResolveReturn(selectedOrder, false)}
+                      disabled={updatingId === selectedOrder.id}
+                      className="flex-1 px-4 py-3 border border-gray-400/40 text-gray-400 font-label-caps text-[10px] tracking-widest uppercase hover:bg-gray-400 hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Từ chối
+                    </button>
+                    <button
+                      onClick={() => handleResolveReturn(selectedOrder, true)}
+                      disabled={updatingId === selectedOrder.id}
+                      className="flex-1 px-4 py-3 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      Duyệt hoàn tiền
+                    </button>
+                  </div>
+                ) : canCancel(selectedOrder.orderStatus) && (
+                  <div className="border-t border-outline-variant/20 pt-5">
+                    <button
+                      onClick={() => handleCancelOrder(selectedOrder)}
+                      disabled={updatingId === selectedOrder.id}
+                      className="w-full px-4 py-3 border border-error/40 text-error font-label-caps text-[10px] tracking-widest uppercase hover:bg-error hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                    >
+                      {updatingId === selectedOrder.id ? 'Đang xử lý...' : 'Huỷ đơn hàng'}
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-10 text-center text-on-surface-variant/70">Chọn một đơn hàng ở bảng bên trái để xem chi tiết.</div>

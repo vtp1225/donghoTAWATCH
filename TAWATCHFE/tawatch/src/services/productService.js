@@ -12,6 +12,7 @@ function formatVnd(value) {
 function mapWatch(watch, index) {
 	return {
 		id: watch.id,
+		slug: watch.slug ?? String(watch.id),
 		title: watch.name,
 		description: watch.description,
 		price: formatVnd(watch.minPrice),
@@ -32,10 +33,6 @@ function mapWatch(watch, index) {
 }
 
 export const productService = {
-	async getAll() {
-		const watches = await watchService.getAll()
-		return watches.map(mapWatch)
-	},
 	async getFeatured() {
 		const watches = await watchService.getFeatured()
 		return watches.map(mapWatch)

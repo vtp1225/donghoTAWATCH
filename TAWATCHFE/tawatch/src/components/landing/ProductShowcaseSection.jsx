@@ -41,7 +41,7 @@ function ShowcaseCard({ item, wishlisted = false }) {
     e.preventDefault()
     const userId = getStoredUserId()
     if (!userId) {
-      navigate('/login', { state: { from: `/product/${item.id}` } })
+      navigate('/login', { state: { from: `/product/${item.slug}` } })
       return
     }
     if (!item.variantId) return
@@ -67,7 +67,7 @@ function ShowcaseCard({ item, wishlisted = false }) {
     <div className="group flex-shrink-0 w-[220px] md:w-auto">
       {/* Image */}
       <div className="relative mb-3 aspect-square overflow-hidden bg-surface-container">
-        <Link to={`/product/${item.id}`} className="absolute inset-0 z-10">
+        <Link to={`/product/${item.slug}`} className="absolute inset-0 z-10">
           <img
             src={item.image}
             alt={item.title}
@@ -103,7 +103,7 @@ function ShowcaseCard({ item, wishlisted = false }) {
       </div>
 
       {/* Info */}
-      <Link to={`/product/${item.id}`} className="block">
+      <Link to={`/product/${item.slug}`} className="block">
         {item.brandName && (
           <p className="font-label-caps text-[8px] tracking-[0.25em] text-primary/70 uppercase">
             {item.brandName}

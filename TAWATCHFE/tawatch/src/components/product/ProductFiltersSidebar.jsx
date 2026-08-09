@@ -5,7 +5,13 @@ import { useEffect } from 'react'
 
 const MOVEMENTS = ['AUTOMATIC', 'MANUAL', 'QUARTZ']
 const MOVEMENT_LABELS = { AUTOMATIC: 'Automatic', MANUAL: 'Manual', QUARTZ: 'Quartz' }
-const MAX_PRICE = 500_000_000
+const PRICE_RANGES = [
+  { label: 'Dưới 10 triệu', min: null, max: 10_000_000 },
+  { label: '10 triệu - 50 triệu', min: 10_000_000, max: 50_000_000 },
+  { label: '50 triệu - 100 triệu', min: 50_000_000, max: 100_000_000 },
+  { label: '100 triệu - 200 triệu', min: 100_000_000, max: 200_000_000 },
+  { label: 'Trên 200 triệu', min: 200_000_000, max: null },
+]
 
 function formatVnd(value) {
   if (value >= 1_000_000_000) return `${(value / 1_000_000_000).toFixed(0)} tỷ`
@@ -132,9 +138,10 @@ export default function ProductFiltersSidebar({ filters, onChange }) {
     filters.brandIds.length > 0 ||
     filters.movementTypes.length > 0 ||
     filters.categoryIds.length > 0 ||
+    filters.priceMin != null ||
     filters.priceMax != null
 
-  const clearAll = () => onChange({ brandIds: [], movementTypes: [], categoryIds: [], priceMax: null })
+  const clearAll = () => onChange({ brandIds: [], movementTypes: [], categoryIds: [], priceMin: null, priceMax: null })
 
   return (
     <aside className="space-y-9 lg:col-span-3">
@@ -213,24 +220,42 @@ export default function ProductFiltersSidebar({ filters, onChange }) {
 
       {/* Price */}
       <div>
-        <SectionHeader title="Giá tối đa" />
-        <input
-          className="h-0.5 w-full cursor-pointer appearance-none bg-outline-variant/20 accent-primary"
-          type="range"
-          min={0}
-          max={MAX_PRICE}
-          step={5_000_000}
-          value={filters.priceMax ?? MAX_PRICE}
-          onChange={(e) => {
-            const val = Number(e.target.value)
-            onChange({ ...filters, priceMax: val >= MAX_PRICE ? null : val })
-          }}
-        />
-        <div className="mt-3 flex justify-between font-label-caps text-[10px] tracking-[0.12em] text-on-surface-variant/55">
-          <span>₫0</span>
-          <span className={filters.priceMax != null ? 'text-primary' : ''}>
-            {filters.priceMax != null ? `₫${formatVnd(filters.priceMax)}` : 'Tất cả'}
-          </span>
+        <SectionHeader title="Mức giá" />
+        <ul className="mb-5 space-y-3.5">
+          {PRICE_RANGES.map((range, idx) => {
+            const active = filters.priceMin === range.min && filters.priceMax === range.max
+            return (
+              <CheckRow
+                key={idx}
+                label={range.label}
+                checked={active}
+                onChange={() => {
+                  if (active) {
+                    onChange({ ...filters, priceMin: null, priceMax: null })
+                  } else {
+                    onChange({ ...filters, priceMin: range.min, priceMax: range.max })
+                  }
+                }}
+              />
+            )
+          })}
+        </ul>
+        <div className="flex items-center gap-2">
+          <input
+            type="number"
+            placeholder="Từ giá"
+            className="w-full border border-outline-variant/20 bg-surface-container-low px-3 py-2 font-body-md text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:outline-none"
+            value={filters.priceMin || ''}
+            onChange={(e) => onChange({ ...filters, priceMin: e.target.value ? Number(e.target.value) : null })}
+          />
+          <span className="text-on-surface-variant/40">-</span>
+          <input
+            type="number"
+            placeholder="Đến giá"
+            className="w-full border border-outline-variant/20 bg-surface-container-low px-3 py-2 font-body-md text-xs text-on-surface placeholder:text-on-surface-variant/40 focus:border-primary focus:outline-none"
+            value={filters.priceMax || ''}
+            onChange={(e) => onChange({ ...filters, priceMax: e.target.value ? Number(e.target.value) : null })}
+          />
         </div>
       </div>
     </aside>

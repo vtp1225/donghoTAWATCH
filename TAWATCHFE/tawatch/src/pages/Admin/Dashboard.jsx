@@ -139,10 +139,23 @@ export default function Dashboard() {
       .slice(0, 6),
     [orders])
 
+  const lowStockWatches = useMemo(() =>
+    [...watches]
+      .filter(w => w.totalStock != null && w.totalStock < 5 && w.totalStock > 0)
+      .sort((a, b) => a.totalStock - b.totalStock)
+      .slice(0, 5),
+    [watches])
+
+  const outOfStockWatches = useMemo(() =>
+    [...watches]
+      .filter(w => w.totalStock === 0)
+      .slice(0, 3),
+    [watches])
+
   /* ── Bar chart data: doanh thu 6 tháng gần nhất ── */
   const monthlyData = useMemo(() => {
     const now = new Date()
-    const slots = Array.from({ length: 6 }, (_, i) => {
+    const slots = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
       return {
         year: d.getFullYear(),
@@ -270,7 +283,7 @@ export default function Dashboard() {
             <div>
               <SectionLabel>Doanh thu theo tháng</SectionLabel>
               <p className="mt-1.5 font-label-caps text-xs tracking-wide text-on-surface-variant/40">
-                Chỉ tính đơn đã giao — 6 tháng gần nhất
+                Chỉ tính đơn đã giao — 7 tháng gần nhất
               </p>
             </div>
             <span className="font-label-caps text-sm tracking-wider text-primary/70">
@@ -371,9 +384,10 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* ── Recent orders ── */}
-      <section className="mb-8 border border-outline-variant/10 bg-surface-container-lowest">
-        <div className="flex items-center justify-between border-b border-outline-variant/10 px-7 py-5">
+      {/* ── Recent orders & Alerts ── */}
+      <div className="mb-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <section className="lg:col-span-2 border border-outline-variant/10 bg-surface-container-lowest">
+          <div className="flex items-center justify-between border-b border-outline-variant/10 px-7 py-5">
           <SectionLabel>Đơn hàng gần đây</SectionLabel>
           <Link
             to="/admin/orders"
@@ -448,7 +462,59 @@ export default function Dashboard() {
             </tbody>
           </table>
         )}
-      </section>
+        </section>
+
+        {/* Low Stock Alerts */}
+        <section className="border border-outline-variant/10 bg-surface-container-lowest flex flex-col">
+          <div className="border-b border-outline-variant/10 px-7 py-5">
+            <SectionLabel>Cảnh báo tồn kho</SectionLabel>
+          </div>
+          <div className="p-7 flex-1 flex flex-col gap-5">
+            {outOfStockWatches.length === 0 && lowStockWatches.length === 0 ? (
+              <div className="flex-1 flex flex-col items-center justify-center gap-2 text-on-surface-variant/30">
+                <span className="material-symbols-outlined text-4xl">check_circle</span>
+                <p className="font-label-caps text-sm tracking-wider text-center">Tồn kho ổn định</p>
+              </div>
+            ) : (
+              <>
+                {outOfStockWatches.length > 0 && (
+                  <div>
+                    <p className="font-label-caps text-[10px] tracking-widest text-error mb-3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-error" /> HẾT HÀNG</p>
+                    <ul className="flex flex-col gap-3">
+                      {outOfStockWatches.map(w => (
+                        <li key={w.id} className="flex items-center justify-between gap-3 border-b border-outline-variant/5 pb-2 last:border-0">
+                          <div className="min-w-0">
+                            <p className="truncate font-body-md text-sm text-on-surface">{w.name}</p>
+                            <p className="truncate font-label-caps text-[9px] text-on-surface-variant/50">{w.sku}</p>
+                          </div>
+                          <span className="font-label-caps text-[10px] text-error font-bold whitespace-nowrap">0 chiếc</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {lowStockWatches.length > 0 && (
+                  <div className={outOfStockWatches.length > 0 ? 'mt-2' : ''}>
+                    <p className="font-label-caps text-[10px] tracking-widest text-amber-500 mb-3 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> SẮP HẾT (DƯỚI 5)</p>
+                    <ul className="flex flex-col gap-3">
+                      {lowStockWatches.map(w => (
+                        <li key={w.id} className="flex items-center justify-between gap-3 border-b border-outline-variant/5 pb-2 last:border-0">
+                          <div className="min-w-0">
+                            <p className="truncate font-body-md text-sm text-on-surface">{w.name}</p>
+                            <p className="truncate font-label-caps text-[9px] text-on-surface-variant/50">{w.sku}</p>
+                          </div>
+                          <span className="font-label-caps text-[10px] text-amber-600 font-bold whitespace-nowrap">{w.totalStock} chiếc</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <Link to="/admin/inventory" className="mt-auto block text-center border border-primary/20 bg-primary/5 py-2 font-label-caps text-[10px] tracking-widest text-primary hover:bg-primary/10 transition-colors">QUẢN LÝ KHO HÀNG</Link>
+              </>
+            )}
+          </div>
+        </section>
+      </div>
 
       {/* ── Quick links ── */}
       <section>

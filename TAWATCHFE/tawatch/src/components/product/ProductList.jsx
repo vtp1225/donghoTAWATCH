@@ -13,7 +13,7 @@ function getStoredUserId() {
   }
 }
 
-const PAGE_SIZE = 10
+const PAGE_SIZE = 15
 
 function sortClientSide(products, sort) {
   if (sort === 'price_asc') return [...products].sort((a, b) => (a.priceRaw ?? 0) - (b.priceRaw ?? 0))
@@ -26,6 +26,7 @@ function hasActiveFilters(filters) {
     filters.brandIds?.length > 0 ||
     filters.movementTypes?.length > 0 ||
     filters.categoryIds?.length > 0 ||
+    filters.priceMin != null ||
     filters.priceMax != null ||
     (filters.name && filters.name.trim().length > 0)
   )
@@ -64,8 +65,9 @@ export default function ProductList({ onLoaded, filters = {}, sort = 'newest', c
     b: filters.brandIds,
     c: filters.categoryIds,
     m: filters.movementTypes,
-    p: filters.priceMax,
-  }), [filters.name, filters.brandIds, filters.categoryIds, filters.movementTypes, filters.priceMax])
+    pmin: filters.priceMin,
+    pmax: filters.priceMax,
+  }), [filters.name, filters.brandIds, filters.categoryIds, filters.movementTypes, filters.priceMin, filters.priceMax])
 
   useEffect(() => {
     let active = true
@@ -90,6 +92,7 @@ export default function ProductList({ onLoaded, filters = {}, sort = 'newest', c
         brandIds: filters.brandIds?.length ? filters.brandIds : undefined,
         categoryIds: filters.categoryIds?.length ? filters.categoryIds : undefined,
         movementTypes: filters.movementTypes?.length ? filters.movementTypes : undefined,
+        minPrice: filters.priceMin ?? undefined,
         maxPrice: filters.priceMax ?? undefined,
         page: currentPage,
         size: PAGE_SIZE,

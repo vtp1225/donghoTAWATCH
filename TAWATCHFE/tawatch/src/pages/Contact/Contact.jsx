@@ -1,18 +1,34 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
+import { settingsService } from '../../services/settingsService.js'
 
-const INFO_ITEMS = [
-  { icon: 'location_on', label: 'Địa chỉ', value: '123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh' },
-  { icon: 'call', label: 'Điện thoại', value: '+84 (028) 3822 1234' },
-  { icon: 'mail', label: 'Email', value: 'contact@tawatch.vn' },
-  { icon: 'schedule', label: 'Giờ làm việc', value: 'Thứ Hai – Thứ Bảy: 9:00 – 20:00' },
+const DEFAULT_INFO_ITEMS = [
+  { id: 'address', icon: 'location_on', label: 'Địa chỉ', value: '123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh' },
+  { id: 'phone', icon: 'call', label: 'Điện thoại', value: '+84 (028) 3822 1234' },
+  { id: 'email', icon: 'mail', label: 'Email', value: 'contact@tawatch.vn' },
+  { id: 'workingHours', icon: 'schedule', label: 'Giờ làm việc', value: 'Thứ Hai – Thứ Bảy: 9:00 – 20:00' },
 ]
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', message: '' })
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [infoItems, setInfoItems] = useState(DEFAULT_INFO_ITEMS)
+
+  useEffect(() => {
+    settingsService.getSettings()
+      .then(settings => {
+        if (!settings) return
+        setInfoItems(prev => prev.map(item => {
+          if (item.id === 'address' && settings.address) return { ...item, value: settings.address }
+          if (item.id === 'phone' && settings.phone) return { ...item, value: settings.phone }
+          if (item.id === 'email' && settings.supportEmail) return { ...item, value: settings.supportEmail }
+          return item
+        }))
+      })
+      .catch(console.error)
+  }, [])
 
   const handleChange = (e) => setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
 
@@ -56,7 +72,7 @@ export default function Contact() {
             </div>
 
             <div className="space-y-8">
-              {INFO_ITEMS.map((item) => (
+              {infoItems.map((item) => (
                 <div key={item.icon} className="flex items-start gap-4">
                   <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border border-outline-variant/20">
                     <span className="material-symbols-outlined text-[18px] text-primary">{item.icon}</span>

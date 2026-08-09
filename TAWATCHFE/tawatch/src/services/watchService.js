@@ -32,6 +32,9 @@ export const watchService = {
   getById(id) {
     return request(`/watches/${id}`).then(unwrap)
   },
+  getBySlug(slug) {
+    return request(`/watches/slug/${slug}`).then(unwrap)
+  },
   create(payload) {
     return request('/watches', {
       method: 'POST',
@@ -117,20 +120,10 @@ export const variantImageService = {
   getByVariant(variantId) {
     return request(`/watch-variant-images?variantId=${variantId}`).then(unwrap)
   },
-  getMainImage(watchId) {
-    return request(`/watch-variant-images/main?watchId=${watchId}`).then(unwrap)
-  },
   upload(formData) {
     return request('/watch-variant-images/upload', {
       method: 'POST',
       body: formData,
-    }).then(unwrap)
-  },
-  create(payload) {
-    return request('/watch-variant-images', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify(payload),
     }).then(unwrap)
   },
   update(id, payload) {

@@ -1,4 +1,8 @@
-// Normalize: lowercase + remove Vietnamese diacritics + collapse spaces
+/**
+ * Chuẩn hóa chuỗi văn bản: chuyển thành chữ thường, xóa dấu tiếng Việt, và xóa khoảng trắng dư thừa
+ * @param {string} text - Chuỗi văn bản cần chuẩn hóa
+ * @returns {string} Chuỗi văn bản đã được chuẩn hóa
+ */
 function normalize(text) {
   return text
     .toLowerCase()
@@ -11,7 +15,11 @@ function normalize(text) {
     .trim()
 }
 
-// Common leet-speak substitutions before normalizing
+/**
+ * Loại bỏ cách viết thay thế chữ cái bằng số/kí tự đặc biệt (leet-speak)
+ * @param {string} text - Chuỗi văn bản có thể chứa leet-speak
+ * @returns {string} Chuỗi văn bản đã chuyển đổi kí tự leet-speak về chữ cái thường
+ */
 function deLeet(text) {
   return text
     .replace(/0/g, 'o')
@@ -33,6 +41,11 @@ const BANNED_WORDS = [
   'asshole', 'bastard', 'cunt', 'dick', 'pussy', 'motherfucker',
 ]
 
+/**
+ * Kiểm tra xem chuỗi văn bản có chứa các từ ngữ nhạy cảm/không phù hợp hay không
+ * @param {string} text - Chuỗi văn bản cần kiểm tra
+ * @returns {boolean} True nếu chứa từ ngữ không phù hợp, ngược lại False
+ */
 export function containsProfanity(text) {
   if (!text || typeof text !== 'string') return false
   const cleaned = normalize(deLeet(text))
@@ -43,6 +56,10 @@ export function containsProfanity(text) {
   })
 }
 
+/**
+ * Trả về thông báo lỗi khi phát hiện có từ ngữ không phù hợp
+ * @returns {string} Thông báo lỗi
+ */
 export function filterMessage() {
   return 'Đánh giá chứa nội dung không phù hợp. Vui lòng chỉnh sửa trước khi gửi.'
 }

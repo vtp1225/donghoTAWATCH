@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useGoogleLogin } from '@react-oauth/google'
 import { Headers } from '../../layouts/AuthLayout.jsx'
 import AuthSocialButton from '../../components/auth/AuthSocialButton.jsx'
 import { authService } from '../../services/authService.js'
+import { cartService } from '../../services/cartService.js'
 
 const googleIcon = (
   <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
@@ -22,6 +24,7 @@ export default function Login() {
     ...initialForm,
     email: location.state?.email || '',
   }))
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState(location.state?.message || '')
@@ -42,6 +45,42 @@ export default function Login() {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
+
+  const handleGoogleSuccess = async (tokenResponse) => {
+    setIsSubmitting(true)
+    setErrorMessage('')
+    setSuccessMessage('')
+    try {
+      const authResponse = await authService.googleLogin(tokenResponse.access_token)
+      if (authResponse?.accessToken) localStorage.setItem('auth_access_token', authResponse.accessToken)
+      if (authResponse?.tokenType) localStorage.setItem('auth_token_type', authResponse.tokenType)
+      if (authResponse?.user) localStorage.setItem('auth_user', JSON.stringify(authResponse.user))
+
+      const sessionId = localStorage.getItem('cart_session_id');
+      if (sessionId && authResponse?.user?.id) {
+        try {
+          await cartService.mergeCart(sessionId, authResponse.user.id);
+          window.dispatchEvent(new Event('cart:updated'));
+        } catch (err) {
+          console.error('Failed to merge cart', err);
+        }
+      }
+
+      const destination = (authResponse?.user?.role === 'ADMIN' || authResponse?.user?.role === 'STAFF')
+        ? '/admin'
+        : (location.state?.from?.pathname || '/')
+      navigate(destination, { replace: true })
+    } catch (error) {
+      setErrorMessage(error.message || 'Đăng nhập Google thất bại. Vui lòng thử lại.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: handleGoogleSuccess,
+    onError: () => setErrorMessage('Đăng nhập Google bị huỷ hoặc thất bại.'),
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -66,45 +105,50 @@ export default function Login() {
         localStorage.setItem('auth_user', JSON.stringify(authResponse.user))
       }
 
+      const sessionId = localStorage.getItem('cart_session_id');
+      if (sessionId && authResponse?.user?.id) {
+        try {
+          await cartService.mergeCart(sessionId, authResponse.user.id);
+          window.dispatchEvent(new Event('cart:updated'));
+        } catch (err) {
+          console.error('Failed to merge cart', err);
+        }
+      }
+
       setSuccessMessage(`Welcome back, ${authResponse?.user?.fullName || authResponse?.user?.username || authResponse?.user?.email || formData.email}.`)
-      const destination = authResponse?.user?.role === 'ADMIN'
+      const destination = (authResponse?.user?.role === 'ADMIN' || authResponse?.user?.role === 'STAFF')
         ? '/admin'
         : (location.state?.from?.pathname || '/')
       navigate(destination, { replace: true })
     } catch (error) {
-      setErrorMessage(error.message || 'Unable to sign in. Please try again.')
+      setErrorMessage('Đăng nhập thất bại. Vui lòng kiểm tra lại email hoặc mật khẩu')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="bg-background font-body-md text-on-surface">
-      <div className="gear-overlay fixed inset-0 z-0 flex items-center justify-center overflow-hidden">
-        <span ref={gearRef} className="material-symbols-outlined text-[600px] animate-[spin_60s_linear_infinite]">
+    <div className="relative bg-background font-body-md text-on-surface min-h-screen">
+      {/* Full Background Image */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-black/20 z-10" />
+        <img
+          className="absolute inset-0 h-full w-full object-cover brightness-75 grayscale-[0.2]"
+          src="images/product-skeleton.jpg"
+          alt="Watch background"
+        />
+      </div>
+
+      <div className="gear-overlay fixed inset-0 z-0 flex items-center justify-center overflow-hidden opacity-20 pointer-events-none">
+        <span ref={gearRef} className="material-symbols-outlined text-[600px] animate-[spin_60s_linear_infinite] text-primary/30">
           settings
         </span>
       </div>
-      <main className="relative z-10 flex min-h-screen items-center justify-center px-gutter">
-        <div className="grid w-full max-w-[1100px] grid-cols-1 overflow-hidden border border-white/5 bg-surface-container-low md:grid-cols-2">
 
-          {/* Left: image panel */}
-          <div className="relative hidden h-full min-h-[600px] md:block">
-            <div className="absolute inset-0 z-10 bg-black/40" />
-            <img
-              className="absolute inset-0 h-full w-full object-cover brightness-75 grayscale-[0.2] transition-transform duration-[20s] hover:scale-110"
-              src="images/product-skeleton.jpg"
-              alt="Watch movement"
-            />
-            <div className="absolute bottom-12 left-12 right-12 z-20">
-              <p className="mb-4 font-label-caps text-label-caps text-primary">Precision Mastery</p>
-              <h2 className="font-headline-md text-headline-md text-white">The Art of Temporal Engineering.</h2>
-              <div className="mt-6 h-px w-12 bg-primary" />
-            </div>
-          </div>
-
-          {/* Right: form */}
-          <div className="flex flex-col justify-center bg-surface-container-low p-10 md:p-16 lg:p-20">
+      <main className="relative z-10 flex min-h-screen items-center justify-center px-4 py-12">
+        <div className="w-full max-w-[480px] overflow-hidden border border-white/0 bg-white/80 shadow-[0_24px_50px_rgba(0,0,0,0.2)]">
+          {/* Form Container */}
+          <div className="flex flex-col justify-center p-10 md:p-12">
             <Headers />
 
             <div className="mb-10">
@@ -114,7 +158,7 @@ export default function Login() {
 
             {(successMessage || errorMessage) && (
               <div
-                className={`mb-6 border px-4 py-3 text-sm ${errorMessage ? 'border-red-500/30 bg-red-500/10 text-red-200' : 'border-primary/30 bg-primary/10 text-primary'}`}
+                className={`mb-6 border px-4 py-3 text-sm font-medium ${errorMessage ? 'border-red-500 bg-red-500/20 text-red-500' : 'border-primary/30 bg-primary/10 text-primary'}`}
                 role="status"
                 aria-live="polite"
               >
@@ -125,15 +169,15 @@ export default function Login() {
             <form className="space-y-8" onSubmit={handleSubmit}>
               <div className="focus-underline relative flex flex-col">
                 <label className="mb-2 font-label-caps text-label-caps text-on-surface-variant" htmlFor="email">
-                  EMAIL ADDRESS
+                  EMAIL OR USERNAME
                 </label>
                 <input
                   id="email"
                   className="border-0 border-b border-white/30 bg-transparent px-0 py-2 font-body-md text-on-surface placeholder:text-white/30 focus:ring-0"
                   name="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  autoComplete="email"
+                  type="text"
+                  placeholder="name@example.com or username"
+                  autoComplete="username"
                   value={formData.email}
                   onChange={handleChange}
                 />
@@ -148,16 +192,29 @@ export default function Login() {
                     Quên mật khẩu?
                   </Link>
                 </div>
-                <input
-                  id="password"
-                  className="border-0 border-b border-white/30 bg-transparent px-0 py-2 font-body-md text-on-surface placeholder:text-white/30 focus:ring-0"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  value={formData.password}
-                  onChange={handleChange}
-                />
+                <div className="relative">
+                  <input
+                    id="password"
+                    className="w-full border-0 border-b border-white/30 bg-transparent px-0 py-2 pr-8 font-body-md text-on-surface placeholder:text-white/30 focus:border-primary focus:ring-0 transition-colors"
+                    name="password"
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    value={formData.password}
+                    onChange={handleChange}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant transition-colors hover:text-primary"
+                    onClick={() => setShowPassword((s) => !s)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    <span className="material-symbols-outlined text-[18px]">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4 pt-4">
@@ -176,7 +233,7 @@ export default function Login() {
                   <div className="h-px flex-1 bg-white/5" />
                 </div>
 
-                <AuthSocialButton icon={googleIcon}>
+                <AuthSocialButton icon={googleIcon} onClick={() => googleLogin()}>
                   SIGN IN WITH GOOGLE
                 </AuthSocialButton>
               </div>
@@ -194,11 +251,8 @@ export default function Login() {
               </p>
             </div>
           </div>
-
         </div>
       </main>
-
-      <div className="fixed bottom-0 left-1/2 z-20 h-32 w-px -translate-x-1/2 bg-primary/30" />
     </div>
   )
 }

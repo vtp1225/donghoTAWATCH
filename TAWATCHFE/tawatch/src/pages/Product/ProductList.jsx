@@ -24,7 +24,7 @@ function findCategoryById(categories, id) {
   return null
 }
 
-const DEFAULT_FILTERS = { brandIds: [], movementTypes: [], categoryIds: [], priceMax: null, name: '' }
+const DEFAULT_FILTERS = { brandIds: [], movementTypes: [], categoryIds: [], priceMin: null, priceMax: null, name: '' }
 
 export default function ProductPageList() {
   const [searchParams] = useSearchParams()
@@ -103,16 +103,21 @@ export default function ProductPageList() {
 
           <div className="lg:col-span-9">
             {promoIds && (
-              <div className="mb-6 flex items-center justify-between border border-primary/25 bg-primary/5 px-5 py-3.5">
-                <div className="flex items-center gap-2.5">
-                  <span className="material-symbols-outlined text-[18px] text-primary">local_offer</span>
-                  <span className="font-label-caps text-[10px] tracking-[0.25em] uppercase text-primary">
-                    Sản phẩm trong khuyến mãi — {promoIds.length} sản phẩm
-                  </span>
+              <div className="mb-6 flex flex-col gap-2.5 border border-primary/25 bg-primary/5 px-5 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="material-symbols-outlined text-[18px] text-primary">local_offer</span>
+                    <span className="font-label-caps text-[10px] tracking-[0.25em] uppercase text-primary">
+                      Sản phẩm trong khuyến mãi — {promoIds.length} sản phẩm
+                    </span>
+                  </div>
+                  <Link to="/products" className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary">
+                    Xem tất cả ×
+                  </Link>
                 </div>
-                <Link to="/products" className="font-label-caps text-[9px] tracking-[0.2em] uppercase text-on-surface-variant/50 transition-colors hover:text-primary">
-                  Xem tất cả ×
-                </Link>
+                <p className="font-body-md text-sm font-medium text-primary/90 italic mt-1">
+                  * Đừng quên nhập mã khuyến mãi ở bước thanh toán để được áp dụng giảm giá.
+                </p>
               </div>
             )}
             {searchQuery && (

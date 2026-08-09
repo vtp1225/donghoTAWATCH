@@ -42,7 +42,7 @@ function WishlistCard({ item, onRemove }) {
   return (
     <div className="group flex gap-5 border border-outline-variant/10 bg-surface-container-low p-5 transition-colors hover:border-outline-variant/20">
       {/* Image */}
-      <Link to={`/product/${item.watchId}`} className="flex-shrink-0">
+      <Link to={`/product/${item.watchSlug}`} className="flex-shrink-0">
         <div className="h-28 w-28 overflow-hidden bg-surface-container">
           {item.imageUrl ? (
             <img
@@ -64,7 +64,7 @@ function WishlistCard({ item, onRemove }) {
           <p className="font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/50 uppercase mb-1">
             {item.brandName}
           </p>
-          <Link to={`/product/${item.watchId}`} className="hover:text-primary transition-colors">
+          <Link to={`/product/${item.watchSlug}`} className="hover:text-primary transition-colors">
             <h3 className="font-headline-sm text-headline-sm text-on-surface">{item.watchName}</h3>
           </Link>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">

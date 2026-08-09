@@ -11,6 +11,7 @@ import { watchService, variantService, variantImageService } from '../../service
 import { cartService } from '../../services/cartService.js'
 import { wishlistService } from '../../services/wishlistService.js'
 import ProductReviews from './ProductReviews.jsx'
+import { promotionService } from '../../services/promotionService.js'
 
 function formatVnd(value) {
   if (value == null) return 'Liên hệ'
@@ -21,33 +22,14 @@ function formatVnd(value) {
   }).format(value)
 }
 
-// Each axis describes one dimension that can differ between variants
-const VARIANT_AXES = [
-  {
-    key: 'dialColor',
-    label: 'Màu mặt số',
-    getValue: (v) => v.dialColorId != null ? String(v.dialColorId) : null,
-    getDisplay: (v) => ({ label: v.dialColorName, hex: v.dialColorHex }),
-  },
-  {
-    key: 'strapMaterial',
-    label: 'Chất liệu dây',
-    getValue: (v) => v.strapMaterial ?? null,
-    getDisplay: (v) => ({ label: v.strapMaterial, hex: null }),
-  },
-  {
-    key: 'strapColor',
-    label: 'Màu dây',
-    getValue: (v) => v.strapColorId != null ? String(v.strapColorId) : null,
-    getDisplay: (v) => ({ label: v.strapColorName, hex: v.strapColorHex }),
-  },
-  {
-    key: 'caseSizeMm',
-    label: 'Kích thước vỏ',
-    getValue: (v) => v.caseSizeMm != null ? String(v.caseSizeMm) : null,
-    getDisplay: (v) => ({ label: v.caseSizeMm != null ? `${v.caseSizeMm}mm` : null, hex: null }),
-  },
-]
+function variantAttrs(v) {
+  return [
+    v.dialColorName   ? { label: 'Màu mặt',   value: v.dialColorName,  hex: v.dialColorHex  } : null,
+    v.strapMaterial   ? { label: 'Dây',        value: v.strapMaterial,  hex: null             } : null,
+    v.strapColorName  ? { label: 'Màu dây',    value: v.strapColorName, hex: v.strapColorHex } : null,
+    v.caseSizeMm != null ? { label: 'Size', value: `${v.caseSizeMm}mm`, hex: null } : null,
+  ].filter(Boolean)
+}
 
 const SPEC_ITEMS = [
   { key: 'movementType', label: 'Bộ máy' },
@@ -96,7 +78,7 @@ function getStoredUserId() {
 }
 
 export default function ProductDetail() {
-  const { id } = useParams()
+  const { slug } = useParams()
   const navigate = useNavigate()
   const [watch, setWatch] = useState(null)
   const [variants, setVariants] = useState([])
@@ -106,7 +88,6 @@ export default function ProductDetail() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [addState, setAddState] = useState('idle') // idle | loading | added | error
-  const [selectedParams, setSelectedParams] = useState({})
   const [wishlisted, setWishlisted] = useState(false)
   const [wishlistLoading, setWishlistLoading] = useState(false)
   const [wishlistToast, setWishlistToast] = useState('')
@@ -124,33 +105,39 @@ export default function ProductDetail() {
   }, [])
 
   useEffect(() => {
-    if (!id) return
+    if (!slug) return
     setLoading(true)
     setError('')
 
-    Promise.all([
-      watchService.getById(Number(id)),
-      variantService.getByWatch(Number(id)),
-    ])
-      .then(([watchData, variantList]) => {
+    const isNumeric = /^\d+$/.test(slug)
+    const watchPromise = isNumeric
+      ? watchService.getById(Number(slug))
+      : watchService.getBySlug(slug)
+
+    watchPromise
+      .then((watchData) => {
         setWatch(watchData)
-        const list = Array.isArray(variantList) ? variantList : []
-        setVariants(list)
-        const first = list[0] ?? null
-        setSelectedVariant(first)
-        loadImages(first)
-        if (first) {
-          const initParams = {}
-          VARIANT_AXES.forEach(axis => {
-            const val = axis.getValue(first)
-            if (val != null) initParams[axis.key] = val
-          })
-          setSelectedParams(initParams)
-        }
+        return variantService.getByWatch(watchData.id).then((variantList) => {
+          const list = Array.isArray(variantList) ? variantList : []
+          setVariants(list)
+          const first = list[0] ?? null
+          setSelectedVariant(first)
+          loadImages(first)
+        })
       })
       .catch((err) => setError(err.message || 'Không thể tải sản phẩm.'))
       .finally(() => setLoading(false))
-  }, [id, loadImages])
+  }, [slug, loadImages])
+
+  const [promotions, setPromotions] = useState([])
+
+  useEffect(() => {
+    promotionService.getAll({ isActive: true })
+      .then((list) => {
+        if (Array.isArray(list)) setPromotions(list)
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const userId = getStoredUserId()
@@ -163,7 +150,7 @@ export default function ProductDetail() {
   const handleToggleWishlist = useCallback(async () => {
     const userId = getStoredUserId()
     if (!userId) {
-      navigate('/login', { state: { from: `/product/${id}` } })
+      navigate('/login', { state: { from: `/product/${slug}` } })
       return
     }
     if (!selectedVariant || wishlistLoading) return
@@ -186,7 +173,7 @@ export default function ProductDetail() {
     } finally {
       setWishlistLoading(false)
     }
-  }, [selectedVariant, wishlisted, wishlistLoading, navigate, id])
+  }, [selectedVariant, wishlisted, wishlistLoading, navigate, slug])
 
   const handleAddToCart = useCallback(async () => {
     if (!selectedVariant || addState === 'loading') return
@@ -203,86 +190,34 @@ export default function ProductDetail() {
     }
   }, [selectedVariant, addState])
 
-  // Axes that actually differ across variants (≥ 2 distinct values)
-  const activeAxes = useMemo(() => {
-    if (!variants.length) return []
-    return VARIANT_AXES.filter(axis => {
-      const vals = new Set(variants.map(v => axis.getValue(v)).filter(v => v != null))
-      return vals.size >= 2
-    })
-  }, [variants])
+  const handleSelectVariant = useCallback((variant) => {
+    setSelectedVariant(variant)
+    loadImages(variant)
+  }, [loadImages])
 
-  // Unique options per axis (value → display)
-  const optionsByAxis = useMemo(() => {
-    return Object.fromEntries(
-      activeAxes.map(axis => {
-        const seen = new Map()
-        variants.forEach(v => {
-          const val = axis.getValue(v)
-          if (val != null && !seen.has(val)) seen.set(val, axis.getDisplay(v))
-        })
-        return [axis.key, [...seen.entries()].map(([val, display]) => ({ val, ...display }))]
-      })
-    )
-  }, [activeAxes, variants])
-
-  const isAvailable = useCallback((axisKey, optionValue) => {
-    return variants.some(v =>
-      activeAxes.every(axis => {
-        if (axis.key === axisKey) return axis.getValue(v) === optionValue
-        const sel = selectedParams[axis.key]
-        return sel == null || axis.getValue(v) === sel
-      })
-    )
-  }, [variants, activeAxes, selectedParams])
-
-  const handleSelectParam = useCallback((axisKey, optionValue) => {
-    const newParams = { ...selectedParams, [axisKey]: optionValue }
-
-    // Find exact variant matching all selected params
-    let match = variants.find(v =>
-      activeAxes.every(axis => {
-        const sel = newParams[axis.key]
-        return sel == null || axis.getValue(v) === sel
-      })
-    )
-
-    if (!match) {
-      // No exact match — pick best candidate that matches the clicked axis,
-      // then maximizes overlap with other selected params
-      const clickedAxis = activeAxes.find(a => a.key === axisKey)
-      const candidates = clickedAxis
-        ? variants.filter(v => clickedAxis.getValue(v) === optionValue)
-        : variants
-
-      match = candidates.reduce((best, v) => {
-        const score = activeAxes.filter(axis => {
-          const sel = newParams[axis.key]
-          return sel != null && axis.getValue(v) === sel
-        }).length
-        const bestScore = best
-          ? activeAxes.filter(axis => {
-              const sel = newParams[axis.key]
-              return sel != null && axis.getValue(best) === sel
-            }).length
-          : -1
-        return score > bestScore ? v : best
-      }, null) ?? variants[0]
-
-      // Sync selectedParams to reflect actual variant chosen
-      const synced = {}
-      activeAxes.forEach(axis => {
-        const val = axis.getValue(match)
-        if (val != null) synced[axis.key] = val
-      })
-      setSelectedParams(synced)
-    } else {
-      setSelectedParams(newParams)
+  const basePrice = selectedVariant?.price ?? 0
+  const bestDiscount = useMemo(() => {
+    if (!basePrice || promotions.length === 0) return 0
+    let maxD = 0
+    const now = Date.now()
+    for (const p of promotions) {
+      if (p.startDate && new Date(p.startDate).getTime() > now) continue
+      if (p.endDate && new Date(p.endDate).getTime() < now) continue
+      if (p.minOrderValue && basePrice < p.minOrderValue) continue
+      if (p.promoType === 'PRODUCT' && (!p.watchIds || !p.watchIds.includes(watch?.id))) continue
+      
+      let d = 0
+      if (p.discountType === 'PERCENT') {
+        d = (basePrice * p.discountValue) / 100
+        if (p.maxDiscountAmount) d = Math.min(d, p.maxDiscountAmount)
+      } else {
+        d = p.discountValue
+      }
+      if (d > maxD) maxD = d
     }
-
-    setSelectedVariant(match)
-    loadImages(match)
-  }, [variants, activeAxes, selectedParams, loadImages])
+    return maxD
+  }, [basePrice, promotions, watch?.id])
+  const bestPrice = Math.max(0, basePrice - bestDiscount)
 
   if (loading) return <><Navbar /><LoadingScreen /></>
   if (error || !watch) return <><Navbar /><ErrorScreen message={error} /></>
@@ -395,13 +330,25 @@ export default function ProductDetail() {
 
             {/* Price + stock */}
             <div className="flex items-end justify-between">
-              <div>
-                <p className="mb-1.5 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
-                  Giá bán
-                </p>
-                <p className="font-headline-md text-3xl text-primary">
-                  {formatVnd(selectedVariant?.price)}
-                </p>
+              <div className="flex flex-wrap items-end gap-8">
+                <div>
+                  <p className="mb-1.5 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
+                    Giá bán
+                  </p>
+                  <p className={`font-headline-md text-3xl ${bestDiscount > 0 ? 'text-on-surface-variant/40 line-through' : 'text-primary'}`}>
+                    {formatVnd(selectedVariant?.price)}
+                  </p>
+                </div>
+                {bestDiscount > 0 && (
+                  <div>
+                    <p className="mb-1.5 font-label-caps text-[10px] tracking-[0.3em] uppercase text-primary font-bold">
+                      Sau khi nhập mã
+                    </p>
+                    <p className="font-headline-md text-3xl text-primary">
+                      {formatVnd(bestPrice)}
+                    </p>
+                  </div>
+                )}
               </div>
               <div className="text-right">
                 <span
@@ -417,63 +364,65 @@ export default function ProductDetail() {
 
             <div className="h-px bg-outline-variant/15" />
 
-            {/* Variant selector — one row per differing parameter */}
-            {variants.length > 0 && activeAxes.length > 0 && (
-              <div className="flex flex-col gap-5">
-                {activeAxes.map(axis => {
-                  const options = optionsByAxis[axis.key] ?? []
-                  const currentVal = selectedParams[axis.key]
-                  const currentLabel = options.find(o => o.val === currentVal)?.label
-                  return (
-                    <div key={axis.key}>
-                      <p className="mb-3 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
-                        {axis.label}
-                        {currentLabel && (
-                          <span className="ml-2 font-body-md normal-case tracking-normal text-on-surface-variant/70">
-                            — {currentLabel}
+            {/* Variant selector — chọn trực tiếp từng biến thể */}
+            {variants.length > 1 && (
+              <div>
+                <p className="mb-3 font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
+                  Biến thể
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((v) => {
+                    const active = selectedVariant?.id === v.id
+                    const inStock = (v.stockQuantity ?? 0) > 0
+                    const attrs = variantAttrs(v)
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => handleSelectVariant(v)}
+                        title={!inStock ? 'Hết hàng' : undefined}
+                        className={`relative flex flex-col gap-1.5 border px-4 py-3 text-left transition-all duration-200
+                          ${active
+                            ? 'border-primary bg-primary/8'
+                            : inStock
+                              ? 'border-outline-variant/25 hover:border-outline-variant/50'
+                              : 'cursor-not-allowed border-outline-variant/10 opacity-40'
+                          }`}
+                      >
+                        {attrs.length > 0 ? attrs.map((attr) => (
+                          <span key={attr.label} className={`flex items-center gap-1.5 font-label-caps text-[10px] tracking-[0.15em] ${active ? 'text-primary' : 'text-on-surface-variant/70'} ${!inStock ? 'line-through' : ''}`}>
+                            <span className="text-on-surface-variant/40">{attr.label}:</span>
+                            {attr.hex && (
+                              <span
+                                className="h-3 w-3 flex-shrink-0 rounded-full border border-outline-variant/30"
+                                style={{ background: attr.hex }}
+                              />
+                            )}
+                            <span className={active ? 'text-primary' : 'text-on-surface/80'}>{attr.value}</span>
+                          </span>
+                        )) : (
+                          <span className={`font-label-caps text-[10px] tracking-[0.15em] ${active ? 'text-primary' : 'text-on-surface-variant/70'}`}>
+                            Biến thể #{v.id}
                           </span>
                         )}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {options.map(({ val, label, hex }) => {
-                          const active = currentVal === val
-                          const available = isAvailable(axis.key, val)
-                          return (
-                            <button
-                              key={val}
-                              onClick={() => available && handleSelectParam(axis.key, val)}
-                              title={!available ? 'Không có sẵn với lựa chọn hiện tại' : undefined}
-                              className={`relative flex items-center gap-2 border px-4 py-2.5 font-label-caps text-[11px] tracking-[0.15em] uppercase transition-all duration-200
-                                ${active
-                                  ? 'border-primary bg-primary/8 text-primary'
-                                  : available
-                                    ? 'border-outline-variant/25 text-on-surface-variant/65 hover:border-outline-variant/50 hover:text-on-surface/80'
-                                    : 'cursor-not-allowed border-outline-variant/10 text-on-surface-variant/25 line-through'
-                                }`}
-                            >
-                              {hex && (
-                                <span
-                                  className="h-3.5 w-3.5 flex-shrink-0 rounded-full border border-outline-variant/30"
-                                  style={{ background: hex }}
-                                />
-                              )}
-                              {label}
-                              {active && (
-                                <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />
-                              )}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
+                        {active && <span className="absolute inset-x-0 bottom-0 h-px bg-primary" />}
+                      </button>
+                    )
+                  })}
+                </div>
               </div>
             )}
-            {variants.length > 0 && activeAxes.length === 0 && (
-              <p className="font-label-caps text-[10px] tracking-[0.3em] uppercase text-on-surface-variant/55">
-                1 biến thể duy nhất
-              </p>
+            {variants.length === 1 && (
+              <div className="flex flex-wrap gap-3">
+                {variantAttrs(variants[0]).map((attr) => (
+                  <span key={attr.label} className="flex items-center gap-1.5 font-label-caps text-[10px] tracking-[0.2em]">
+                    <span className="text-on-surface-variant/40 uppercase">{attr.label}:</span>
+                    {attr.hex && (
+                      <span className="h-3 w-3 rounded-full border border-outline-variant/30" style={{ background: attr.hex }} />
+                    )}
+                    <span className="text-on-surface/80 uppercase">{attr.value}</span>
+                  </span>
+                ))}
+              </div>
             )}
 
             <div className="h-px bg-outline-variant/15" />

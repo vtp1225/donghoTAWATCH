@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { promotionService } from '../../services/promotionService.js'
+import { couponService } from '../../services/couponService.js'
 
 // ─── Countdown hook ───────────────────────────────────────────────────────────
 
@@ -61,7 +62,7 @@ function CountdownUnit({ value, label }) {
       <span className="font-headline-sm text-2xl tabular-nums text-on-surface">
         {String(value).padStart(2, '0')}
       </span>
-      <span className="font-label-caps text-[8px] tracking-[0.2em] text-on-surface-variant/50 uppercase mt-0.5">
+      <span className="font-label-caps text-[8px] tracking-[0.2em] text-on-surface-variant/80 font-bold uppercase mt-0.5">
         {label}
       </span>
     </div>
@@ -97,16 +98,26 @@ const CARD_ACCENTS = [
 ]
 
 function getPromoLink(promo) {
-  if (promo.promoType === 'PRODUCT' && Array.isArray(promo.watchIds) && promo.watchIds.length > 0) {
-    if (promo.watchIds.length === 1) return `/product/${promo.watchIds[0]}`
-    return `/products?ids=${promo.watchIds.join(',')}`
+  if (promo.promoType === 'PRODUCT' && Array.isArray(promo.watchSlugs) && promo.watchSlugs.length > 0) {
+    if (promo.watchSlugs.length === 1) return `/product/${promo.watchSlugs[0]}`
+    return `/products?ids=${(promo.watchIds ?? []).join(',')}`
   }
   return '/products'
 }
 
-function EventCard({ promo, index }) {
+function EventCard({ promo, index, coupon }) {
   const accent = CARD_ACCENTS[index % CARD_ACCENTS.length]
   const minOrder = Number(promo.minOrderValue ?? 0)
+
+  const [copied, setCopied] = useState(false)
+  const handleCopy = (e) => {
+    e.preventDefault()
+    if (coupon?.code) {
+      navigator.clipboard.writeText(coupon.code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   return (
     <article className={`relative border p-7 flex flex-col gap-6 ${accent}`}>
@@ -118,12 +129,12 @@ function EventCard({ promo, index }) {
         <h3 className="font-headline-sm text-headline-sm text-on-surface leading-tight">
           {promo.name}
         </h3>
-        <p className="mt-2 font-body-md text-sm text-on-surface-variant/70">
+        <p className="mt-2 font-body-md text-sm text-on-surface-variant/90 font-medium">
           {formatDiscount(promo)}
           {minOrder > 0 && ` · Đơn từ ${formatVnd(minOrder)}`}
         </p>
         {Array.isArray(promo.watchNames) && promo.watchNames.length > 0 && (
-          <p className="mt-1.5 font-label-caps text-[9px] tracking-widest text-on-surface-variant/50">
+          <p className="mt-1.5 font-label-caps text-[9px] tracking-widest text-on-surface-variant/80 font-bold">
             Áp dụng: {promo.watchNames.length <= 3
               ? promo.watchNames.join(' · ')
               : `${promo.watchNames.slice(0, 3).join(' · ')} +${promo.watchNames.length - 3}`}
@@ -133,20 +144,37 @@ function EventCard({ promo, index }) {
 
       {/* Countdown */}
       <div>
-        <p className="font-label-caps text-[8px] tracking-[0.25em] text-on-surface-variant/40 uppercase mb-3">
+        <p className="font-label-caps text-[8px] tracking-[0.25em] text-on-surface-variant/70 font-bold uppercase mb-3">
           Kết thúc sau
         </p>
         <Countdown endDate={promo.endDate} />
+        {coupon && (
+          <p className="mt-4 font-body-md text-[10px] text-primary font-medium italic">
+            * Cần nhập mã ở bước thanh toán để áp dụng
+          </p>
+        )}
       </div>
 
-      {/* CTA */}
-      <Link
-        to={getPromoLink(promo)}
-        className="mt-auto inline-flex items-center gap-2 self-start border border-primary/40 px-5 py-2.5 font-label-caps text-[9px] tracking-[0.22em] text-primary uppercase transition-all hover:bg-primary hover:text-background"
-      >
-        Mua ngay
-        <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
-      </Link>
+      {/* CTA & Code */}
+      <div className="mt-auto flex flex-wrap items-center gap-3">
+        <Link
+          to={getPromoLink(promo)}
+          className="inline-flex items-center gap-2 border border-primary/40 px-5 py-2.5 font-label-caps text-[9px] tracking-[0.22em] text-primary uppercase transition-all hover:bg-primary hover:text-background"
+        >
+          Mua ngay
+          <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
+        </Link>
+        {coupon && (
+          <button
+            onClick={handleCopy}
+            className={`inline-flex items-center gap-2 border px-4 py-2.5 font-label-caps text-[9px] tracking-[0.22em] uppercase transition-all ${copied ? 'border-secondary text-secondary bg-secondary/10' : 'border-outline-variant/30 text-on-surface-variant hover:border-primary hover:text-primary'}`}
+            title="Sao chép mã"
+          >
+            <span className="material-symbols-outlined text-[14px]">{copied ? 'check' : 'content_copy'}</span>
+            MÃ: {coupon.code}
+          </button>
+        )}
+      </div>
     </article>
   )
 }
@@ -155,11 +183,20 @@ function EventCard({ promo, index }) {
 
 export default function SaleEventSection() {
   const [promotions, setPromotions] = useState([])
+  const [coupons, setCoupons] = useState([])
 
   useEffect(() => {
     let active = true
-    promotionService.getAll({ isActive: true })
-      .then((list) => { if (active) setPromotions(Array.isArray(list) ? list : []) })
+    Promise.all([
+      promotionService.getAll({ isActive: true }),
+      couponService.getFeatured()
+    ])
+      .then(([promoList, couponList]) => {
+        if (active) {
+          setPromotions(Array.isArray(promoList) ? promoList : [])
+          setCoupons(Array.isArray(couponList) ? couponList : [])
+        }
+      })
       .catch(() => {})
     return () => { active = false }
   }, [])
@@ -204,13 +241,17 @@ export default function SaleEventSection() {
           </Link>
         </div>
 
-        <div className="h-px mb-10 opacity-30" style={{ background: 'linear-gradient(to right, transparent, #e9c176, transparent)' }} />
+        <div className="h-px mb-10 opacity-30" style={{ background: 'linear-gradient(to right, transparent, #1e3a8a, transparent)' }} />
 
         {/* Cards grid */}
         <div className={`grid gap-5 ${active.length === 1 ? 'grid-cols-1 max-w-md' : active.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-          {active.map((promo, i) => (
-            <EventCard key={promo.id} promo={promo} index={i} />
-          ))}
+          {active.map((promo, i) => {
+
+            const featuredCoupon = coupons.find(c => c.promotionId === promo.id)
+            if(featuredCoupon) {
+            return <EventCard key={promo.id} promo={promo} index={i} coupon={featuredCoupon} />
+            }
+          })}
         </div>
 
       </div>

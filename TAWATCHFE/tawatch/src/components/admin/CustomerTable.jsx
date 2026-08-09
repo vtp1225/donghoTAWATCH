@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { userService } from '../../services/userService'
+import { TIER_META } from '../../services/loyaltyService'
 
-export default function CustomerTable({ refreshKey, onDelete, onView }) {
+export default function CustomerTable({ refreshKey, onToggleActive, onView }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,30 +49,50 @@ export default function CustomerTable({ refreshKey, onDelete, onView }) {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant/10">
-                {['Tên', 'Email', 'Số điện thoại', 'Vai trò', 'Tham gia', 'Hành động'].map((h, i) => (
+                {['Tên', 'Email', 'Số điện thoại', 'Hạng TV', 'Vai trò', 'Tham gia', 'Hành động'].map((h, i) => (
                   <th key={i} className="px-6 py-4 font-label-caps text-[10px] tracking-widest text-on-surface-variant/75 uppercase">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/5">
               {users.length === 0 && (
-                <tr><td colSpan={6} className="px-6 py-12 text-center font-label-caps text-xs text-on-surface-variant/40 tracking-widest">KHÔNG CÓ KHÁCH HÀNG</td></tr>
+                <tr><td colSpan={7} className="px-6 py-12 text-center font-label-caps text-xs text-on-surface-variant/40 tracking-widest">KHÔNG CÓ KHÁCH HÀNG</td></tr>
               )}
               {users.map((u) => (
                 <tr key={u.id} className="group hover:bg-surface-container-high transition-all duration-300">
                   <td className="px-6 py-5">
                     <div>
-                      <p className="font-headline-sm text-sm text-on-background">{u.fullName || u.name || '—'}</p>
+                      <p className="font-headline-sm text-sm text-on-background">
+                        {u.fullName || u.name || '—'}
+                        {u.isActive === false && <span className="ml-2 inline-block px-1.5 py-0.5 bg-error/10 text-error font-label-caps text-[8px] tracking-widest rounded-sm align-middle">ĐÃ KHÓA</span>}
+                      </p>
                     </div>
                   </td>
                   <td className="px-6 py-5"><span className="font-body-md text-sm text-on-surface-variant">{u.email || '—'}</span></td>
                   <td className="px-6 py-5"><span className="font-body-md text-sm text-on-surface-variant">{u.phone || '—'}</span></td>
+                  <td className="px-6 py-5">
+                    {(() => {
+                      const count = u.loyaltyPoints ?? 0
+                      const tier = count >= 20 ? 'DIAMOND' : count >= 10 ? 'GOLD' : count >= 5 ? 'SILVER' : count >= 1 ? 'BRONZE' : 'NONE'
+                      const meta = TIER_META[tier]
+                      return (
+                        <span className={`inline-flex items-center gap-1 font-label-caps text-[9px] tracking-wider ${meta.color}`}>
+                          <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>{meta.icon}</span>
+                          {meta.label} ({count})
+                        </span>
+                      )
+                    })()}
+                  </td>
                   <td className="px-6 py-5"><span className="font-label-caps text-xs tracking-widest text-on-surface-variant/75">{u.role || 'CUSTOMER'}</span></td>
                   <td className="px-6 py-5"><span className="font-body-md text-sm text-on-surface-variant">{u.createdAt ? new Date(u.createdAt).toLocaleDateString('vi-VN') : '—'}</span></td>
                   <td className="px-6 py-5 text-right">
                     <div className="flex items-center justify-end gap-3">
                       <button onClick={() => onView?.(u)} className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors" title="Xem">visibility</button>
-                      <button onClick={() => onDelete?.(u)} className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors" title="Xoá">delete</button>
+                      {u.isActive === false ? (
+                        <button onClick={() => onToggleActive?.(u)} className="material-symbols-outlined text-on-surface-variant hover:text-emerald-500 transition-colors" title="Mở khóa">lock_open</button>
+                      ) : (
+                        <button onClick={() => onToggleActive?.(u)} className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors" title="Vô hiệu hóa">block</button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -8,18 +8,18 @@ export default function HeroSection() {
       <div className="absolute inset-0 z-0">
         <img
           alt="Timeless Precision"
-          className="h-full w-full scale-105 object-cover object-center opacity-80"
+          className="h-full w-full scale-105 object-cover object-center opacity-60"
           src="/images/product-skeleton.jpg"
         />
         <div className="hero-overlay absolute inset-0" />
       </div>
       <div className="relative z-10 max-w-4xl px-gutter text-center">
         <div className="reveal-divider mb-8 active" />
-        <h1 className="font-display-lg text-display-lg-mobile text-primary animate-fade-in md:text-display-lg mb-6">
+        <h1 className="font-display-lg text-display-lg-mobile text-white animate-fade-in md:text-display-lg mb-6">
             Đẳng cấp thời gian, tinh hoa chế tác
         </h1>
         <p
-          className="font-body-lg text-body-lg mx-auto mb-12 max-w-2xl animate-fade-in text-on-surface-variant opacity-80"
+          className="font-body-lg text-body-lg mx-auto mb-12 max-w-2xl animate-fade-in text-blue-100 opacity-90"
           style={{ animationDelay: '0.2s' }}
         >
             TAWATCH - Nơi hội tụ những tuyệt tác đồng hồ, kết tinh từ nghệ thuật chế tác và đam mê thời gian. Khám phá bộ sưu tập độc đáo, trải nghiệm dịch vụ tận tâm và cảm nhận sự khác biệt của từng chiếc đồng hồ tại TAWATCH.
@@ -28,10 +28,10 @@ export default function HeroSection() {
           className="flex flex-col justify-center gap-6 animate-fade-in md:flex-row"
           style={{ animationDelay: '0.4s' }}
         >
-          <button onClick={() => navigate('/products')} className="gold-border-button px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest" type="button">
+          <button onClick={() => navigate('/products')} className="white-border-button px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest" type="button">
             Xem Bộ Sưu Tập
           </button>
-          <button onClick={() => navigate('/brands')} className="border border-transparent px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest text-primary transition-all hover:border-primary/20" type="button">
+          <button onClick={() => navigate('/brands')} className="border border-transparent px-10 py-4 font-label-caps text-label-caps uppercase tracking-widest text-white transition-all hover:border-white/20" type="button">
             Khám Phá Thương Hiệu
           </button>
         </div>

@@ -9,10 +9,6 @@ export const userService = {
 		return request('/users').then(unwrapApiResponse)
 	},
 
-	getUserById(id) {
-		return request(`/users/${id}`).then(unwrapApiResponse)
-	},
-
 	updateUser(id, payload) {
 		return request(`/users/${id}`, {
 			method: 'PUT',
@@ -42,6 +38,16 @@ export const userService = {
 	deleteUser(id) {
 		return request(`/users/${id}`, {
 			method: 'DELETE',
+		}).then(unwrapApiResponse)
+	},
+	disableUser(id) {
+		return request(`/users/${id}/disable`, {
+			method: 'PUT',
+		}).then(unwrapApiResponse)
+	},
+	enableUser(id) {
+		return request(`/users/${id}/enable`, {
+			method: 'PUT',
 		}).then(unwrapApiResponse)
 	},
 }

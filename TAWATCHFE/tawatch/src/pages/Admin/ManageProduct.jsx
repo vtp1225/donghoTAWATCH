@@ -2,17 +2,35 @@ import { useState, useCallback, useMemo } from 'react'
 import StatsGrid from '../../components/admin/StatsGrid'
 import InventoryTable from '../../components/admin/InventoryTable'
 import WatchModal from '../../components/admin/WatchModal'
+import ImportReceiptSection from '../../components/admin/ImportReceiptSection'
+import ImportExcelModal from '../../components/admin/ImportExcelModal'
 import { watchService } from '../../services/watchService'
+import useAuth from '../../hooks/useAuth'
+
+const TABS = [
+  { id: 'inventory', label: 'Kho hàng', icon: 'inventory_2' },
+  { id: 'import',    label: 'Nhập kho',  icon: 'move_to_inbox' },
+]
 
 export default function ManageProduct() {
+  const { user } = useAuth()
+  const isAdmin = user?.role === 'ADMIN'
+
+  const [activeTab, setActiveTab] = useState('inventory')
+
+  // Inventory tab state
   const [modalOpen, setModalOpen] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
   const [refreshKey, setRefreshKey] = useState(0)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
-
-  // Stats come FREE from InventoryTable's existing load — no extra API call
   const [tableStats, setTableStats] = useState(null)
+
+  // Import tab state
+  const [createReceiptOpen, setCreateReceiptOpen] = useState(false)
+
+  // Excel import
+  const [importExcelOpen, setImportExcelOpen] = useState(false)
 
   const handleStatsLoad = useCallback(({ total, outOfStock, lowStock, isFiltered }) => {
     if (!isFiltered) setTableStats({ total, outOfStock, lowStock })
@@ -22,7 +40,6 @@ export default function ManageProduct() {
     const total      = tableStats?.total      ?? null
     const outOfStock = tableStats?.outOfStock ?? null
     const lowStock   = tableStats?.lowStock   ?? null
-
     return [
       {
         label: 'Tổng sản phẩm',
@@ -35,9 +52,7 @@ export default function ManageProduct() {
         value: lowStock != null ? lowStock.toString() : null,
         icon: 'warning',
         accent: lowStock > 0 ? 'text-amber-400' : 'text-on-background',
-        detail: lowStock != null
-          ? (lowStock > 0 ? 'Tồn kho dưới 5 chiếc' : 'Không có')
-          : null,
+        detail: lowStock != null ? (lowStock > 0 ? 'Tồn kho dưới 5 chiếc' : 'Không có') : null,
         detailColor: lowStock > 0 ? 'text-amber-400/70' : 'text-on-surface-variant/40',
       },
       {
@@ -45,17 +60,11 @@ export default function ManageProduct() {
         value: outOfStock != null ? outOfStock.toString() : null,
         icon: 'remove_shopping_cart',
         accent: outOfStock > 0 ? 'text-error' : 'text-on-background',
-        detail: outOfStock != null
-          ? (outOfStock > 0 ? 'Cần nhập thêm hàng' : 'Tất cả còn hàng')
-          : null,
+        detail: outOfStock != null ? (outOfStock > 0 ? 'Cần nhập thêm hàng' : 'Tất cả còn hàng') : null,
         detailColor: outOfStock > 0 ? 'text-error/60' : 'text-on-surface-variant/40',
       },
     ]
   }, [tableStats])
-
-  function handleSuccess() {
-    setRefreshKey((k) => k + 1)
-  }
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -74,23 +83,36 @@ export default function ManageProduct() {
   return (
     <main className="ml-72 mt-20 min-h-screen overflow-x-hidden" style={{ padding: '24px 32px' }}>
       {/* Header */}
-      <section className="mb-16 pt-8">
+      <section className="mb-10 pt-8">
         <div className="flex justify-between items-end mb-6">
           <div className="max-w-2xl">
             <span className="font-label-caps text-label-caps text-primary tracking-[0.4em] block mb-4 uppercase">
+              WAREHOUSE MANAGEMENT
             </span>
-            <h2 className="font-display-lg text-display-lg text-on-background">Kho Hàng</h2>
+            <h2 className="font-display-lg text-display-lg text-on-background">Quản Lý Kho</h2>
           </div>
-          <button
-            onClick={() => {
-              setEditTarget(null)
-              setModalOpen(true)
-            }}
-            className="px-8 py-3 border border-primary text-primary font-label-caps text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-background transition-all duration-500 active:scale-95 flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            Thêm Sản Phẩm
-          </button>
+
+          {activeTab === 'inventory' ? (
+            isAdmin && (
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => { setEditTarget(null); setModalOpen(true) }}
+                  className="px-8 py-3 border border-primary text-primary font-label-caps text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-background transition-all duration-500 active:scale-95 flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">add</span>
+                  Thêm Sản Phẩm
+                </button>
+              </div>
+            )
+          ) : (
+            <button
+              onClick={() => setCreateReceiptOpen(true)}
+              className="px-8 py-3 border border-primary text-primary font-label-caps text-xs tracking-[0.2em] uppercase hover:bg-primary hover:text-background transition-all duration-500 active:scale-95 flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              Tạo phiếu nhập
+            </button>
+          )}
         </div>
         <div
           className="h-px opacity-30"
@@ -98,11 +120,44 @@ export default function ManageProduct() {
         />
       </section>
 
-      <StatsGrid stats={stats} loading={tableStats === null} />
-      <InventoryTable refreshKey={refreshKey} onStatsLoad={handleStatsLoad} onDelete={setDeleteTarget} onEdit={(watch) => {
-        setEditTarget(watch)
-        setModalOpen(true)
-      }} />
+      {/* Tabs */}
+      <div className="flex items-center gap-8 mb-10 border-b border-outline-variant/15">
+        {TABS.filter((tab) => isAdmin || tab.id !== 'import').map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 pb-3 font-label-caps text-xs tracking-widest transition-all ${
+              activeTab === tab.id
+                ? 'text-primary border-b-2 border-primary -mb-px'
+                : 'text-on-surface-variant/50 hover:text-on-surface-variant'
+            }`}
+          >
+            <span className="material-symbols-outlined text-base">{tab.icon}</span>
+            {tab.label.toUpperCase()}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab: Kho hàng */}
+      {activeTab === 'inventory' && (
+        <>
+          <StatsGrid stats={stats} loading={tableStats === null} />
+          <InventoryTable
+            refreshKey={refreshKey}
+            onStatsLoad={handleStatsLoad}
+            onDelete={setDeleteTarget}
+            onEdit={(watch) => { setEditTarget(watch); setModalOpen(true) }}
+          />
+        </>
+      )}
+
+      {/* Tab: Nhập kho */}
+      {activeTab === 'import' && (
+        <ImportReceiptSection
+          createOpen={createReceiptOpen}
+          onCreateClose={() => setCreateReceiptOpen(false)}
+        />
+      )}
 
       {/* Footer */}
       <footer className="mt-section-gap-desktop pb-8 opacity-20">
@@ -116,15 +171,19 @@ export default function ManageProduct() {
         </div>
       </footer>
 
-      {/* Add watch modal */}
+      {/* Excel import modal */}
+      <ImportExcelModal
+        open={importExcelOpen}
+        onClose={() => setImportExcelOpen(false)}
+        onSuccess={() => { setImportExcelOpen(false); setRefreshKey((k) => k + 1) }}
+      />
+
+      {/* Add/edit watch modal */}
       <WatchModal
         open={modalOpen}
         watch={editTarget}
-        onClose={() => {
-          setModalOpen(false)
-          setEditTarget(null)
-        }}
-        onSuccess={handleSuccess}
+        onClose={() => { setModalOpen(false); setEditTarget(null) }}
+        onSuccess={() => setRefreshKey((k) => k + 1)}
       />
 
       {/* Delete confirm */}
@@ -139,17 +198,8 @@ export default function ManageProduct() {
               Hành động này không thể hoàn tác. Tất cả biến thể và ảnh liên quan cũng sẽ bị xoá.
             </p>
             <div className="flex gap-4">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-label-caps text-xs tracking-widest hover:border-primary hover:text-primary transition-all"
-              >
-                HUỶ
-              </button>
-              <button
-                onClick={confirmDelete}
-                disabled={deleting}
-                className="flex-1 py-3 bg-error text-background font-label-caps text-xs tracking-widest hover:bg-error/80 transition-all disabled:opacity-50"
-              >
+              <button onClick={() => setDeleteTarget(null)} className="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-label-caps text-xs tracking-widest hover:border-primary hover:text-primary transition-all">HUỶ</button>
+              <button onClick={confirmDelete} disabled={deleting} className="flex-1 py-3 bg-error text-background font-label-caps text-xs tracking-widest hover:bg-error/80 transition-all disabled:opacity-50">
                 {deleting ? 'ĐANG XOÁ...' : 'XOÁ'}
               </button>
             </div>

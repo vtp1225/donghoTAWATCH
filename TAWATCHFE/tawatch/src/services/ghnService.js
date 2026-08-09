@@ -25,4 +25,8 @@ export const ghnService = {
     })
     return unwrap(res)?.total ?? 0
   },
+
+  getTracking(orderCode) {
+    return request(`/ghn/tracking?orderCode=${orderCode}`).then(unwrap)
+  },
 }

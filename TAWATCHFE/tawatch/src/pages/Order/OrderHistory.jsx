@@ -4,7 +4,9 @@ import Navbar from '../../components/layout/Navbar.jsx'
 import Footer from '../../components/layout/Footer.jsx'
 import useAuth from '../../hooks/useAuth.js'
 import { orderService } from '../../services/orderService.js'
-
+import { ghnService } from '../../services/ghnService.js'
+import { paymentService } from '../../services/paymentService.js'
+import GhnTrackingTimeline from '../../components/common/GhnTrackingTimeline.jsx'
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 function formatVnd(value) {
@@ -37,12 +39,15 @@ const STATUS_CONFIG = {
   DELIVERED:  { label: 'Đã giao hàng',   color: 'border-primary/40 bg-primary/10 text-primary',          dot: 'bg-primary',      icon: 'check_circle' },
   CANCELLED:  { label: 'Đã huỷ',         color: 'border-red-500/40 bg-red-500/10 text-red-400',          dot: 'bg-red-400',      icon: 'cancel' },
   REFUNDED:   { label: 'Đã hoàn tiền',   color: 'border-purple-500/40 bg-purple-500/10 text-purple-400', dot: 'bg-purple-400',   icon: 'currency_exchange' },
+  RETURN_REQUESTED: { label: 'Yêu cầu đổi/trả', color: 'border-pink-500/40 bg-pink-500/10 text-pink-400', dot: 'bg-pink-400', icon: 'assignment_return' },
+  RETURN_REJECTED:  { label: 'Từ chối đổi/trả', color: 'border-gray-500/40 bg-gray-500/10 text-gray-400', dot: 'bg-gray-400', icon: 'block' },
 }
 
 const PAYMENT_STATUS_CONFIG = {
-  UNPAID: { label: 'Chưa thanh toán', color: 'text-amber-400',         icon: 'schedule' },
-  PAID:   { label: 'Đã thanh toán',   color: 'text-primary',           icon: 'check_circle' },
-  FAILED: { label: 'Thanh toán lỗi',  color: 'text-red-400',           icon: 'error' },
+  UNPAID:  { label: 'Chưa thanh toán', color: 'text-amber-400',         icon: 'schedule' },
+  PENDING: { label: 'Chờ thanh toán',  color: 'text-amber-400',         icon: 'hourglass_empty' },
+  PAID:    { label: 'Đã thanh toán',   color: 'text-primary',           icon: 'check_circle' },
+  FAILED:  { label: 'Thanh toán lỗi',  color: 'text-red-400',           icon: 'error' },
 }
 
 const PAYMENT_METHOD_LABEL  = { COD: 'Thanh toán khi nhận hàng', VNPAY: 'Ví VNPAY', BANK_TRANSFER: 'Chuyển khoản ngân hàng' }
@@ -57,6 +62,7 @@ const FILTER_TABS = [
   { value: 'SHIPPING',  label: 'Đang giao' },
   { value: 'DELIVERED', label: 'Đã giao' },
   { value: 'CANCELLED', label: 'Đã huỷ' },
+  { value: 'RETURNS',   label: 'Đổi/Trả' },
 ]
 
 const CANCELLABLE = new Set(['PENDING', 'CONFIRMED'])
@@ -74,7 +80,7 @@ const PROGRESS_STEPS = [
 const STEP_INDEX = { PENDING: 0, CONFIRMED: 1, PROCESSING: 2, SHIPPING: 3, DELIVERED: 4 }
 
 function OrderProgressBar({ status }) {
-  if (status === 'CANCELLED' || status === 'REFUNDED') {
+  if (status === 'CANCELLED' || status === 'REFUNDED' || status === 'RETURN_REQUESTED' || status === 'RETURN_REJECTED') {
     const cfg = STATUS_CONFIG[status]
     return (
       <div className={`flex items-center gap-3 border px-4 py-3 ${cfg.color}`}>
@@ -208,10 +214,81 @@ function CancelPanel({ orderId, userId, onCancelled }) {
   )
 }
 
+// ─── ReturnPanel ─────────────────────────────────────────────────────────────
+
+function ReturnPanel({ orderId, userId, onReturned }) {
+  const [open, setOpen] = useState(false)
+  const [reason, setReason] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const handleReturn = async () => {
+    if (!reason.trim()) {
+      setError('Vui lòng nhập lý do đổi trả.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      await orderService.returnOrder(orderId, { userId, reason: reason.trim() })
+      onReturned()
+    } catch (err) {
+      setError(err?.message || 'Không thể gửi yêu cầu đổi/trả.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-2 border border-pink-500/30 px-4 py-2.5 font-label-caps text-[9px] tracking-[0.2em] text-pink-400 transition-colors hover:bg-pink-500/10"
+      >
+        <span className="material-symbols-outlined text-[14px]">assignment_return</span>
+        YÊU CẦU ĐỔI/TRẢ
+      </button>
+    )
+  }
+
+  return (
+    <div className="border border-pink-500/20 bg-pink-500/5 p-5">
+      <p className="mb-3 font-label-caps text-[9px] tracking-[0.25em] text-pink-400">YÊU CẦU ĐỔI / TRẢ HÀNG</p>
+      <textarea
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        placeholder="Nhập lý do đổi trả chi tiết..."
+        rows={3}
+        className="mb-4 w-full border border-pink-500/20 bg-transparent p-3 font-body-md text-xs text-on-surface outline-none placeholder:text-on-surface-variant/30 focus:border-pink-400"
+      />
+      {error && <p className="mb-3 font-body-md text-xs text-pink-400">{error}</p>}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handleReturn}
+          disabled={loading}
+          className="border border-pink-500/40 px-5 py-2 font-label-caps text-[9px] tracking-[0.15em] text-pink-400 transition-colors hover:bg-pink-500/15 disabled:opacity-50"
+        >
+          {loading ? 'ĐANG GỬI...' : 'XÁC NHẬN'}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setOpen(false); setError('') }}
+          className="border border-outline-variant/25 px-5 py-2 font-label-caps text-[9px] tracking-[0.15em] text-on-surface-variant transition-colors hover:border-primary hover:text-primary"
+        >
+          HUỶ
+        </button>
+      </div>
+    </div>
+  )
+}
+
 // ─── OrderCard ────────────────────────────────────────────────────────────────
 
-function OrderCard({ order, userId, onCancelled }) {
+function OrderCard({ order, userId, onCancelled, onReturned }) {
   const [expanded, setExpanded] = useState(false)
+  const navigate = useNavigate()
   const address     = parseAddress(order.shippingAddressSnapshot)
   const paymentCfg  = PAYMENT_STATUS_CONFIG[order.paymentStatus] ?? { label: order.paymentStatus, color: 'text-on-surface-variant', icon: 'info' }
   const previewImgs = (order.items ?? []).slice(0, 3)
@@ -296,14 +373,35 @@ function OrderCard({ order, userId, onCancelled }) {
             <div className="lg:col-span-7">
               <p className="mb-5 font-label-caps text-[9px] tracking-[0.3em] text-on-surface-variant/50">SẢN PHẨM</p>
               <div className="space-y-4">
-                {(order.items ?? []).map((item) => {
-                  const watchId = item.productSnapshot?.watchId
+                {(console.log(order),
+                  order.items ?? []).map((item) => {
+                  const watchSlug = item.productSnapshot?.watchSlug || item.productSnapshot?.watchId
                   return (
-                    <div key={item.id} className="flex items-center gap-4 border border-outline-variant/8 bg-surface-container-low p-3">
+                    <div onClick={() => watchSlug && navigate(`/product/${watchSlug}`)} key={item.id} className={`flex items-center gap-4 border border-outline-variant/8 bg-surface-container-low p-3 ${watchSlug ? 'cursor-pointer hover:bg-surface-variant/30 transition-colors' : ''}`}>
                       <div className="h-20 w-20 flex-shrink-0 overflow-hidden bg-surface-container">
+
                         <img alt={item.watchName} src={resolveImage(item)} className="h-full w-full object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
+                        {['UNPAID', 'PENDING', 'FAILED'].includes(order.paymentStatus) && order.paymentMethod === 'VNPAY' && !['CANCELLED', 'RETURN_REQUESTED', 'RETURN_REJECTED', 'REFUNDED'].includes(order.orderStatus) && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              paymentService.initiateVnpay(order.id)
+                                .then(data => {
+                                  if (data && data.paymentUrl) {
+                                    window.location.href = data.paymentUrl;
+                                  }
+                                })
+                                .catch(err => alert(err?.message || 'Không thể tạo lại URL thanh toán'));
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 border border-primary/30 px-3 py-1.5 font-label-caps text-[8px] tracking-[0.2em] text-primary transition-colors hover:bg-primary/10"
+                          >
+                            <span className="material-symbols-outlined text-[11px]">account_balance_wallet</span>
+                            Thanh toán ngay
+                          </button>
+                        )}
                         <p className="font-body-md text-sm font-medium text-on-surface">{item.watchName}</p>
                         <p className="mt-1 font-label-caps text-[9px] tracking-[0.2em] text-on-surface-variant/60">
                           {item.dialColor} / {item.strapColor}
@@ -311,9 +409,10 @@ function OrderCard({ order, userId, onCancelled }) {
                         <p className="mt-1 font-label-caps text-[9px] tracking-[0.15em] text-on-surface-variant/40">
                           SL: {item.quantity} × {formatVnd(item.unitPrice)}
                         </p>
-                        {watchId && order.orderStatus === 'DELIVERED' && (
+                        
+                        {watchSlug && order.orderStatus === 'DELIVERED' && (
                           <Link
-                            to={`/product/${watchId}#reviews`}
+                            to={`/product/${watchSlug}#reviews`}
                             className="mt-2 inline-flex items-center gap-1.5 border border-primary/30 px-3 py-1.5 font-label-caps text-[8px] tracking-[0.2em] text-primary transition-colors hover:bg-primary/10"
                           >
                             <span className="material-symbols-outlined text-[11px]">rate_review</span>
@@ -412,7 +511,11 @@ function OrderCard({ order, userId, onCancelled }) {
                     <span className="material-symbols-outlined text-[14px] text-primary">pin</span>
                     <p className="font-label-caps text-[9px] tracking-[0.25em] text-on-surface-variant/60">MÃ VẬN ĐƠN</p>
                   </div>
-                  <p className="font-label-caps text-[13px] tracking-[0.3em] text-primary">{order.trackingCode}</p>
+                  <div className="flex items-center gap-3">
+                    <p className="font-label-caps text-[13px] tracking-[0.3em] text-primary">{order.trackingCode}</p>
+                    <span className="border border-primary/20 bg-primary/5 px-2 py-0.5 font-label-caps text-[8px] tracking-widest text-primary">GHN</span>
+                  </div>
+                  <GhnTrackingTimeline trackingCode={order.trackingCode} />
                 </div>
               )}
 
@@ -430,6 +533,9 @@ function OrderCard({ order, userId, onCancelled }) {
               {/* Cancel */}
               {CANCELLABLE.has(order.orderStatus) && (
                 <CancelPanel orderId={order.id} userId={userId} onCancelled={onCancelled} />
+              )}
+              {order.orderStatus === 'DELIVERED' && (
+                <ReturnPanel orderId={order.id} userId={userId} onReturned={onReturned} />
               )}
             </div>
           </div>
@@ -495,7 +601,15 @@ export default function OrderHistory() {
     setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, orderStatus: 'CANCELLED' } : o))
   }
 
-  const displayed = activeFilter === 'ALL' ? orders : orders.filter((o) => o.orderStatus === activeFilter)
+  const handleReturned = (orderId) => {
+    setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, orderStatus: 'RETURN_REQUESTED' } : o))
+  }
+
+  const displayed = activeFilter === 'ALL' 
+    ? orders 
+    : activeFilter === 'RETURNS' 
+      ? orders.filter((o) => ['RETURN_REQUESTED', 'RETURN_REJECTED', 'REFUNDED'].includes(o.orderStatus))
+      : orders.filter((o) => o.orderStatus === activeFilter)
 
   if (!isAuthenticated) {
     return (
@@ -571,7 +685,10 @@ export default function OrderHistory() {
             {/* Filter tabs */}
             <div className="mb-8 flex flex-wrap gap-2 border-b border-outline-variant/10 pb-6">
               {FILTER_TABS.map((tab) => {
-                const count = tab.value === 'ALL' ? orders.length : orders.filter((o) => o.orderStatus === tab.value).length
+                let count = 0
+                if (tab.value === 'ALL') count = orders.length
+                else if (tab.value === 'RETURNS') count = orders.filter((o) => ['RETURN_REQUESTED', 'RETURN_REJECTED', 'REFUNDED'].includes(o.orderStatus)).length
+                else count = orders.filter((o) => o.orderStatus === tab.value).length
                 return (
                   <button
                     key={tab.value}
@@ -610,6 +727,7 @@ export default function OrderHistory() {
                     order={order}
                     userId={user.id}
                     onCancelled={() => handleCancelled(order.id)}
+                    onReturned={() => handleReturned(order.id)}
                   />
                 ))}
               </div>

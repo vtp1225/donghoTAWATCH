@@ -80,9 +80,24 @@ export default function CategoryTable({ onDelete, onEdit, onDataChange }) {
           {categories.map((category) => {
             const isRoot = category.parentId == null
             const childrenCount = Array.isArray(category.children) ? category.children.length : 0
+            const isActive = category.isActive ?? true
+
+            async function toggleActive() {
+              try {
+                await categoryService.update(category.id, {
+                  name: category.name,
+                  slug: category.slug,
+                  parentId: category.parentId,
+                  isActive: !isActive,
+                })
+                load()
+              } catch (err) {
+                alert(err.message || 'Không thể thay đổi trạng thái.')
+              }
+            }
 
             return (
-              <div key={category.id} className="group border border-outline-variant/10 hover:border-primary/40 transition-all duration-500 bg-surface-container-lowest p-6 flex flex-col md:flex-row items-center gap-6">
+              <div key={category.id} className={`group border transition-all duration-500 bg-surface-container-lowest p-6 flex flex-col md:flex-row items-center gap-6 ${isActive ? 'border-outline-variant/10 hover:border-primary/40' : 'border-error/20 bg-error/5 opacity-75'}`}>
                 <div className="w-20 h-20 bg-surface-container-high border border-outline-variant/20 flex-shrink-0 flex items-center justify-center">
                   <span className="font-headline-sm text-primary text-xl tracking-wider">{initials(category.name)}</span>
                 </div>
@@ -92,6 +107,9 @@ export default function CategoryTable({ onDelete, onEdit, onDataChange }) {
                     <h4 className="font-headline-sm text-headline-sm text-on-surface truncate">{category.name}</h4>
                     <span className={`px-2 py-0.5 font-label-caps text-[10px] border ${isRoot ? 'bg-primary/10 text-primary border-primary/20' : 'bg-secondary-container/30 text-on-surface-variant border-outline-variant/30'}`}>
                       {isRoot ? 'ROOT' : 'CHILD'}
+                    </span>
+                    <span className={`px-2 py-0.5 font-label-caps text-[10px] border ${isActive ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-error/10 text-error border-error/20'}`}>
+                      {isActive ? 'HIỂN THỊ' : 'ĐÃ ẨN'}
                     </span>
                   </div>
                   <p className="font-body-md text-on-surface-variant/80 line-clamp-1">Slug: {category.slug || 'chua co slug'}</p>
@@ -103,7 +121,10 @@ export default function CategoryTable({ onDelete, onEdit, onDataChange }) {
                   <span className="font-headline-sm text-primary">{childrenCount}</span>
                 </div>
 
-                <div className="flex gap-4 border-l border-outline-variant/20 pl-6">
+                <div className="flex items-center gap-4 border-l border-outline-variant/20 pl-6">
+                  <button onClick={toggleActive} className="text-on-surface-variant hover:text-primary transition-colors" title={isActive ? 'Ẩn danh mục' : 'Hiện danh mục'}>
+                    <span className="material-symbols-outlined">{isActive ? 'visibility' : 'visibility_off'}</span>
+                  </button>
                   <button onClick={() => onEdit?.(category)} className="text-on-surface-variant hover:text-primary transition-colors" title="Edit">
                     <span className="material-symbols-outlined">edit</span>
                   </button>
