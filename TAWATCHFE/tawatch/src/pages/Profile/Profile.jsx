@@ -99,8 +99,8 @@ function AddressCard({ address, userId, onUpdated, onDeleted }) {
       setError('Vui lòng điền đầy đủ thông tin.')
       return
     }
-    if (!/^(0|\+84)[0-9]{9}$/.test(form.phone.replace(/\s/g, ''))) {
-      setError('Số điện thoại không hợp lệ.')
+    if (!/^(0|84|\+84)(3|5|7|8|9)[0-9]{8}$/.test(form.phone.replace(/\s/g, ''))) {
+      setError('Số điện thoại không hợp lệ (VD: 0987654321).')
       return
     }
     if (!form.ghnDistrictId || !form.ghnWardCode) {
@@ -337,8 +337,8 @@ function AddressTab({ userId }) {
       setFormError('Vui lòng điền đầy đủ thông tin.')
       return
     }
-    if (!/^(0|\+84)[0-9]{9}$/.test(phone.replace(/\s/g, ''))) {
-      setFormError('Số điện thoại không hợp lệ.')
+    if (!/^(0|84|\+84)(3|5|7|8|9)[0-9]{8}$/.test(phone.replace(/\s/g, ''))) {
+      setFormError('Số điện thoại không hợp lệ (VD: 0987654321).')
       return
     }
     if (!ghnDistrictId || !ghnWardCode) {
@@ -516,8 +516,8 @@ function InfoTab({ user, onUserUpdated }) {
       setError('Họ tên không được để trống.')
       return
     }
-    if (form.phone && !/^(0|\+84)[0-9]{9}$/.test(form.phone.trim().replace(/\s/g, ''))) {
-      setError('Số điện thoại không hợp lệ.')
+    if (form.phone && !/^(0|84|\+84)(3|5|7|8|9)[0-9]{8}$/.test(form.phone.trim().replace(/\s/g, ''))) {
+      setError('Số điện thoại không hợp lệ (VD: 0987654321).')
       return
     }
     setSaving(true)

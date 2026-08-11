@@ -28,6 +28,7 @@ function mapWatch(watch, index) {
 		categoryId: watch.categoryId ?? null,
 		categoryName: watch.categoryName ?? '',
 		isFeatured: watch.isFeatured ?? false,
+		totalStock: watch.totalStock ?? 0,
 		offsetClassName: index % 2 === 1 ? 'pt-12 md:pt-24' : '',
 	}
 }

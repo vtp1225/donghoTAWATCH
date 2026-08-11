@@ -1,0 +1,87 @@
+<mxfile host="Electron" modified="2024-05-16T12:00:00.000Z" agent="Mozilla/5.0" version="21.6.8" type="device">
+  <diagram id="usecase_diagram" name="Usecase Diagram">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        
+        <!-- ACTORS -->
+        <mxCell id="actor_admin" value="Admin" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="200" width="30" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="actor_staff" value="Staff" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="100" y="500" width="30" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="actor_user" value="User" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;" vertex="1" parent="1">
+          <mxGeometry x="700" y="500" width="30" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- USE CASES -->
+        <mxCell id="uc_1" value="Quản lý nhà cung cấp" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="40" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_2" value="Quản lý danh mục" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="100" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_3" value="Quản lý thương hiệu" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="160" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_4" value="Quản lý kho" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="220" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_5" value="Quản lý mã giảm giá" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="280" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_6" value="Báo cáo thống kê" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="340" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_7" value="Quản lý tài khoản" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="400" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_8" value="Quản lý đánh giá/bình luận" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="460" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_9" value="Quản lý đơn hàng" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="520" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_10" value="Quản lý sản phẩm" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="580" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_11" value="Quản lý giỏ hàng" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="640" width="140" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_12" value="Quản lý danh sách yêu thích" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="700" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="uc_13" value="Xem, tìm kiếm, lọc sản phẩm" style="ellipse;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="350" y="760" width="170" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ADMIN CONNECTIONS -->
+        <mxCell id="c_a_1" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_2" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_2"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_3" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_3"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_4" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_4"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_5" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_5"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_6" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_6"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_7" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_7"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_8" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_9" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_9"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_a_10" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_admin" target="uc_10"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- STAFF CONNECTIONS -->
+        <mxCell id="c_s_9" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_staff" target="uc_9"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- USER CONNECTIONS -->
+        <mxCell id="c_u_8" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_user" target="uc_8"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_u_9" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_user" target="uc_9"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_u_11" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_user" target="uc_11"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_u_12" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_user" target="uc_12"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="c_u_13" style="edgeStyle=none;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=none;endFill=0;" edge="1" parent="1" source="actor_user" target="uc_13"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

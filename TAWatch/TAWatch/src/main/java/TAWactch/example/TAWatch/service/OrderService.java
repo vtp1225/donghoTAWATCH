@@ -341,9 +341,14 @@ public class OrderService {
                 ghnItems.add(ghnItem);
             }
 
+            Integer codAmount = 0;
+            if (order.getPaymentMethod() == PaymentMethodType.COD && order.getPaymentStatus() == PaymentStatusType.UNPAID) {
+                codAmount = order.getTotalAmount().intValue();
+            }
+
             String trackingCode = ghnService.createShippingOrder(
                     districtId, wardCode, toName, toPhone, addressDetail,
-                    totalWeight, order.getTotalAmount().intValue(),
+                    totalWeight, order.getTotalAmount().intValue(), codAmount,
                     order.getOrderCode(), ghnItems
             );
 

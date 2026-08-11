@@ -122,6 +122,9 @@ function ShowcaseCard({ item, wishlisted = false }) {
             </p>
           )}
         </div>
+        <p className="mt-1.5 font-label-caps text-[8px] tracking-[0.1em] text-on-surface-variant/70">
+          Trong kho: <span className="text-primary">{item.totalStock}</span> sản phẩm
+        </p>
       </Link>
 
       <button

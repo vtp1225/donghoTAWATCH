@@ -72,8 +72,8 @@ function AddressPicker({ addresses, loading, selectedId, onSelect, onAddressCrea
       setFormError('Vui lòng điền đầy đủ thông tin địa chỉ.')
       return
     }
-    if (!/^(0|\+84)[0-9]{9}$/.test(newAddr.phone.replace(/\s/g, ''))) {
-      setFormError('Số điện thoại không hợp lệ.')
+    if (!/^(0|84|\+84)(3|5|7|8|9)[0-9]{8}$/.test(newAddr.phone.replace(/\s/g, ''))) {
+      setFormError('Số điện thoại không hợp lệ (VD: 0987654321).')
       return
     }
     if (!newAddr.ghnDistrictId || !newAddr.ghnWardCode) {
@@ -502,8 +502,8 @@ export default function Checkout() {
         setSubmitError('Email nhận hàng không hợp lệ.')
         return
       }
-      if (!/^(0|\+84)[0-9]{9}$/.test(guestPhone.replace(/\s/g, ''))) {
-        setSubmitError('Số điện thoại nhận hàng không hợp lệ.')
+      if (!/^(0|84|\+84)(3|5|7|8|9)[0-9]{8}$/.test(guestPhone.replace(/\s/g, ''))) {
+        setSubmitError('Số điện thoại nhận hàng không hợp lệ (VD: 0987654321).')
         return
       }
     }

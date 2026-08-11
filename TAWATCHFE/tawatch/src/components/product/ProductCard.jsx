@@ -142,6 +142,10 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
           </div>
         </div>
         <p className="line-clamp-2 font-body-md text-on-surface-variant">{item.description}</p>
+        
+        <p className="mt-2 font-label-caps text-[9px] tracking-[0.1em] text-on-surface-variant/70">
+          Trong kho: <span className="text-primary">{item.totalStock}</span> sản phẩm
+        </p>
 
         <div className="pt-4 flex items-center gap-3">
           {/* Add to cart button */}

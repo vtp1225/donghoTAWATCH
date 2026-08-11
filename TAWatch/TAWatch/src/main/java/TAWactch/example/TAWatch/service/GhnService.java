@@ -89,7 +89,7 @@ public class GhnService {
     public String createShippingOrder(
             Integer toDistrictId, String toWardCode,
             String toName, String toPhone, String toAddress,
-            Integer weightGrams, Integer insuranceValue,
+            Integer weightGrams, Integer insuranceValue, Integer codAmount,
             String clientOrderCode, List<Map<String, Object>> items
     ) {
         Map<String, Object> body = new LinkedHashMap<>();
@@ -108,6 +108,9 @@ public class GhnService {
         body.put("service_type_id", 2);
         if (insuranceValue != null && insuranceValue > 0) {
             body.put("insurance_value", Math.min(insuranceValue, 5000000));
+        }
+        if (codAmount != null && codAmount > 0) {
+            body.put("cod_amount", codAmount);
         }
         body.put("items", items);
 
