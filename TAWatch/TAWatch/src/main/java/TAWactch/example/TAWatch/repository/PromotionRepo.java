@@ -13,6 +13,7 @@ import java.util.List;
 public interface PromotionRepo extends JpaRepository<Promotion, Integer> {
     List<Promotion> findByIsActive(Boolean isActive);
     boolean existsByName(String name);
+    java.util.Optional<Promotion> findByName(String name);
 
     @Query("""
         SELECT DISTINCT p FROM Promotion p

@@ -1,5 +1,6 @@
 package TAWactch.example.TAWatch.security;
 
+import TAWactch.example.TAWatch.repository.UserRepo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +24,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
+    @Autowired
+    private UserRepo userRepo;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
@@ -42,6 +46,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String email = jwtUtil.extractEmail(token);
             UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+            // Set userId vào request attribute để các API dùng @RequestAttribute("userId") có thể lấy được
+            userRepo.findByEmail(email).ifPresent(user -> {
+                request.setAttribute("userId", user.getId());
+            });
 
             UsernamePasswordAuthenticationToken authToken =
                     new UsernamePasswordAuthenticationToken(

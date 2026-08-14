@@ -189,6 +189,7 @@ public class SecurityConfig {
                         // Coupon APIs - validate public, rest admin
                         .requestMatchers(HttpMethod.POST, "/coupons/validate").permitAll()
                         .requestMatchers(HttpMethod.GET, "/coupons/featured").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/coupons/my-coupons").authenticated()
                         .requestMatchers(HttpMethod.GET, "/coupons/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/coupons").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/coupons/**").hasRole("ADMIN")

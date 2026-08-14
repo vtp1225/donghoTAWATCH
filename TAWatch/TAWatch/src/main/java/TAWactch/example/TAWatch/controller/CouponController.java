@@ -77,4 +77,13 @@ public class CouponController {
         response.setData(couponService.validate(request));
         return response;
     }
+
+    @GetMapping("/my-coupons")
+    public ApiRespone<List<CouponResponse>> getMyCoupons(@RequestAttribute("userId") int userId) {
+        ApiRespone<List<CouponResponse>> response = new ApiRespone<>();
+        response.setCode(200);
+        response.setMessage("Success");
+        response.setData(couponService.getMyCoupons(userId));
+        return response;
+    }
 }

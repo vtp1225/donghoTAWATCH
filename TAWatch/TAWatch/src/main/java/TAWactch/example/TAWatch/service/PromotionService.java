@@ -59,6 +59,7 @@ public class PromotionService {
         if (promotion.getIsActive() == null) promotion.setIsActive(true);
         if (promotion.getMinOrderValue() == null) promotion.setMinOrderValue(java.math.BigDecimal.ZERO);
         if (promotion.getMinPurchaseCount() == null) promotion.setMinPurchaseCount(0);
+        if (promotion.getMaxUses() == null) throw new AppException(ErrorCode.PROMOTION_MAX_USES_REQUIRED);
         resolveWatch(request, promotion);
         validateProfitMargin(promotion);
         return promotionMapper.toResponse(promotionRepo.save(promotion));
@@ -72,6 +73,7 @@ public class PromotionService {
             }
         }
         promotionMapper.partialUpdate(request, promotion);
+        if (promotion.getMaxUses() == null) throw new AppException(ErrorCode.PROMOTION_MAX_USES_REQUIRED);
         resolveWatch(request, promotion);
         validateProfitMargin(promotion);
         return promotionMapper.toResponse(promotionRepo.save(promotion));

@@ -22,6 +22,7 @@ function getStoredUserId() {
 export default function ProductCard({ item, offsetClassName = '', wishlisted = false, onWishlistChange }) {
   const navigate = useNavigate()
   const [addState, setAddState] = useState('idle') // idle | loading | added | error
+  const [addToast, setAddToast] = useState('')
   const [heartState, setHeartState] = useState(wishlisted)
   const [wishlistToast, setWishlistToast] = useState('')
 
@@ -32,9 +33,13 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
       await addToCart(item.variantId)
       setAddState('added')
       setTimeout(() => setAddState('idle'), 2000)
-    } catch {
+    } catch (err) {
       setAddState('error')
-      setTimeout(() => setAddState('idle'), 2000)
+      setAddToast(err?.message || 'Không thể thêm vào giỏ hàng')
+      setTimeout(() => {
+        setAddState('idle')
+        setAddToast('')
+      }, 3000)
     }
   }
 
@@ -69,18 +74,19 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
 
   return (
     <div className={`group product-card-hover relative ${offsetClassName}`}>
-      {/* Wishlist toast — fixed top-right corner */}
-      {wishlistToast && (
-        <div className="fixed top-5 right-5 z-[9999] flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in pointer-events-none">
-          <span
-            className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
-            style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
-          >favorite</span>
-          <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
-            {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
-          </span>
-        </div>
-      )}
+      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-max">
+        {wishlistToast && (
+          <div className="flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in">
+            <span
+              className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
+              style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >favorite</span>
+            <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+              {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Image area */}
       <div className="relative mb-6 aspect-square overflow-hidden bg-surface-container cursor-pointer">
@@ -152,14 +158,14 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={!hasVariant || addState === 'loading'}
+            disabled={!hasVariant || addState === 'loading' || addState === 'added' || addState === 'error'}
             className={`flex flex-1 items-center justify-center gap-2 border py-2.5 font-label-caps text-[10px] tracking-[0.18em] uppercase transition-all duration-300 disabled:cursor-not-allowed
               ${!hasVariant
                 ? 'border-outline-variant/20 text-on-surface-variant/35 cursor-not-allowed'
                 : addState === 'added'
                   ? 'border-primary/60 bg-primary/10 text-primary'
                   : addState === 'error'
-                    ? 'border-red-500/50 text-red-400'
+                    ? 'border-error/40 bg-error/10 text-error'
                     : 'border-outline-variant/30 text-on-surface/60 hover:border-primary/50 hover:bg-primary hover:text-background'
               }`}
           >
@@ -176,7 +182,7 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
             ) : addState === 'error' ? (
               <>
                 <span className="material-symbols-outlined text-[15px]">error</span>
-                Lỗi – Thử lại
+                {addToast || 'Lỗi'}
               </>
             ) : !hasVariant ? (
               <>

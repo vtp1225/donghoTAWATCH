@@ -15,6 +15,9 @@ export const couponService = {
   getFeatured() {
     return request('/coupons/featured').then(unwrap)
   },
+  getMyCoupons() {
+    return request('/coupons/my-coupons').then(unwrap)
+  },
   create(payload) {
     return request('/coupons', {
       method: 'POST',

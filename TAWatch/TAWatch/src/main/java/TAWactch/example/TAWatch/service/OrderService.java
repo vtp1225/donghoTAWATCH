@@ -38,6 +38,7 @@ public class OrderService {
     @Autowired private CouponService couponService;
     @Autowired private WatchVariantImageRepo watchVariantImageRepo;
     @Autowired private UserMappers userMappers;
+    @Autowired private PromotionRepo promotionRepo;
 
     // -------------------------------------------------------
     // Đặt hàng mới
@@ -48,12 +49,16 @@ public class OrderService {
             throw new AppException(ErrorCode.ORDER_ITEMS_EMPTY);
         }
 
+
         // Resolve user
         User user = null;
         if (request.userId() != null) {
             user = userRepo.findById(request.userId())
                     .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            if(!user.getIsVerified())
+                throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
         }
+
         // Resolve address và build snapshot
         String snapshot = buildShippingSnapshot(request, user);
 
@@ -92,16 +97,7 @@ public class OrderService {
             discountAmount = couponService.validateAndCalculate(coupon, subtotal);
         }
 
-        // Áp dụng giảm giá thành viên (loyalty tier)
-        if (user != null) {
-            LoyaltyTierType tier = LoyaltyTierType.fromOrderCount(user.getLoyaltyPoints());
-            if (tier.discountPercent > 0) {
-                BigDecimal loyaltyDiscount = subtotal
-                        .multiply(BigDecimal.valueOf(tier.discountPercent))
-                        .divide(BigDecimal.valueOf(100));
-                discountAmount = discountAmount.add(loyaltyDiscount);
-            }
-        }
+
 
         BigDecimal shippingFee = (request.shippingFee() != null && request.shippingFee().compareTo(BigDecimal.ZERO) > 0)
                 ? request.shippingFee()
@@ -245,7 +241,15 @@ public class OrderService {
             // Tăng điểm thành viên khi đơn hoàn thành
             if (order.getUser() != null) {
                 User customer = order.getUser();
-                customer.setLoyaltyPoints(customer.getLoyaltyPoints() + 1);
+                int oldPoints = customer.getLoyaltyPoints();
+                customer.setLoyaltyPoints(oldPoints + 1);
+
+                LoyaltyTierType oldTier = LoyaltyTierType.fromOrderCount(oldPoints);
+                LoyaltyTierType newTier = LoyaltyTierType.fromOrderCount(oldPoints + 1);
+
+                if (newTier != oldTier && newTier != LoyaltyTierType.NONE) {
+                    grantTierUpgradeCoupons(customer, newTier);
+                }
                 userRepo.save(customer);
             }
         } else if (request.newStatus() == OrderStatusType.PROCESSING && order.getDeliveryMethod() == DeliveryMethodType.EXTERNAL_SHIPPER) {
@@ -363,6 +367,40 @@ public class OrderService {
     private Order requireOrder(Integer orderId) {
         return orderRepo.findById(orderId)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+    }
+
+    // Cấp coupon thăng hạng cho user khi đổi tier
+    private void grantTierUpgradeCoupons(User customer, LoyaltyTierType newTier) {
+        String promoName = switch (newTier) {
+            case BRONZE  -> "Thăng hạng BRONZE";
+            case SILVER  -> "Thăng hạng SILVER";
+            case GOLD    -> "Thăng hạng GOLD";
+            case DIAMOND -> "Thăng hạng DIAMOND";
+            default      -> null;
+        };
+        if (promoName == null) return;
+
+        Promotion promo = promotionRepo.findByName(promoName).orElse(null);
+        if (promo == null) return;
+
+        int quantity = switch (newTier) {
+            case BRONZE  -> 1;
+            case SILVER  -> 2;
+            case GOLD    -> 3;
+            case DIAMOND -> 4;
+            default      -> 0;
+        };
+
+        Instant expiresAt = Instant.now().plus(30, java.time.temporal.ChronoUnit.DAYS);
+        for (int i = 0; i < quantity; i++) {
+            Coupon coupon = new Coupon();
+            coupon.setPromotion(promo);
+            coupon.setUser(customer);
+            coupon.setIsUsed(false);
+            coupon.setCode(newTier.name() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+            coupon.setExpiresAt(expiresAt);
+            couponRepo.save(coupon);
+        }
     }
 
     private void validateStatusTransition(OrderStatusType from, OrderStatusType to) {

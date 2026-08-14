@@ -175,6 +175,8 @@ export default function ProductDetail() {
     }
   }, [selectedVariant, wishlisted, wishlistLoading, navigate, slug])
 
+  const [addToast, setAddToast] = useState('')
+
   const handleAddToCart = useCallback(async () => {
     if (!selectedVariant || addState === 'loading') return
     setAddState('loading')
@@ -184,9 +186,13 @@ export default function ProductDetail() {
       window.dispatchEvent(new Event('cart:updated'))
       setAddState('added')
       setTimeout(() => setAddState('idle'), 2500)
-    } catch {
+    } catch (err) {
       setAddState('error')
-      setTimeout(() => setAddState('idle'), 2500)
+      setAddToast(err?.message || 'Không thể thêm vào giỏ hàng')
+      setTimeout(() => {
+        setAddState('idle')
+        setAddToast('')
+      }, 3000)
     }
   }, [selectedVariant, addState])
 
@@ -432,14 +438,14 @@ export default function ProductDetail() {
               <button
                 type="button"
                 onClick={handleAddToCart}
-                disabled={!hasStock || !selectedVariant || addState === 'loading'}
+                disabled={!hasStock || !selectedVariant || addState === 'loading' || addState === 'added' || addState === 'error'}
                 className={`flex items-center justify-center gap-3 py-4 font-label-caps text-xs tracking-[0.25em] uppercase transition-all duration-500 active:scale-[0.985] disabled:cursor-not-allowed ${
                   !hasStock || !selectedVariant
                     ? 'border border-outline-variant/20 text-on-surface-variant/30'
                     : addState === 'added'
                     ? 'border border-primary/50 bg-primary/10 text-primary'
                     : addState === 'error'
-                    ? 'border border-error/40 text-error/80'
+                    ? 'border border-error/40 bg-error/10 text-error'
                     : 'bg-primary text-background hover:bg-primary/85'
                 }`}
               >
@@ -456,7 +462,7 @@ export default function ProductDetail() {
                 ) : addState === 'error' ? (
                   <>
                     <span className="material-symbols-outlined text-lg leading-none">error</span>
-                    Có lỗi — Thử lại
+                    {addToast || 'Có lỗi — Thử lại'}
                   </>
                 ) : !hasStock || !selectedVariant ? (
                   <>
@@ -499,17 +505,19 @@ export default function ProductDetail() {
                       favorite
                     </span>
                   </button>
-                  {wishlistToast && (
-                    <div className="fixed top-5 right-5 z-[9999] flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in pointer-events-none">
-                      <span
-                        className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
-                        style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
-                      >favorite</span>
-                      <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
-                        {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
-                      </span>
+                    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-max">
+                      {wishlistToast && (
+                        <div className="flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in">
+                          <span
+                            className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
+                            style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
+                          >favorite</span>
+                          <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+                            {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
                 </div>
               </div>
 

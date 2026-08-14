@@ -19,6 +19,7 @@ function getStoredUserId() {
 function ShowcaseCard({ item, wishlisted = false }) {
   const navigate = useNavigate()
   const [addState, setAddState] = useState('idle')
+  const [addToast, setAddToast] = useState('')
   const [heartState, setHeartState] = useState(wishlisted)
   const [wishlistToast, setWishlistToast] = useState('')
 
@@ -31,9 +32,13 @@ function ShowcaseCard({ item, wishlisted = false }) {
       window.dispatchEvent(new Event('cart:updated'))
       setAddState('added')
       setTimeout(() => setAddState('idle'), 2000)
-    } catch {
+    } catch (err) {
       setAddState('error')
-      setTimeout(() => setAddState('idle'), 2000)
+      setAddToast(err?.message || 'Không thể thêm vào giỏ hàng')
+      setTimeout(() => {
+        setAddState('idle')
+        setAddToast('')
+      }, 3000)
     }
   }
 
@@ -64,7 +69,21 @@ function ShowcaseCard({ item, wishlisted = false }) {
   }
 
   return (
-    <div className="group flex-shrink-0 w-[220px] md:w-auto">
+    <div className="group flex-shrink-0 w-[220px] md:w-auto relative">
+      <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex flex-col items-center gap-2 pointer-events-none w-max">
+        {wishlistToast && (
+          <div className="flex items-center gap-2 bg-background border border-outline-variant/30 px-4 py-3 shadow-lg animate-fade-in">
+            <span
+              className={`material-symbols-outlined text-[16px] ${wishlistToast === 'added' ? 'text-red-400' : 'text-on-surface-variant/60'}`}
+              style={wishlistToast === 'added' ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >favorite</span>
+            <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+              {wishlistToast === 'added' ? 'Đã thêm vào yêu thích' : 'Đã xoá khỏi yêu thích'}
+            </span>
+          </div>
+        )}
+      </div>
+
       {/* Image */}
       <div className="relative mb-3 aspect-square overflow-hidden bg-surface-container">
         <Link to={`/product/${item.slug}`} className="absolute inset-0 z-10">
@@ -134,6 +153,8 @@ function ShowcaseCard({ item, wishlisted = false }) {
         className={`mt-3 w-full border py-2 font-label-caps text-[8px] tracking-[0.2em] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
           addState === 'added'
             ? 'border-primary/50 bg-primary/10 text-primary'
+            : addState === 'error'
+            ? 'border-error/40 bg-error/10 text-error'
             : 'border-outline-variant/20 text-on-surface-variant/50 hover:border-primary hover:text-primary'
         }`}
       >
@@ -141,6 +162,8 @@ function ShowcaseCard({ item, wishlisted = false }) {
           ? 'ĐÃ THÊM'
           : addState === 'loading'
           ? 'ĐANG THÊM...'
+          : addState === 'error'
+          ? (addToast ? addToast.toUpperCase() : 'LỖI')
           : !item.variantId
           ? 'HẾT HÀNG'
           : 'THÊM VÀO GIỎ'}

@@ -10,7 +10,6 @@ import { orderService } from '../../services/orderService.js'
 import { paymentService } from '../../services/paymentService.js'
 import { addressService } from '../../services/userService.js'
 import { ghnService } from '../../services/ghnService.js'
-import { loyaltyService, TIER_META } from '../../services/loyaltyService.js'
 
 function formatVnd(value) {
   if (value == null) return '0 đ'
@@ -55,6 +54,78 @@ function RadioCard({ selected, onClick, children }) {
   )
 }
 
+// ---------- Coupon Picker Modal ----------
+function CouponPickerModal({ isOpen, onClose, onSelect, myCoupons, featuredCoupons, loading }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="w-full max-w-lg bg-background p-6 shadow-2xl overflow-y-auto max-h-[80vh]">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="font-headline-sm text-headline-sm text-on-surface">Chọn Mã Giảm Giá</h3>
+          <button onClick={onClose} className="material-symbols-outlined text-on-surface-variant hover:text-on-surface">close</button>
+        </div>
+
+        {loading ? (
+          <div className="py-12 text-center font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant/40">ĐANG TẢI...</div>
+        ) : (
+          <div className="space-y-6">
+            {myCoupons?.length > 0 && (
+              <div>
+                <h4 className="font-label-caps text-[10px] tracking-[0.2em] text-primary mb-3">VOUCHER CỦA BẠN</h4>
+                <div className="space-y-3">
+                  {myCoupons.map(c => (
+                    <div key={c.id} className="border border-primary/30 p-4 flex justify-between items-center bg-primary/5">
+                      <div>
+                        <p className="font-body-md text-sm font-semibold text-on-surface">{c.promotionName || 'Voucher'}</p>
+                        <p className="font-label-caps text-[10px] text-on-surface-variant mt-1">Mã: {c.code}</p>
+                        {c.expiresAt && <p className="font-label-caps text-[9px] text-red-400 mt-1">HSD: {new Date(c.expiresAt).toLocaleDateString('vi-VN')}</p>}
+                      </div>
+                      <button 
+                        onClick={() => onSelect(c)}
+                        className="border border-primary px-4 py-2 font-label-caps text-[10px] tracking-widest text-primary hover:bg-primary hover:text-background transition-colors"
+                      >
+                        ÁP DỤNG
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {featuredCoupons?.length > 0 && (
+              <div>
+                <h4 className="font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant mb-3">VOUCHER HỆ THỐNG</h4>
+                <div className="space-y-3">
+                  {featuredCoupons.map(c => (
+                    <div key={c.id} className="border border-outline-variant/30 p-4 flex justify-between items-center">
+                      <div>
+                        <p className="font-body-md text-sm font-medium text-on-surface">{c.promotionName || 'Khuyến mãi'}</p>
+                        <p className="font-label-caps text-[10px] text-on-surface-variant mt-1">Mã: {c.code}</p>
+                      </div>
+                      <button 
+                        onClick={() => onSelect(c)}
+                        className="border border-outline-variant/50 px-4 py-2 font-label-caps text-[10px] tracking-widest text-on-surface hover:border-primary hover:text-primary transition-colors"
+                      >
+                        ÁP DỤNG
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {myCoupons?.length === 0 && featuredCoupons?.length === 0 && (
+              <div className="py-8 text-center text-on-surface-variant font-body-md text-sm">
+                Hiện không có mã giảm giá nào.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
 // ---------- Address picker (logged-in) — presentational only ----------
 function AddressPicker({ addresses, loading, selectedId, onSelect, onAddressCreated, userId }) {
@@ -322,7 +393,10 @@ export default function Checkout() {
   const [couponLoading, setCouponLoading] = useState(false)
   const [couponError, setCouponError] = useState('')
 
-  const [loyaltyInfo, setLoyaltyInfo] = useState(null)
+  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false)
+  const [myCoupons, setMyCoupons] = useState([])
+  const [featuredCoupons, setFeaturedCoupons] = useState([])
+  const [couponsLoading, setCouponsLoading] = useState(false)
 
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
@@ -334,14 +408,6 @@ export default function Checkout() {
       .catch(() => setCart(null))
       .finally(() => setCartLoading(false))
   }, [])
-
-  useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      loyaltyService.getLoyaltyInfo(user.id)
-        .then(setLoyaltyInfo)
-        .catch(() => {})
-    }
-  }, [isAuthenticated, user?.id])
 
   // Load địa chỉ và tự động tính phí ship cho địa chỉ mặc định ngay khi vào trang
   useEffect(() => {
@@ -427,14 +493,11 @@ export default function Checkout() {
     : allCartItems
   const subtotal = items.reduce((sum, i) => sum + (i.subtotal ?? i.unitPrice * i.quantity), 0)
   const couponDiscount = appliedCoupon?.discountAmount ?? 0
-  const loyaltyDiscount = (isAuthenticated && loyaltyInfo?.discountPercent > 0)
-    ? Math.round(subtotal * loyaltyInfo.discountPercent / 100)
-    : 0
-  const discountAmount = couponDiscount + loyaltyDiscount
+  const discountAmount = couponDiscount
   const totalAmount = Math.max(subtotal + shippingFee - discountAmount, 0)
 
-  const applyCoupon = async () => {
-    const code = couponCode.trim()
+  const applyCoupon = async (codeToApply = couponCode) => {
+    const code = typeof codeToApply === 'string' ? codeToApply.trim() : couponCode.trim()
 
     if (!code) {
       setCouponError('Vui lòng nhập mã giảm giá.')
@@ -464,6 +527,26 @@ export default function Checkout() {
   }
   const handleCouponCodeChange = (value) => {
     setCouponCode(value)
+  }
+
+  const handleOpenCouponModal = () => {
+    setIsCouponModalOpen(true)
+    setCouponsLoading(true)
+    Promise.all([
+      isAuthenticated ? couponService.getMyCoupons().catch(() => []) : Promise.resolve([]),
+      couponService.getFeatured().catch(() => [])
+    ]).then(([my, featured]) => {
+      setMyCoupons(my)
+      setFeaturedCoupons(featured)
+    }).finally(() => {
+      setCouponsLoading(false)
+    })
+  }
+
+  const handleSelectCouponFromModal = (coupon) => {
+    setCouponCode(coupon.code)
+    setIsCouponModalOpen(false)
+    applyCoupon(coupon.code)
   }
 
   const removeCoupon = () => {
@@ -670,20 +753,28 @@ export default function Checkout() {
                 <SectionLabel step="03">Mã giảm giá</SectionLabel>
                 <div className="space-y-3">
                   <div className="flex flex-col gap-3 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={handleOpenCouponModal}
+                      className="flex items-center justify-center gap-2 border border-primary px-6 py-3 font-label-caps text-[10px] tracking-[0.2em] text-primary transition-colors hover:bg-primary hover:text-background sm:flex-none"
+                    >
+                      <span className="material-symbols-outlined text-[16px]">local_activity</span>
+                      CHỌN VOUCHER
+                    </button>
                     <input
                       type="text"
                       value={couponCode}
                       onChange={(e) => handleCouponCodeChange(e.target.value)}
-                      placeholder="Nhập mã giảm giá"
+                      placeholder="Hoặc nhập mã giảm giá khác..."
                       className="flex-1 border border-outline-variant/20 bg-transparent px-4 py-3 font-body-md text-sm text-on-surface outline-none transition-colors placeholder:text-on-surface-variant/30 focus:border-primary"
                     />
                     <button
                       type="button"
-                      onClick={applyCoupon}
-                      disabled={couponLoading}
-                      className="border border-primary px-6 py-3 font-label-caps text-[10px] tracking-[0.2em] text-primary transition-colors hover:bg-primary hover:text-background disabled:opacity-50"
+                      onClick={() => applyCoupon(couponCode)}
+                      disabled={couponLoading || !couponCode.trim()}
+                      className="border border-outline-variant/50 px-6 py-3 font-label-caps text-[10px] tracking-[0.2em] text-on-surface-variant transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
                     >
-                      {couponLoading ? 'ĐANG ÁP DỤNG...' : 'ÁP DỤNG'}
+                      {couponLoading ? 'ĐANG XỬ LÝ...' : 'ÁP DỤNG MÃ TỰ NHẬP'}
                     </button>
                   </div>
                   {couponError && <p className="font-body-md text-xs text-red-400">{couponError}</p>}
@@ -691,7 +782,7 @@ export default function Checkout() {
                     <div className="border border-primary/20 bg-primary/5 px-4 py-3 font-body-md text-xs text-on-surface-variant flex justify-between items-center">
                       <div>
                         <p className="font-label-caps text-[9px] tracking-[0.2em] text-primary">ĐÃ ÁP DỤNG</p>
-                        <p className="mt-1 text-on-surface">{appliedCoupon.promotionName || appliedCoupon.code}</p>
+                        <p className="mt-1 text-on-surface font-semibold">{appliedCoupon.promotionName || appliedCoupon.code}</p>
                         <p className="mt-1 text-primary">Giảm {formatVnd(appliedCoupon.discountAmount)}</p>
                       </div>
                       <button 
@@ -700,7 +791,7 @@ export default function Checkout() {
                         className="text-on-surface-variant/50 hover:text-red-500 transition-colors p-2"
                         title="Bỏ áp dụng mã giảm giá"
                       >
-                        ✕
+                        <span className="material-symbols-outlined text-[18px]">close</span>
                       </button>
                     </div>
                   )}
@@ -785,17 +876,6 @@ export default function Checkout() {
                       <span className="text-primary">− {formatVnd(couponDiscount)}</span>
                     </div>
                   )}
-                  {loyaltyDiscount > 0 && loyaltyInfo && (
-                    <div className="flex justify-between font-body-md text-sm">
-                      <span className="flex items-center gap-1.5 text-on-surface-variant">
-                        <span className="material-symbols-outlined text-[13px] text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
-                          {TIER_META[loyaltyInfo.tier]?.icon ?? 'military_tech'}
-                        </span>
-                        Thành viên {loyaltyInfo.tierLabel} ({loyaltyInfo.discountPercent}%)
-                      </span>
-                      <span className="text-primary">− {formatVnd(loyaltyDiscount)}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between font-body-md text-sm">
                     <span className="text-on-surface-variant">Phí vận chuyển</span>
                     <span className={shippingFeeLoading ? 'text-on-surface-variant/40' : shippingFee > 0 ? 'text-on-surface' : 'text-primary'}>
@@ -849,6 +929,14 @@ export default function Checkout() {
         </form>
       </main>
       <Footer />
+      <CouponPickerModal 
+        isOpen={isCouponModalOpen} 
+        onClose={() => setIsCouponModalOpen(false)} 
+        onSelect={handleSelectCouponFromModal}
+        myCoupons={myCoupons}
+        featuredCoupons={featuredCoupons}
+        loading={couponsLoading}
+      />
     </div>
   )
 }

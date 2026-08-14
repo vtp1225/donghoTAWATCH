@@ -1,8 +1,8 @@
 spring:
   datasource:
-    url: "jdbc:mysql://localhost:3307/Tawatch"
+    url: "jdbc:mysql://localhost:3306/Tawatch"
     username: root
-    password: root
+    password: 123
     hikari:
       connection-init-sql: "SET SESSION sql_mode='NO_ENGINE_SUBSTITUTION'"
       maximum-pool-size: 10

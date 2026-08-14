@@ -66,6 +66,7 @@ export default function Cart() {
       window.dispatchEvent(new Event('cart:updated'))
     } catch (err) {
       setError(err?.message || 'Không thể cập nhật số lượng.')
+      setTimeout(() => setError(''), 3000)
     } finally {
       setSavingItemId(null)
     }
@@ -86,6 +87,7 @@ export default function Cart() {
       window.dispatchEvent(new Event('cart:updated'))
     } catch (err) {
       setError(err?.message || 'Không thể xoá sản phẩm.')
+      setTimeout(() => setError(''), 3000)
     } finally {
       setSavingItemId(null)
     }
@@ -102,6 +104,7 @@ export default function Cart() {
       window.dispatchEvent(new Event('cart:updated'))
     } catch (err) {
       setError(err?.message || 'Không thể làm trống giỏ hàng.')
+      setTimeout(() => setError(''), 3000)
     } finally {
       setSavingItemId(null)
     }
@@ -176,10 +179,19 @@ export default function Cart() {
 
         {loading ? (
           <div className="py-24 text-center font-label-caps text-[10px] tracking-[0.3em] text-on-surface-variant/40">ĐANG TẢI...</div>
-        ) : error ? (
-          <div className="py-8 text-center font-label-caps text-[10px] tracking-[0.3em] text-error">{error}</div>
         ) : (
-          <div className="grid grid-cols-1 gap-16 lg:grid-cols-12">
+          <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 relative">
+            
+            {/* Floating Error Toast */}
+            {error && (
+              <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-background border border-error/30 px-4 py-3 shadow-lg animate-fade-in pointer-events-none w-max">
+                <span className="material-symbols-outlined text-[16px] text-error">error</span>
+                <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+                  {error}
+                </span>
+              </div>
+            )}
+
             <section className="lg:col-span-8">
               {items.length === 0 ? (
                 <div className="border border-outline-variant/10 bg-surface-container-low p-10 text-center">

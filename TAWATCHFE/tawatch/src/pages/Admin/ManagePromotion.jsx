@@ -341,7 +341,7 @@ export default function ManagePromotion() {
             </label>
             <label>
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Số lượt tối đa</span>
-              <input min="1" type="number" value={promotionForm.maxUses} onChange={(e) => changePromotion('maxUses', e.target.value)} placeholder="Không giới hạn" className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
+              <input required min="1" type="number" value={promotionForm.maxUses}  onChange={(e) => changePromotion('maxUses', e.target.value)} placeholder="VD: 100" className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
             <label>
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Bắt đầu</span>

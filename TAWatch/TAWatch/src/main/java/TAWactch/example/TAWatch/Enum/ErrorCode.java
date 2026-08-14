@@ -41,7 +41,7 @@ public enum ErrorCode {
     INVALID_STATUS_TRANSITION(5010, "Chuyển đổi trạng thái đơn hàng không hợp lệ"),
     INVALID_QUANTITY(5011, "Số lượng không hợp lệ"),
     COUPON_ALREADY_USED_BY_USER(5012, "Bạn đã sử dụng mã giảm giá này cho đơn hàng trước đó"),
-
+    EMAIL_NOT_VERIFIED(1008, "Email chưa được xác thực"),
     USER_ALREADY_VERIFIED(1008, "Email này đã được xác thực"),
     OTP_NOT_FOUND(6001, "Không tìm thấy OTP hợp lệ, vui lòng yêu cầu gửi lại"),
     OTP_EXPIRED(6002, "OTP đã hết hạn, vui lòng yêu cầu gửi lại"),
@@ -70,6 +70,7 @@ public enum ErrorCode {
     COUPON_CODE_EXISTS(9003, "Mã coupon này đã tồn tại"),
     INVALID_DATE_RANGE(9004,"Ngay thang khong hop le"),
     PROMOTION_CAUSES_LOSS(9005, "Mức giảm giá này sẽ làm một số sản phẩm có giá bán thấp hơn giá vốn (bán lỗ). Vui lòng điều chỉnh lại!"),
+    PROMOTION_MAX_USES_REQUIRED(9006, "Vui lòng nhập số lần sử dụng tối đa (maxUses) để tránh lạm dụng"),
     // Slug
     WATCH_SLUG_EXISTS(2014, "Slug đồng hồ đã tồn tại"),
     BRAND_SLUG_EXISTS(2015, "Slug thương hiệu đã tồn tại"),

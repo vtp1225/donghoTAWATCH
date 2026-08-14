@@ -14,6 +14,7 @@ function formatVnd(value) {
 function WishlistCard({ item, onRemove }) {
   const [removing, setRemoving] = useState(false)
   const [addState, setAddState] = useState('idle')
+  const [addToast, setAddToast] = useState('')
 
   const handleRemove = async () => {
     setRemoving(true)
@@ -33,14 +34,18 @@ function WishlistCard({ item, onRemove }) {
       window.dispatchEvent(new Event('cart:updated'))
       setAddState('added')
       setTimeout(() => setAddState('idle'), 2000)
-    } catch {
+    } catch (err) {
       setAddState('error')
-      setTimeout(() => setAddState('idle'), 2000)
+      setAddToast(err?.message || 'Không thể thêm vào giỏ hàng')
+      setTimeout(() => {
+        setAddState('idle')
+        setAddToast('')
+      }, 3000)
     }
   }
 
   return (
-    <div className="group flex gap-5 border border-outline-variant/10 bg-surface-container-low p-5 transition-colors hover:border-outline-variant/20">
+    <div className="group flex gap-5 border border-outline-variant/10 bg-surface-container-low p-5 transition-colors hover:border-outline-variant/20 relative">
       {/* Image */}
       <Link to={`/product/${item.watchSlug}`} className="flex-shrink-0">
         <div className="h-28 w-28 overflow-hidden bg-surface-container">
@@ -88,19 +93,19 @@ function WishlistCard({ item, onRemove }) {
             <button
               type="button"
               onClick={handleAddToCart}
-              disabled={addState === 'loading'}
-              className={`flex items-center gap-2 border px-4 py-2 font-label-caps text-[9px] tracking-[0.18em] uppercase transition-all duration-200 disabled:opacity-50 ${
+              disabled={addState === 'loading' || addState === 'added' || addState === 'error'}
+              className={`flex items-center gap-2 border px-4 py-2 font-label-caps text-[9px] tracking-[0.18em] uppercase transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
                 addState === 'added'
                   ? 'border-primary/60 bg-primary/10 text-primary'
                   : addState === 'error'
-                  ? 'border-red-500/40 text-red-400'
+                  ? 'border-error/40 bg-error/10 text-error'
                   : 'border-outline-variant/25 text-on-surface-variant hover:border-primary hover:bg-primary hover:text-background'
               }`}
             >
               <span className="material-symbols-outlined text-[14px]">
                 {addState === 'added' ? 'check' : addState === 'error' ? 'error' : 'shopping_bag'}
               </span>
-              {addState === 'added' ? 'Đã thêm' : addState === 'error' ? 'Lỗi' : 'Thêm vào giỏ'}
+              {addState === 'added' ? 'Đã thêm' : addState === 'error' ? (addToast || 'Lỗi') : 'Thêm vào giỏ'}
             </button>
           ) : (
             <span className="font-label-caps text-[9px] tracking-widest text-on-surface-variant/40 uppercase">Hết hàng</span>

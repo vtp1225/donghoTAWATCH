@@ -150,4 +150,18 @@ public class CouponService {
         return couponRepo.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.COUPON_NOT_FOUND));
     }
+
+    public List<CouponResponse> getMyCoupons(Integer userId) {
+        Instant now = Instant.now();
+        return couponRepo.findByUserIdAndIsUsedFalse(userId).stream()
+                .filter(c -> c.getExpiresAt() == null || c.getExpiresAt().isAfter(now))
+                .filter(c -> {
+                    Promotion promo = c.getPromotion();
+                    return Boolean.TRUE.equals(promo.getIsActive())
+                            && !promo.getStartDate().isAfter(now)
+                            && !promo.getEndDate().isBefore(now);
+                })
+                .map(couponMapper::toResponse)
+                .toList();
+    }
 }
