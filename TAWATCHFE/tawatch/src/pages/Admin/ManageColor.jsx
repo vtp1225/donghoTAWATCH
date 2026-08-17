@@ -29,8 +29,14 @@ function ColorFormModal({ open, color, onClose, onSuccess }) {
   }
 
   async function handleSave() {
-    if (!form.name.trim()) { setError('Tên màu không được để trống.'); return }
-    if (!/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(form.hexCode)) { setError('Mã hex không hợp lệ (ví dụ: #B76E79).'); return }
+    if (!form.name.trim()) {
+      setError('Tên màu không được để trống')
+      return
+    }
+    if(!/^#([0-9A-F]{3}){1,2}$/i.test(form.hexCode)) {
+      setError('Mã màu HEX không hợp lệ')
+      return
+    }
 
     setSaving(true)
     setError('')
@@ -150,7 +156,8 @@ export default function ManageColor() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
   const [filterActive, setFilterActive] = useState('all')
-
+  const [isActiveTarget, setIsActiveTarget] = useState(null)
+  
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -185,7 +192,16 @@ export default function ManageColor() {
     if (filterActive === 'inactive') return !c.isActive
     return true
   })
-
+  async function editActive(color) {
+    setEditTarget(color);
+    const payload = { ...color, isActive: !color.isActive }
+    try {
+      await colorService.update(color.id, payload)
+      load()
+    } catch (err) {
+      alert(err?.message || 'Không thể cập nhật trạng thái màu.')
+    }
+  }
   return (
     <main className="ml-72 mt-20 p-gutter min-h-screen">
       <section className="mb-16 pt-8">
@@ -299,6 +315,13 @@ export default function ManageColor() {
                           edit
                         </button>
                         <button
+                          onClick={() =>{ setIsActiveTarget(color) }}
+                          className="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors"
+                          title="Tam dừng"
+                        >
+                          {color.isActive ? 'toggle_on' : 'toggle_off'}
+                        </button>
+                        <button
                           onClick={() => setDeleteTarget(color)}
                           className="material-symbols-outlined text-on-surface-variant hover:text-error transition-colors"
                           title="Xoá"
@@ -355,6 +378,30 @@ export default function ManageColor() {
           </div>
         </div>
       )}
+      {
+        isActiveTarget && (<div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setIsActiveTarget(null)} />
+          <div className="relative bg-surface-container-low border border-outline-variant/20 p-10 max-w-sm w-full mx-4">
+            <p className="font-label-caps text-[10px] text-error tracking-widest mb-4 uppercase">
+              {
+                isActiveTarget.isActive ? 'Xác nhận tạm dừng hiển thị màu' : 'Xác nhận hiển thị màu'
+              }
+            </p>
+            <div className="flex items-center gap-4 mb-2">
+              <div className="h-8 w-8 rounded border border-white/10" style={{ background: isActiveTarget.hexCode || '#ccc' }} />
+              <p className="font-headline-sm text-headline-sm text-on-background">{isActiveTarget.name}</p>
+            </div>
+            <p className="font-label-caps text-[10px] text-on-surface-variant mb-8">{isActiveTarget.hexCode}</p>
+            <div className="flex gap-4">
+              <button onClick={() => setIsActiveTarget(null)} className="flex-1 py-3 border border-outline-variant/30 text-on-surface-variant font-label-caps text-xs tracking-widest hover:border-primary hover:text-primary transition-all">HUỶ</button>
+              <button onClick={() => {editActive(isActiveTarget); setIsActiveTarget(null);} } disabled={deleting} className={isActiveTarget.isActive ? "flex-1 py-3 bg-error text-background font-label-caps text-xs tracking-widest hover:bg-error/80 transition-all disabled:opacity-50" : 
+                "flex-1 py-3 bg-primary text-background font-label-caps text-xs tracking-widest hover:bg-primary/80 transition-all disabled:opacity-50"}>
+                {deleting ? 'ĐANG TẠM DỪNG...' : [isActiveTarget.isActive ? 'TẠM DỪNG' : 'HIỂN THỊ']}
+              </button>
+            </div>
+          </div>
+        </div>)
+      }
     </main>
   )
 }

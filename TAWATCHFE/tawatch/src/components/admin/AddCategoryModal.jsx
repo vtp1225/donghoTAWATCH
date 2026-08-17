@@ -89,12 +89,12 @@ export default function AddCategoryModal({ onClose, onSuccess, category, categor
               <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Tên danh mục</label>
               <input className="bg-transparent border-b border-outline-variant/30 py-2" value={form.name} onChange={(e) => setField('name', e.target.value)} />
             </div>
-
+{/*
             <div className="flex flex-col gap-1.5">
               <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Slug</label>
               <input className="bg-transparent border-b border-outline-variant/30 py-2" value={form.slug} onChange={(e) => setField('slug', e.target.value)} placeholder="de xuat tu backend neu de trong" />
             </div>
-
+*/}
             <div className="flex flex-col gap-1.5">
               <label className="font-label-caps text-[10px] tracking-widest text-on-surface-variant uppercase">Danh mục cha</label>
               <select className="bg-transparent border-b border-outline-variant/30 py-2" value={form.parentId} onChange={(e) => setField('parentId', e.target.value)}>

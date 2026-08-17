@@ -7,7 +7,7 @@ import { loyaltyService } from './services/loyaltyService.js'
 import LoyaltyToast from './components/common/LoyaltyToast.jsx'
 
 const TIER_ORDER = { NONE: 0, BRONZE: 1, SILVER: 2, GOLD: 3, DIAMOND: 4 }
-const POLL_INTERVAL_MS = 30_000
+const POLL_INTERVAL_MS = 15_000
 
 function LoyaltyChecker() {
   const { isAuthenticated, user } = useAuth()

@@ -21,7 +21,6 @@ function fmt(num) {
 // ─── Detail Modal ──────────────────────────────────────────────
 function DetailModal({ receipt, onClose, onConfirm, onCancel, confirming, cancelling }) {
   if (!receipt) return null
-  console.log('DetailModal receipt:', receipt)
   const s = STATUS_LABEL[receipt.status] || STATUS_LABEL.DRAFT
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center">
@@ -132,7 +131,9 @@ function CreateModal({ open, suppliers, currentUserId, onClose, onSuccess }) {
     try {
       const variants = await variantService.getByWatch(watchId)
       setVariantsByWatch((prev) => ({ ...prev, [watchId]: variants }))
-    } catch {}
+    } catch {
+      setError('Không thể tải danh sách biến thể.')
+    }
   }
 
   function updateItem(idx, field, value) {

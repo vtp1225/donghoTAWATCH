@@ -150,12 +150,14 @@ function ShowcaseCard({ item, wishlisted = false }) {
         type="button"
         onClick={handleAdd}
         disabled={!item.variantId || addState !== 'idle'}
-        className={`mt-3 w-full border py-2 font-label-caps text-[8px] tracking-[0.2em] transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed ${
+        className={`mt-3 w-full border py-2 font-label-caps tracking-[0.2em] transition-all duration-200 disabled:cursor-not-allowed ${
           addState === 'added'
-            ? 'border-primary/50 bg-primary/10 text-primary'
+            ? 'border-primary/50 bg-primary/10 text-primary text-[8px]'
             : addState === 'error'
-            ? 'border-error/40 bg-error/10 text-error'
-            : 'border-outline-variant/20 text-on-surface-variant/50 hover:border-primary hover:text-primary'
+            ? 'border-error bg-error text-white font-bold text-[10px] opacity-100'
+            : !item.variantId
+            ? 'border-outline-variant/20 text-on-surface-variant/50 opacity-40 text-[8px]'
+            : 'border-outline-variant/20 text-on-surface-variant/50 hover:border-primary hover:text-primary text-[8px]'
         }`}
       >
         {addState === 'added'

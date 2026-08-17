@@ -19,9 +19,7 @@ export default function LoyaltyToast({ info, onClose }) {
     if (!info) return
     // mount → trigger slide-in
     const t1 = setTimeout(() => setVisible(true), 30)
-    // auto-dismiss
-    const t2 = setTimeout(() => handleClose(), AUTO_DISMISS_MS)
-    return () => { clearTimeout(t1); clearTimeout(t2) }
+    return () => { clearTimeout(t1) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [info])
 
@@ -53,16 +51,7 @@ export default function LoyaltyToast({ info, onClose }) {
         : 'bg-gradient-to-r from-transparent via-primary to-transparent'}`}
       />
 
-      {/* progress bar tự động dismiss */}
-      <div className="h-0.5 w-full bg-outline-variant/10 overflow-hidden">
-        <div
-          className={`h-full ${meta.color.replace('text-', 'bg-')} opacity-40`}
-          style={{
-            width: visible ? '0%' : '100%',
-            transition: visible ? `width ${AUTO_DISMISS_MS}ms linear` : 'none',
-          }}
-        />
-      </div>
+
 
       <div className="p-5">
         {/* Header */}

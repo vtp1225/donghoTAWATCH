@@ -13,16 +13,6 @@ export default function AdminTopBar() {
   return (
     <header className="fixed top-0 right-0 left-72 h-20 z-40 bg-background/80 backdrop-blur-xl border-b border-outline-variant/10 flex items-center justify-between px-gutter">
       <div className="flex items-center gap-6 flex-1">
-        <div className="relative w-full max-w-md group">
-          <span className="material-symbols-outlined absolute left-0 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">
-            search
-          </span>
-          <input
-            className="w-full bg-transparent border-none border-b border-outline-variant/20 focus:ring-0 focus:border-primary pl-8 py-2 font-label-caps text-xs tracking-widest placeholder:text-on-surface-variant/40 transition-all"
-            placeholder="Search Archives..."
-            type="text"
-          />
-        </div>
       </div>
 
       <div className="flex items-center gap-8">

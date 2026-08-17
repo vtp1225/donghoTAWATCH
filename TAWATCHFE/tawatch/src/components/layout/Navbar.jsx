@@ -31,7 +31,7 @@ function SearchOverlay({ onClose }) {
   const search = useCallback((q) => {
     if (!q.trim()) { setResults([]); setLoading(false); return }
     setLoading(true)
-    productService.search({ name: q.trim(), size: 6, page: 0 })
+    productService.search({ name: q.trim(), sku: q.trim(), size: 6, page: 0 })
       .then((data) => setResults(data.content ?? []))
       .catch(() => setResults([]))
       .finally(() => setLoading(false))
@@ -113,7 +113,10 @@ function SearchOverlay({ onClose }) {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-body-md text-[15px] text-on-surface">{item.title}</p>
+                  <p className="truncate font-body-md text-[15px] text-on-surface">
+                    {item.title}
+                    {item.sku && <span className="ml-2 font-label-caps text-[9px] tracking-widest text-primary/70 border border-primary/20 px-1 py-0.5 rounded">SKU: {item.sku}</span>}
+                  </p>
                   <p className="mt-0.5 truncate font-body-md text-xs text-on-surface-variant">{item.description?.slice(0, 70)}</p>
                 </div>
                 <span className="flex-shrink-0 font-body-md text-[15px] text-primary">{item.price}</span>
@@ -314,7 +317,7 @@ export default function Navbar() {
 
   const [confirmLogoutOpen, setConfirmLogoutOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-
+  console.log(dongHoCategory, uniqueRoots)
   return (
     <nav
       className={`fixed top-0 z-50 flex h-20 w-full items-center justify-between px-8 backdrop-blur-xl transition-all duration-300 md:px-[80px] ${

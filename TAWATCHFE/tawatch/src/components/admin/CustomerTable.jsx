@@ -6,7 +6,8 @@ export default function CustomerTable({ refreshKey, onToggleActive, onView }) {
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-
+  const [filter, setFilter] = useState('')
+  const [originalUsers, setOriginalUsers] = useState([])
   useEffect(() => {
     let active = true
     async function fetchUsers() {
@@ -16,6 +17,7 @@ export default function CustomerTable({ refreshKey, onToggleActive, onView }) {
         const list = await userService.getAllUsers()
         if (!active) return
         setUsers(list || [])
+        setOriginalUsers(list || [])
       } catch (err) {
         if (!active) return
         setError(err?.message || 'Không thể tải danh sách khách hàng.')
@@ -28,6 +30,20 @@ export default function CustomerTable({ refreshKey, onToggleActive, onView }) {
 
     return () => { active = false }
   }, [refreshKey])
+
+  useEffect(() => {
+    if (!filter) {
+      setUsers(originalUsers)
+      return
+    }
+    const filtered = originalUsers.filter((u) => {
+      const nameMatch = u.fullName?.toLowerCase().includes(filter.toLowerCase())
+      const emailMatch = u.email?.toLowerCase().includes(filter.toLowerCase())
+      const phoneMatch = u.phone?.toLowerCase().includes(filter.toLowerCase())
+      return nameMatch || emailMatch || phoneMatch
+    })
+    setUsers(filtered)
+  }, [filter, originalUsers])
 
   return (
     <section className="section-container relative">
@@ -45,7 +61,17 @@ export default function CustomerTable({ refreshKey, onToggleActive, onView }) {
       )}
 
       {!loading && !error && (
-        <div className="w-full overflow-hidden border border-outline-variant/10">
+        <div className="w-full  overflow-hidden border border-outline-variant/10">
+          <div className="relative mb-6 w-full xl:w-96">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/70">search</span>
+          <input
+            value={filter || ''}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="Tìm kiếm theo tên, email hoặc số điện thoại..."
+            className="w-full bg-surface-container-low border border-outline-variant/20 pl-10 pr-4 py-3 text-sm text-on-surface placeholder:text-on-surface-variant/50 focus:border-primary focus:outline-none"
+          />
+          
+        </div>
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-surface-container-low border-b border-outline-variant/10">

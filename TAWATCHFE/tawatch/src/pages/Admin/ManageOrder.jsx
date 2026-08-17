@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { orderService } from '../../services/orderService.js'
-import {userService} from '../../services/userService.js'
-import GhnTrackingTimeline from '../../components/common/GhnTrackingTimeline.jsx'
+import OrderDetailModal from '../../components/admin/OrderDetailModal.jsx'
 
 const STATUS_FLOW = ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPING', 'DELIVERED', 'REFUNDED']
 const STATUS_FILTERS = ['ALL', ...STATUS_FLOW, 'CANCELLED', 'RETURN_REQUESTED', 'RETURN_REJECTED']
@@ -60,11 +59,6 @@ const PAYMENT_META = {
   REFUNDED: { label: 'Đã hoàn tiền', className: 'text-secondary' },
 }
 
-const DELIVERY_LABELS = {
-  EXTERNAL_SHIPPER: 'Đơn vị vận chuyển',
-  DIRECT_SHOP: 'Nhận tại cửa hàng',
-}
-
 
 
 function formatCurrency(value) {
@@ -116,7 +110,6 @@ function getInSnapshot(snapshot, key) {
   }
 }
 function normalizeOrder(order) {
-  const customerName = order?.customerName || order?.guestName || order?.fullName || `Khách #${order?.id ?? 'N/A'}`
   const itemsCount = Array.isArray(order?.items)
     ? order.items.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0)
     : Number(order?.itemsCount) || 0
@@ -169,19 +162,11 @@ function isReturnRequested(currentStatus) {
   return currentStatus === 'RETURN_REQUESTED'
 }
 
-function getActionLabel(next) {
-  if (next === 'CONFIRMED') return 'Xác nhận đơn'
-  if (next === 'PROCESSING') return 'Bắt đầu xử lý'
-  if (next === 'SHIPPING') return 'Chuyển giao vận'
-  if (next === 'DELIVERED') return 'Đánh dấu hoàn tất'
-  return 'Đã hoàn tất'
-}
-
 export default function ManageOrder() {
   const [orders, setOrders] = useState([])
   const [activeFilter, setActiveFilter] = useState('ALL')
   const [keyword, setKeyword] = useState('')
-  const [selectedOrderId, setSelectedOrderId] = useState(null)
+  const [selectedOrder, setSelectedOrder] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [updatingId, setUpdatingId] = useState(null)
@@ -234,11 +219,6 @@ export default function ManageOrder() {
     })
   }, [orders, activeFilter, keyword])
 
-  const selectedOrder = useMemo(() => {
-    const candidate = filteredOrders.find((order) => order.id === selectedOrderId)
-    return candidate || filteredOrders[0] || null
-  }, [filteredOrders, selectedOrderId])
-
   const summary = useMemo(() => {
     const totalRevenue = orders.reduce((sum, item) => sum + item.totalAmount, 0)
     return {
@@ -255,17 +235,13 @@ export default function ManageOrder() {
 
     setUpdatingId(order.id)
     try {
-      await orderService.updateOrderStatus(order.id, { newStatus: targetStatus })
-      setOrders((currentOrders) =>
-        currentOrders.map((item) =>
-          item.id === order.id
-            ? {
-                ...item,
-                orderStatus: targetStatus,
-                updatedAt: new Date().toISOString(),
-              }
-            : item,
-        ),
+      const updated = await orderService.updateOrderStatus(order.id, { newStatus: targetStatus })
+      const normalized = normalizeOrder(updated)
+      setOrders((current) =>
+        current.map((item) => (item.id === order.id ? { ...item, ...normalized } : item)),
+      )
+      setSelectedOrder((current) =>
+        current?.id === order.id ? { ...current, ...normalized } : current,
       )
     } catch (err) {
       alert(err?.message || 'Không thể cập nhật trạng thái đơn hàng.')
@@ -282,17 +258,13 @@ export default function ManageOrder() {
 
     setUpdatingId(order.id)
     try {
-      await orderService.cancelOrder(order.id, { userId: null, reason: reason.trim() || null })
-      setOrders((currentOrders) =>
-        currentOrders.map((item) =>
-          item.id === order.id
-            ? {
-                ...item,
-                orderStatus: 'CANCELLED',
-                updatedAt: new Date().toISOString(),
-              }
-            : item,
-        ),
+      const updated = await orderService.cancelOrder(order.id, { userId: null, reason: reason.trim() || null })
+      const normalized = normalizeOrder(updated)
+      setOrders((current) =>
+        current.map((item) => (item.id === order.id ? { ...item, ...normalized } : item)),
+      )
+      setSelectedOrder((current) =>
+        current?.id === order.id ? { ...current, ...normalized } : current,
       )
     } catch (err) {
       alert(err?.message || 'Không thể huỷ đơn hàng.')
@@ -309,17 +281,13 @@ export default function ManageOrder() {
 
     setUpdatingId(order.id)
     try {
-      await orderService.updateOrderStatus(order.id, { newStatus: targetStatus })
-      setOrders((currentOrders) =>
-        currentOrders.map((item) =>
-          item.id === order.id
-            ? {
-                ...item,
-                orderStatus: targetStatus,
-                updatedAt: new Date().toISOString(),
-              }
-            : item,
-        ),
+      const updated = await orderService.updateOrderStatus(order.id, { newStatus: targetStatus })
+      const normalized = normalizeOrder(updated)
+      setOrders((current) =>
+        current.map((item) => (item.id === order.id ? { ...item, ...normalized } : item)),
+      )
+      setSelectedOrder((current) =>
+        current?.id === order.id ? { ...current, ...normalized } : current,
       )
     } catch (err) {
       alert(err?.message || 'Không thể xử lý yêu cầu đổi/trả.')
@@ -336,7 +304,7 @@ export default function ManageOrder() {
         </span>
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <h2 className="font-display-lg text-display-lg text-on-background mb-4">Quản Lý Đơn Hàng</h2>
+            <h2 className="font-display-lg text-display-lg text-on-background mb-4 whitespace-nowrap">Quản Lý Đơn Hàng</h2>
             <p className="text-on-surface-variant/80 max-w-2xl">
               Theo dõi hành trình từng đơn hàng theo thời gian thực, cập nhật trạng thái xử lý và giữ toàn bộ lịch sử giao vận trong một bảng điều khiển duy nhất.
             </p>
@@ -371,25 +339,21 @@ export default function ManageOrder() {
       ) : null}
 
       <section className="mb-8 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="flex flex-wrap gap-2">
-          {STATUS_FILTERS.map((status) => {
-            const active = activeFilter === status
-            const label = status === 'ALL' ? 'Tất cả' : getStatusMeta(status).label
-
-            return (
-              <button
-                key={status}
-                onClick={() => setActiveFilter(status)}
-                className={`px-4 py-2 border font-label-caps text-[10px] tracking-[0.18em] uppercase transition-all duration-300 ${
-                  active
-                    ? 'border-primary bg-primary text-background'
-                    : 'border-outline-variant/30 text-on-surface-variant hover:border-primary/60 hover:text-primary'
-                }`}
-              >
-                {label}
-              </button>
-            )
-          })}
+        <div className="w-full xl:w-auto">
+          <select
+            value={activeFilter}
+            onChange={(e) => setActiveFilter(e.target.value)}
+            className="w-full xl:w-56 bg-surface-container-low border border-outline-variant/20 px-4 py-3 text-sm text-on-surface focus:border-primary focus:outline-none cursor-pointer"
+          >
+            {STATUS_FILTERS.map((status) => {
+              const label = status === 'ALL' ? 'Tất cả' : getStatusMeta(status).label
+              return (
+                <option key={status} value={status}>
+                  {label}
+                </option>
+              )
+            })}
+          </select>
         </div>
 
         <div className="relative w-full xl:w-96">
@@ -408,242 +372,81 @@ export default function ManageOrder() {
           <p className="font-label-caps text-xs tracking-[0.25em] text-on-surface-variant">ĐANG TẢI DANH SÁCH ĐƠN HÀNG...</p>
         </section>
       ) : (
-        <section className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-          <div className="xl:col-span-8 border border-outline-variant/10 bg-surface-container-lowest overflow-hidden">
-            <div className="hidden md:grid grid-cols-12 py-4 px-6 bg-surface-container-low border-b border-outline-variant/10">
-              <div className="col-span-3 font-label-caps text-[10px] tracking-widest text-outline uppercase">Mã đơn</div>
-              <div className="col-span-3 font-label-caps text-[10px] tracking-widest text-outline uppercase">Khách hàng</div>
-              <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Trạng thái</div>
-              <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Giá trị</div>
-              <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase text-right">Hành động</div>
-            </div>
-
-            <div className="max-h-[640px] overflow-y-auto">
-              {filteredOrders.length === 0 ? (
-                <div className="p-10 text-center">
-                  <p className="font-headline-sm text-headline-sm text-on-background mb-3">Không tìm thấy đơn hàng phù hợp</p>
-                  <p className="text-on-surface-variant/70">Thử đổi bộ lọc hoặc từ khóa tìm kiếm để tiếp tục.</p>
-                </div>
-              ) : (
-                filteredOrders.map((order) => {
-                  const statusMeta = getStatusMeta(order.orderStatus)
-                  const paymentMeta = getPaymentMeta(order.paymentStatus)
-                  const isSelected = selectedOrder?.id === order.id
-                  const next = nextStatus(order.orderStatus)
-
-                  return (
-                    <article
-                      key={order.id}
-                      onClick={() => setSelectedOrderId(order.id)}
-                      className={`grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-0 p-5 md:px-6 md:py-6 border-b border-outline-variant/10 cursor-pointer transition-colors ${
-                        isSelected ? 'bg-surface-container-low' : 'bg-background hover:bg-surface-container-low/60'
-                      }`}
-                    >
-                      <div className="md:col-span-3">
-                        <p className="font-headline-sm text-xl text-on-background">{order.orderCode}</p>
-                        <p className="font-label-caps text-[10px] tracking-widest text-on-surface-variant/70 mt-1 uppercase">
-                          {formatDateTime(order.createdAt)}
-                        </p>
-                      </div>
-
-                      <div className="md:col-span-3">
-                        <p className="text-on-surface font-body-md">{order.customerName}</p>
-                        <p className="text-on-surface-variant/70 text-xs mt-1">{order.customerEmail || order.customerPhone || 'Không có liên hệ'}</p>
-                        <p className={`text-xs mt-1 ${paymentMeta.className}`}>{paymentMeta.label}</p>
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-label-caps tracking-widest border ${statusMeta.chipClass}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`} />
-                          {statusMeta.label}
-                        </span>
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <p className="font-headline-sm text-lg text-on-background">{formatCurrency(order.totalAmount)}</p>
-                        <p className="text-on-surface-variant/70 text-xs mt-1">{order.itemsCount} sản phẩm</p>
-                      </div>
-
-                      <div className="md:col-span-2 md:text-right flex md:justify-end items-center gap-3">
-                        {isReturnRequested(order.orderStatus) ? (
-                          <>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleResolveReturn(order, false)
-                              }}
-                              disabled={updatingId === order.id}
-                              className="px-3 py-2 border border-gray-400/40 text-gray-400 font-label-caps text-[10px] tracking-widest uppercase hover:bg-gray-400 hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                            >
-                              Từ chối
-                            </button>
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleResolveReturn(order, true)
-                              }}
-                              disabled={updatingId === order.id}
-                              className="px-3 py-2 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                            >
-                              Duyệt hoàn tiền
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            {canCancel(order.orderStatus) && (
-                              <button
-                                onClick={(event) => {
-                                  event.stopPropagation()
-                                  handleCancelOrder(order)
-                                }}
-                                disabled={updatingId === order.id}
-                                className="px-3 py-2 border border-error/40 text-error font-label-caps text-[10px] tracking-widest uppercase hover:bg-error hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                              >
-                                Huỷ đơn
-                              </button>
-                            )}
-                            <button
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                handleAdvanceStatus(order)
-                              }}
-                              disabled={!next || updatingId === order.id}
-                              className="px-3 py-2 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                            >
-                              {updatingId === order.id ? 'Đang cập nhật' : getActionLabel(next)}
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </article>
-                  )
-                })
-              )}
-            </div>
+        <section className="border border-outline-variant/10 bg-surface-container-lowest overflow-hidden">
+          <div className="hidden md:grid grid-cols-12 py-4 px-6 bg-surface-container-low border-b border-outline-variant/10">
+            <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Mã đơn</div>
+            <div className="col-span-3 font-label-caps text-[10px] tracking-widest text-outline uppercase">Khách hàng</div>
+            <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Trạng thái</div>
+            <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Giá trị</div>
+            <div className="col-span-2 font-label-caps text-[10px] tracking-widest text-outline uppercase">Thanh toán</div>
+            <div className="col-span-1 font-label-caps text-[10px] tracking-widest text-outline uppercase text-right">Chi tiết</div>
           </div>
 
-          <aside className="xl:col-span-4 border border-outline-variant/10 bg-surface-container-low p-6">
-            <p className="font-label-caps text-[10px] tracking-[0.2em] text-primary uppercase mb-4">Chi tiết đơn hàng</p>
-
-            {selectedOrder ? (
-              <div className="space-y-6">
-                <div>
-                  <h3 className="font-headline-sm text-headline-sm text-on-background">{selectedOrder.orderCode}</h3>
-                  <p className="text-on-surface-variant/70 text-sm mt-1">Cập nhật lần cuối: {formatDateTime(selectedOrder.updatedAt)}</p>
-                </div>
-
-                <div className="space-y-3 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Khách hàng</span>
-                    <span className="text-on-background text-right">{selectedOrder.customerName}</span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Liên hệ</span>
-                    <span className="text-on-background text-right">
-                      {selectedOrder.customerPhone || selectedOrder.customerEmail || 'N/A'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Thanh toán</span>
-                    <span className={getPaymentMeta(selectedOrder.paymentStatus).className}>
-                      {getPaymentMeta(selectedOrder.paymentStatus).label}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Giao nhận</span>
-                    <span className="text-on-background text-right">
-                      {DELIVERY_LABELS[selectedOrder.deliveryMethod] || selectedOrder.deliveryMethod}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Tổng Cộng</span>
-                    <span className="text-on-background text-right">
-                      {formatCurrency(selectedOrder.totalAmount)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <span className="text-on-surface-variant/70">Mã vận đơn</span>
-                    <span className="text-on-background text-right">{selectedOrder.trackingCode || 'Chưa cập nhật'}</span>
-                  </div>
-                  {selectedOrder.trackingCode && (
-                    <div className="pt-2">
-                      <GhnTrackingTimeline trackingCode={selectedOrder.trackingCode} />
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <p className="font-label-caps text-[10px] tracking-widest uppercase text-on-surface-variant/70 mb-2">Địa chỉ giao hàng</p>
-                  <p className="text-on-background text-sm leading-relaxed">{selectedOrder.shippingAddress}</p>
-                </div>
-
-                {selectedOrder.note ? (
-                  <div className="border border-outline-variant/20 bg-background/60 p-4">
-                    <p className="font-label-caps text-[10px] tracking-widest text-primary uppercase mb-2">Ghi chú</p>
-                    <p className="text-sm text-on-surface-variant">{selectedOrder.note}</p>
-                  </div>
-                ) : null}
-
-                {selectedOrder.returnReason ? (
-                  <div className="border border-pink-500/20 bg-pink-500/5 p-4">
-                    <p className="font-label-caps text-[10px] tracking-widest text-pink-400 uppercase mb-2">Lý do đổi/trả</p>
-                    <p className="text-sm text-on-surface-variant">{selectedOrder.returnReason}</p>
-                  </div>
-                ) : null}
-
-                <div className="border-t border-outline-variant/20 pt-5">
-                  <p className="font-label-caps text-[10px] tracking-[0.2em] uppercase text-on-surface-variant/70 mb-3">Tiến trình đơn hàng</p>
-                  <div className="space-y-3">
-                    {STATUS_FLOW.map((status) => {
-                      const currentIndex = STATUS_FLOW.indexOf(selectedOrder.orderStatus)
-                      const statusIndex = STATUS_FLOW.indexOf(status)
-                      const isDone = currentIndex >= statusIndex
-                      const meta = getStatusMeta(status)
-
-                      return (
-                        <div key={status} className="flex items-center gap-3">
-                          <span className={`w-2 h-2 rounded-full ${isDone ? meta.dotClass : 'bg-outline-variant/40'}`} />
-                          <span className={`text-sm ${isDone ? 'text-on-background' : 'text-on-surface-variant/50'}`}>{meta.label}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {isReturnRequested(selectedOrder.orderStatus) ? (
-                  <div className="border-t border-outline-variant/20 pt-5 flex gap-3">
-                    <button
-                      onClick={() => handleResolveReturn(selectedOrder, false)}
-                      disabled={updatingId === selectedOrder.id}
-                      className="flex-1 px-4 py-3 border border-gray-400/40 text-gray-400 font-label-caps text-[10px] tracking-widest uppercase hover:bg-gray-400 hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      Từ chối
-                    </button>
-                    <button
-                      onClick={() => handleResolveReturn(selectedOrder, true)}
-                      disabled={updatingId === selectedOrder.id}
-                      className="flex-1 px-4 py-3 border border-primary/40 text-primary font-label-caps text-[10px] tracking-widest uppercase hover:bg-primary hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      Duyệt hoàn tiền
-                    </button>
-                  </div>
-                ) : canCancel(selectedOrder.orderStatus) && (
-                  <div className="border-t border-outline-variant/20 pt-5">
-                    <button
-                      onClick={() => handleCancelOrder(selectedOrder)}
-                      disabled={updatingId === selectedOrder.id}
-                      className="w-full px-4 py-3 border border-error/40 text-error font-label-caps text-[10px] tracking-widest uppercase hover:bg-error hover:text-background disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-                    >
-                      {updatingId === selectedOrder.id ? 'Đang xử lý...' : 'Huỷ đơn hàng'}
-                    </button>
-                  </div>
-                )}
+          <div className="max-h-[680px] overflow-y-auto">
+            {filteredOrders.length === 0 ? (
+              <div className="p-10 text-center">
+                <p className="font-headline-sm text-headline-sm text-on-background mb-3">Không tìm thấy đơn hàng phù hợp</p>
+                <p className="text-on-surface-variant/70">Thử đổi bộ lọc hoặc từ khóa tìm kiếm để tiếp tục.</p>
               </div>
             ) : (
-              <div className="py-10 text-center text-on-surface-variant/70">Chọn một đơn hàng ở bảng bên trái để xem chi tiết.</div>
+              filteredOrders.map((order) => {
+                const statusMeta = getStatusMeta(order.orderStatus)
+                const paymentMeta = getPaymentMeta(order.paymentStatus)
+
+                return (
+                  <article
+                    key={order.id}
+                    onClick={() => setSelectedOrder(order)}
+                    className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-0 p-5 md:px-6 md:py-5 border-b border-outline-variant/10 cursor-pointer transition-colors bg-background hover:bg-surface-container-low/60"
+                  >
+                    <div className="md:col-span-2">
+                      <p className="font-headline-sm text-lg text-on-background">{order.orderCode}</p>
+                      <p className="font-label-caps text-[10px] tracking-widest text-on-surface-variant/70 mt-1 uppercase">
+                        {formatDateTime(order.createdAt)}
+                      </p>
+                    </div>
+
+                    <div className="md:col-span-3">
+                      <p className="text-on-surface font-body-md text-sm">{order.customerName}</p>
+                      <p className="text-on-surface-variant/70 text-xs mt-1">{order.customerEmail || order.customerPhone || 'Không có liên hệ'}</p>
+                    </div>
+
+                    <div className="md:col-span-2 flex items-center">
+                      <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-label-caps tracking-widest border ${statusMeta.chipClass}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${statusMeta.dotClass}`} />
+                        {statusMeta.label}
+                      </span>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <p className="font-headline-sm text-base text-on-background">{formatCurrency(order.totalAmount)}</p>
+                      <p className="text-on-surface-variant/70 text-xs mt-1">{order.itemsCount} sản phẩm</p>
+                    </div>
+
+                    <div className="md:col-span-2 flex items-center">
+                      <span className={`text-xs ${paymentMeta.className}`}>{paymentMeta.label}</span>
+                    </div>
+
+                    <div className="md:col-span-1 md:text-right flex md:justify-end items-center gap-2">
+                      <span className="material-symbols-outlined text-on-surface-variant/60 text-base">chevron_right</span>
+                    </div>
+                  </article>
+                )
+              })
             )}
-          </aside>
+          </div>
         </section>
+      )}
+
+      {selectedOrder && (
+        <OrderDetailModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          onAdvanceStatus={handleAdvanceStatus}
+          onCancelOrder={handleCancelOrder}
+          onResolveReturn={handleResolveReturn}
+          updating={updatingId}
+        />
       )}
     </main>
   )

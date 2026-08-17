@@ -12,6 +12,7 @@ function formatVnd(value) {
 function mapWatch(watch, index) {
 	return {
 		id: watch.id,
+		sku: watch.sku ?? '',
 		slug: watch.slug ?? String(watch.id),
 		title: watch.name,
 		description: watch.description,
@@ -59,6 +60,7 @@ export const productService = {
 	async search(filters = {}) {
 		const paged = await watchService.search({
 			name: filters.name ?? undefined,
+			sku: filters.sku ?? undefined,
 			brandIds: filters.brandIds,
 			categoryIds: filters.categoryIds,
 			segmentIds: filters.segmentIds,

@@ -184,11 +184,11 @@ export default function Cart() {
             
             {/* Floating Error Toast */}
             {error && (
-              <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-background border border-error/30 px-4 py-3 shadow-lg animate-fade-in pointer-events-none w-max">
-                <span className="material-symbols-outlined text-[16px] text-error">error</span>
-                <span className="font-label-caps text-[10px] tracking-[0.2em] whitespace-nowrap text-on-surface">
+              <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-2 bg-error/10 border border-error px-5 py-3 shadow-lg animate-fade-in pointer-events-none w-max rounded-md">
+                <span className="material-symbols-outlined text-[18px] text-error">error</span>
+                <p className="font-body-md font-bold text-error">
                   {error}
-                </span>
+                </p>
               </div>
             )}
 

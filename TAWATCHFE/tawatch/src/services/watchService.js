@@ -28,7 +28,7 @@ export const watchService = {
     if (segmentId != null) params.set('segmentId', segmentId)
     if (isActive != null) params.set('isActive', isActive)
     return request(`/watches/admin/paged?${params}`).then(unwrap)
-  },
+  },  
   getById(id) {
     return request(`/watches/${id}`).then(unwrap)
   },

@@ -139,11 +139,11 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
           <div className="flex-shrink-0 text-right">
             {item.salePrice ? (
               <>
-                <span className="font-headline-sm text-primary block">{item.salePrice}</span>
-                <span className="font-label-caps text-[10px] text-on-surface-variant/40 line-through">{item.price}</span>
+                <span className="font-headline-sm text-base font-bold text-primary block">{item.salePrice}</span>
+                <span className="font-label-caps text-xs font-medium text-on-surface-variant/40 line-through">{item.price}</span>
               </>
             ) : (
-              <span className="font-headline-sm text-primary">{item.price}</span>
+              <span className="font-headline-sm text-base font-bold text-primary">{item.price}</span>
             )}
           </div>
         </div>
@@ -159,13 +159,13 @@ export default function ProductCard({ item, offsetClassName = '', wishlisted = f
             type="button"
             onClick={handleAddToCart}
             disabled={!hasVariant || addState === 'loading' || addState === 'added' || addState === 'error'}
-            className={`flex flex-1 items-center justify-center gap-2 border py-2.5 font-label-caps text-[10px] tracking-[0.18em] uppercase transition-all duration-300 disabled:cursor-not-allowed
+            className={`flex flex-1 items-center justify-center gap-2 border py-2.5 font-label-caps text-xs sm:text-sm font-semibold tracking-wider uppercase transition-all duration-300 disabled:cursor-not-allowed
               ${!hasVariant
                 ? 'border-outline-variant/20 text-on-surface-variant/35 cursor-not-allowed'
                 : addState === 'added'
                   ? 'border-primary/60 bg-primary/10 text-primary'
                   : addState === 'error'
-                    ? 'border-error/40 bg-error/10 text-error'
+                    ? 'border-error bg-error text-white font-bold'
                     : 'border-outline-variant/30 text-on-surface/60 hover:border-primary/50 hover:bg-primary hover:text-background'
               }`}
           >

@@ -77,7 +77,6 @@ const emptyCoupon = {
   promotionId: '',
   code: '',
   userId: '',
-  expiresAt: '',
 }
 
 export default function ManagePromotion() {
@@ -193,7 +192,6 @@ export default function ManagePromotion() {
         promotionId: Number(couponForm.promotionId),
         code: couponForm.code.trim(),
         userId: couponForm.userId ? Number(couponForm.userId) : null,
-        expiresAt: couponForm.expiresAt ? toIso(couponForm.expiresAt) : null,
       })
       setCouponForm(emptyCoupon)
       await loadData()
@@ -373,10 +371,6 @@ export default function ManagePromotion() {
               <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Promotion</span>
               <select required value={couponForm.promotionId} onChange={(e) => {
                 changeCoupon('promotionId', e.target.value);
-                const promo = activePromotions.find(p => String(p.id) === String(e.target.value));
-                if (promo && promo.endDate) {
-                  changeCoupon('expiresAt',toInputDateTime(promo.endDate));
-                }
               }} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary">
                 <option value="">Chọn chương trình</option>
                 {activePromotions.map((promo) => <option key={promo.id} value={promo.id}>{promo.name}</option>)}
@@ -392,10 +386,6 @@ export default function ManagePromotion() {
                 <option value="">Bỏ trống để dùng chung</option>
                 {users.map(u => <option key={u.id} value={u.id}>{u.fullName || u.email} (ID: {u.id})</option>)}
               </select>
-            </label>
-            <label className="block">
-              <span className="font-label-caps text-[10px] uppercase tracking-widest text-on-surface-variant">Hạn mã</span>
-              <input type="datetime-local" value={couponForm.expiresAt} onChange={(e) => changeCoupon('expiresAt', e.target.value)} className="mt-2 w-full border-b border-outline-variant/25 bg-transparent py-3 font-body-md text-sm outline-none focus:border-primary" />
             </label>
           </div>
 

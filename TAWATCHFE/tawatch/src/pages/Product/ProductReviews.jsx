@@ -132,11 +132,16 @@ export default function ProductReviews({ watchId }) {
         rating,
         comment: comment.trim(),
       })
-      setMyPendingReview(created)
+      if (created.isApproved) {
+        setReviews((prev) => [created, ...prev])
+        setSuccessMsg('Đánh giá của bạn đã được đăng thành công!')
+      } else {
+        setMyPendingReview(created)
+        setSuccessMsg('Đánh giá của bạn đang chờ admin duyệt. Cảm ơn bạn!')
+      }
       setEligibleOrders((prev) => prev.filter((o) => String(o.id) !== selectedOrderId))
       setComment('')
       setRating(5)
-      setSuccessMsg('Đánh giá của bạn đang chờ admin duyệt. Cảm ơn bạn!')
     } catch (err) {
       setError(err?.message || 'Không thể gửi đánh giá.')
     } finally {

@@ -97,6 +97,8 @@ export default function Dashboard() {
   const [watches, setWatches] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(false)
+  const [topPeriod, setTopPeriod] = useState('month')
+  const [topSortBy, setTopSortBy] = useState('quantity')
 
   useEffect(() => {
     Promise.all([
@@ -117,6 +119,50 @@ export default function Dashboard() {
     orders.filter(o => getStatus(o) === 'DELIVERED')
       .reduce((s, o) => s + Number(o.totalAmount || 0), 0),
     [orders])
+
+  const totalProfit = useMemo(() =>
+    orders.filter(o => getStatus(o) === 'DELIVERED').reduce((sum, o) => {
+      const profit = (o.items || []).reduce((p, item) =>
+        p + (Number(item.unitPrice || 0) - Number(item.unitCost || 0)) * (item.quantity || 0), 0
+      )
+      return sum + profit
+    }, 0),
+  [orders])
+
+  const topSellingWatches = useMemo(() => {
+    const now = new Date()
+    let cutoff = null
+    if (topPeriod !== 'all') {
+      cutoff = new Date(now)
+      if (topPeriod === '7d')      cutoff.setDate(now.getDate() - 7)
+      else if (topPeriod === '30d') cutoff.setDate(now.getDate() - 30)
+      else if (topPeriod === '90d') cutoff.setDate(now.getDate() - 90)
+      else if (topPeriod === 'month') cutoff = new Date(now.getFullYear(), now.getMonth(), 1)
+      else if (topPeriod === 'quarter') {
+        const q = Math.floor(now.getMonth() / 3)
+        cutoff = new Date(now.getFullYear(), q * 3, 1)
+      }
+      else if (topPeriod === 'year') cutoff = new Date(now.getFullYear(), 0, 1)
+    }
+    const salesMap = {}
+    orders.filter(o => {
+      if (getStatus(o) !== 'DELIVERED') return false
+      if (!cutoff) return true
+      return new Date(o.createdAt) >= cutoff
+    }).forEach(o => {
+      (o.items || []).forEach(item => {
+        const watchId = item.watchVariantId
+        if (!salesMap[watchId]) {
+          salesMap[watchId] = { watchName: item.watchName, watchId, quantity: 0, revenue: 0 }
+        }
+        salesMap[watchId].quantity += item.quantity || 0
+        salesMap[watchId].revenue += Number(item.totalPrice || 0)
+      })
+    })
+    return Object.values(salesMap)
+      .sort((a, b) => (topSortBy === 'revenue' ? b.revenue - a.revenue : b.quantity - a.quantity))
+      .slice(0, 5)
+  }, [orders, topPeriod, topSortBy])
 
   const customerCount = useMemo(() =>
     users.filter(u => u.role !== 'ADMIN').length, [users])
@@ -221,7 +267,7 @@ export default function Dashboard() {
       </section>
 
       {/* ── KPI cards ── */}
-      <section className="mb-8 grid grid-cols-4 gap-4">
+      <section className="mb-8 grid grid-cols-5 gap-4">
         {[
           {
             label: 'Doanh thu (đã giao)',
@@ -229,6 +275,13 @@ export default function Dashboard() {
             icon: 'payments',
             accent: 'text-primary',
             sub: loading ? null : `Từ ${orders.filter(o => getStatus(o) === 'DELIVERED').length} đơn hoàn tất`,
+          },
+          {
+            label: 'Lợi nhuận',
+            value: loading ? null : formatVnd(totalProfit),
+            icon: 'trending_up',
+            accent: 'text-green-500',
+            sub: loading ? null : `Doanh thu - Giá vốn`,
           },
           {
             label: 'Tổng đơn hàng',
@@ -430,7 +483,7 @@ export default function Dashboard() {
               {recentOrders.map(order => {
                 const status = getStatus(order)
                 const meta = STATUS_META[status] ?? STATUS_META.PENDING
-                const name = order.customerName || order.guestName || `Khách #${order.id}`
+                const name = order.user?.fullName || order.guestName || 'Khách vãng lai'
                 const code = order.orderCode || `ORD-${order.id}`
                 return (
                   <tr key={order.id} className="transition-colors hover:bg-surface-container/40">
@@ -515,6 +568,86 @@ export default function Dashboard() {
           </div>
         </section>
       </div>
+
+      {/* ── Top sản phẩm bán chạy ── */}
+      {topSellingWatches.length > 0 && (
+        <section className="mb-8 border border-outline-variant/10 bg-surface-container-lowest p-7">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <SectionLabel>Top sản phẩm bán chạy</SectionLabel>
+              <p className="mt-1.5 font-label-caps text-xs tracking-wide text-on-surface-variant/40">
+                Dựa trên đơn đã giao thành công
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 border border-outline-variant/15 bg-surface-container p-0.5">
+                {[
+                  { v: '7d',     label: '7 ngày' },
+                  { v: '30d',    label: '30 ngày' },
+                  { v: 'month',  label: 'Tháng' },
+                  { v: 'quarter', label: 'Quý' },
+                  { v: 'year',   label: 'Năm' },
+                  { v: 'all',    label: 'Mọi lúc' },
+                ].map(({ v, label }) => (
+                  <button
+                    key={v}
+                    onClick={() => setTopPeriod(v)}
+                    className={`px-3 py-1.5 font-label-caps text-[10px] tracking-widest transition-colors ${
+                      topPeriod === v
+                        ? 'bg-primary text-background'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-1 border border-outline-variant/15 bg-surface-container p-0.5">
+                {[
+                  { v: 'quantity', label: 'Số lượng' },
+                  { v: 'revenue',  label: 'Doanh thu' },
+                ].map(({ v, label }) => (
+                  <button
+                    key={v}
+                    onClick={() => setTopSortBy(v)}
+                    className={`px-3 py-1.5 font-label-caps text-[10px] tracking-widest transition-colors ${
+                      topSortBy === v
+                        ? 'bg-primary text-background'
+                        : 'text-on-surface-variant hover:bg-surface-container-highest'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="grid grid-cols-5 gap-4">
+            {topSellingWatches.map((item, index) => (
+              <div key={item.watchId} className="border border-outline-variant/10 bg-surface-container p-4 transition-colors hover:border-primary/20">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className={`flex h-8 w-8 items-center justify-center rounded-full font-label-caps text-sm font-bold ${
+                    index === 0 ? 'bg-primary text-background' : 'bg-outline-variant/20 text-on-surface-variant'
+                  }`}>
+                    #{index + 1}
+                  </span>
+                </div>
+                <p className="mb-2 truncate font-body-md text-sm font-semibold text-on-surface">
+                  {item.watchName}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="font-label-caps text-xs text-on-surface-variant">Đã bán</span>
+                  <span className={`font-label-caps text-sm font-bold ${topSortBy === 'quantity' ? 'text-primary' : 'text-on-surface'}`}>{item.quantity} chiếc</span>
+                </div>
+                <div className="mt-1 flex items-center justify-between">
+                  <span className="font-label-caps text-xs text-on-surface-variant">Doanh thu</span>
+                  <span className={`font-label-caps text-xs font-semibold ${topSortBy === 'revenue' ? 'text-primary' : 'text-on-surface'}`}>{formatVnd(item.revenue)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── Quick links ── */}
       <section>
